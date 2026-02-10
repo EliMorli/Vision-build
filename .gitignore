@@ -1,10 +1,11 @@
-# Flutter / Dart
-.dart_tool/
-.packages
-build/
-.flutter-plugins
-.flutter-plugins-dependencies
-*.iml
+# Dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
 
 # IDE
 .idea/
@@ -14,44 +15,14 @@ build/
 
 # macOS
 .DS_Store
-*.dSYM.zip
-*.dSYM
-
-# Android
-**/android/**/gradle-wrapper.jar
-.gradle/
-**/android/captures/
-**/android/gradlew
-**/android/gradlew.bat
-**/android/local.properties
-**/android/**/GeneratedPluginRegistrant.java
-
-# iOS
-**/ios/**/*.mode1v3
-**/ios/**/*.mode2v3
-**/ios/**/*.moved-aside
-**/ios/**/*.pbxuser
-**/ios/**/*.perspectivev3
-**/ios/**/project.xcworkspace/
-**/ios/**/xcuserdata/
-**/ios/.generated/
-**/ios/Flutter/.last_build_id
-**/ios/Flutter/App.framework
-**/ios/Flutter/Flutter.framework
-**/ios/Flutter/Generated.xcconfig
-**/ios/Pods/
-
-# Firebase
-firebase-debug.log
-.firebase/
-
-# Cloud Functions
-functions/node_modules/
-functions/lib/
 
 # Environment / Secrets
 .env
 *.env
-google-services.json
-GoogleService-Info.plist
-firebase_app_id_file.json
+.env.local
+
+# Supabase local
+supabase/.temp/
+
+# Build outputs
+*.tsbuildinfo

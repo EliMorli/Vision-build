@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "VisionBuild",
+    "slug": "visionbuild",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "visionbuild",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1A73E8"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.visionbuild.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "VisionBuild needs camera access to photograph your rooms.",
+        "NSPhotoLibraryUsageDescription": "VisionBuild needs photo access to select room images."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#1A73E8"
+      },
+      "package": "com.visionbuild.app",
+      "permissions": ["CAMERA"]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-camera",
+      "expo-image-picker",
+      "expo-secure-store"
+    ]
+  }
+}
