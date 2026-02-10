@@ -1,14 +1,17 @@
 import { create } from "zustand";
 import { Session } from "@supabase/supabase-js";
+import * as WebBrowser from "expo-web-browser";
+import { makeRedirectUri } from "expo-auth-session";
 import { supabase } from "./supabase";
-import { Project, Profile, Contractor, Lead, LeadInfo } from "./types";
+import { Project, Profile, Contractor } from "./types";
 
-// ─── Auth Slice ────────────────────────────────────────────
+// ─── Auth Store ────────────────────────────────────────────
 
 interface AuthState {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
+  error: string | null;
   setSession: (session: Session | null) => void;
   fetchProfile: () => Promise<void>;
   signInWithOAuth: (provider: "google" | "apple") => Promise<void>;
@@ -19,6 +22,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
   profile: null,
   loading: true,
+  error: null,
 
   setSession: (session) => {
     set({ session, loading: false });
@@ -29,24 +33,60 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const userId = get().session?.user?.id;
     if (!userId) return;
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
       .single();
 
     if (data) set({ profile: data });
+    if (error) console.warn("fetchProfile:", error.message);
   },
 
   signInWithOAuth: async (provider) => {
-    set({ loading: true });
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: "visionbuild://auth/callback" },
-    });
-    if (error) {
+    set({ loading: true, error: null });
+
+    try {
+      const redirectUrl = makeRedirectUri({ scheme: "visionbuild", path: "auth/callback" });
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: redirectUrl },
+      });
+
+      if (error) throw error;
+
+      // Open the Supabase auth URL in the system browser
+      if (data.url) {
+        const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+
+        if (result.type === "success" && result.url) {
+          // Extract tokens from the redirect URL fragment
+          const fragment = result.url.split("#")[1];
+          if (fragment) {
+            const params = new URLSearchParams(fragment);
+            const accessToken = params.get("access_token");
+            const refreshToken = params.get("refresh_token");
+
+            if (accessToken && refreshToken) {
+              const { data: sessionData, error: sessionError } =
+                await supabase.auth.setSession({
+                  access_token: accessToken,
+                  refresh_token: refreshToken,
+                });
+
+              if (sessionError) throw sessionError;
+              set({ session: sessionData.session, loading: false });
+              if (sessionData.session) get().fetchProfile();
+              return;
+            }
+          }
+        }
+      }
+
       set({ loading: false });
-      throw error;
+    } catch (e: any) {
+      set({ error: e.message, loading: false });
     }
   },
 
@@ -104,15 +144,15 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     set({ loading: true, progress: 0, progressMessage: "Uploading photo...", error: null });
 
     try {
-      // 1. Upload to Supabase Storage
-      set({ progress: 0.2 });
+      // 1. Read file and upload to Supabase Storage
+      set({ progress: 0.15 });
       const fileName = `${userId}/${Date.now()}.jpg`;
-      const response = await fetch(imageUri);
-      const blob = await response.blob();
+      const fileResponse = await fetch(imageUri);
+      const arrayBuffer = await fileResponse.arrayBuffer();
 
       const { error: uploadError } = await supabase.storage
         .from("room-photos")
-        .upload(fileName, blob, { contentType: "image/jpeg" });
+        .upload(fileName, arrayBuffer, { contentType: "image/jpeg" });
 
       if (uploadError) throw uploadError;
 

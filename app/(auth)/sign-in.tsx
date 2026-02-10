@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,9 @@ import {
   Dimensions,
   FlatList,
   ViewToken,
+  ActivityIndicator,
 } from "react-native";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useAuthStore } from "@/lib/store";
@@ -37,7 +39,13 @@ const PAGES = [
 
 export default function SignInScreen() {
   const [currentPage, setCurrentPage] = useState(0);
-  const { signInWithOAuth, loading } = useAuthStore();
+  const { signInWithOAuth, loading, error, session } = useAuthStore();
+  const router = useRouter();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (session) router.replace("/(tabs)");
+  }, [session]);
 
   const onViewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
@@ -101,6 +109,14 @@ export default function SignInScreen() {
           <Ionicons name="logo-apple" size={20} color={colors.textPrimary} />
           <Text style={styles.btnOutlineText}>Continue with Apple</Text>
         </Pressable>
+
+        {loading && (
+          <ActivityIndicator style={{ marginTop: spacing.md }} color={colors.primary} />
+        )}
+
+        {error && (
+          <Text style={styles.errorText}>{error}</Text>
+        )}
       </View>
     </View>
   );
@@ -147,4 +163,5 @@ const styles = StyleSheet.create({
   btnPrimaryText: { color: "#fff", fontSize: 16, fontWeight: "600" },
   btnOutline: { borderWidth: 1, borderColor: colors.border },
   btnOutlineText: { color: colors.textPrimary, fontSize: 16, fontWeight: "600" },
+  errorText: { color: colors.error, fontSize: 13, textAlign: "center" as const, marginTop: spacing.sm },
 });

@@ -1,19 +1,23 @@
 import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import * as WebBrowser from "expo-web-browser";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/lib/store";
+
+// Complete any pending auth sessions (handles redirect back from browser)
+WebBrowser.maybeCompleteAuthSession();
 
 export default function RootLayout() {
   const setSession = useAuthStore((s) => s.setSession);
 
   useEffect(() => {
-    // Hydrate session on mount
+    // Hydrate existing session on cold start
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });
 
-    // Listen for auth changes
+    // React to all auth changes (sign-in, sign-out, token refresh)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {

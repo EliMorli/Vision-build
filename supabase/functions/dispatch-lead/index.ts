@@ -138,13 +138,22 @@ Client: ${userName}, Zip: ${zipCode}, Budget: ${budgetRange}, Room: ${roomType},
 
     const leadIds: string[] = [];
 
+    // Fetch project owner once
+    const { data: projectRow } = await supabase
+      .from("projects")
+      .select("user_id")
+      .eq("id", projectId)
+      .single();
+
+    const projectUserId = projectRow?.user_id;
+
     for (const contractor of contractors ?? []) {
       // Create lead row
       const { data: lead } = await supabase
         .from("leads")
         .insert({
           project_id: projectId,
-          user_id: (await supabase.from("projects").select("user_id").eq("id", projectId).single()).data?.user_id,
+          user_id: projectUserId,
           contractor_id: contractor.id,
           email_subject: emailData.subject,
           email_body: emailData.body,
