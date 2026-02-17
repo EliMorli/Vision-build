@@ -1,39 +1,36 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  Pressable,
   Dimensions,
   FlatList,
   ViewToken,
-  ActivityIndicator,
+  SafeAreaView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useAuthStore } from "@/lib/store";
+import { Button } from "@/components";
 
 const { width } = Dimensions.get("window");
 
 const PAGES = [
   {
-    icon: "sparkles" as const,
-    title: "Visualize Your Dream Home",
-    subtitle:
-      "Upload a photo of any room and see it transformed into your dream design with AI.",
+    icon: "camera-outline" as const,
+    title: "Snap Your Space",
+    subtitle: "Take a photo of any room in your home. Kitchen, bathroom, bedroom — we handle them all.",
   },
   {
-    icon: "grid-outline" as const,
-    title: "Structural Integrity",
-    subtitle:
-      "Our AI preserves your room layout — walls, windows, and doors stay in place. Only surfaces and finishes change.",
+    icon: "color-wand-outline" as const,
+    title: "AI Redesigns It",
+    subtitle: "Pick a style and our AI generates 4 photorealistic designs — keeping your walls, windows, and layout intact.",
   },
   {
-    icon: "handshake-outline" as const,
-    title: "Connect with Contractors",
-    subtitle:
-      "Turn your vision into reality. We generate a professional project brief and match you with local contractors.",
+    icon: "people-outline" as const,
+    title: "Get Real Estimates",
+    subtitle: "We create a professional project brief and connect you with vetted local contractors in 24 hours.",
   },
 ];
 
@@ -42,34 +39,41 @@ export default function SignInScreen() {
   const { signInWithOAuth, loading, error, session } = useAuthStore();
   const router = useRouter();
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (session) router.replace("/(tabs)");
   }, [session]);
 
   const onViewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
-      if (viewableItems.length > 0 && viewableItems[0].index != null) {
+      if (viewableItems[0]?.index != null) {
         setCurrentPage(viewableItems[0].index);
       }
     }
   ).current;
 
+  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
+
   return (
-    <View style={styles.container}>
-      {/* Onboarding pages */}
+    <SafeAreaView style={styles.container}>
+      {/* Logo */}
+      <View style={styles.logoRow}>
+        <Ionicons name="construct" size={22} color={colors.primary} />
+        <Text style={styles.logoText}>VisionBuild</Text>
+      </View>
+
+      {/* Onboarding carousel */}
       <FlatList
         data={PAGES}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={{ viewAreaCoveragePercentThreshold: 50 }}
+        viewabilityConfig={viewabilityConfig}
         keyExtractor={(_, i) => String(i)}
         renderItem={({ item }) => (
           <View style={styles.page}>
             <View style={styles.iconCircle}>
-              <Ionicons name={item.icon} size={48} color={colors.primary} />
+              <Ionicons name={item.icon} size={44} color={colors.primary} />
             </View>
             <Text style={styles.pageTitle}>{item.title}</Text>
             <Text style={styles.pageSubtitle}>{item.subtitle}</Text>
@@ -82,48 +86,43 @@ export default function SignInScreen() {
         {PAGES.map((_, i) => (
           <View
             key={i}
-            style={[
-              styles.dot,
-              currentPage === i ? styles.dotActive : styles.dotInactive,
-            ]}
+            style={[styles.dot, currentPage === i ? styles.dotActive : styles.dotInactive]}
           />
         ))}
       </View>
 
-      {/* Sign-in buttons */}
+      {/* Auth buttons */}
       <View style={styles.buttons}>
-        <Pressable
-          style={[styles.btn, styles.btnPrimary]}
+        <Button
+          label="Continue with Google"
+          icon="logo-google"
           onPress={() => signInWithOAuth("google")}
-          disabled={loading}
-        >
-          <Ionicons name="logo-google" size={20} color="#fff" />
-          <Text style={styles.btnPrimaryText}>Continue with Google</Text>
-        </Pressable>
-
-        <Pressable
-          style={[styles.btn, styles.btnOutline]}
+          loading={loading}
+          variant="primary"
+        />
+        <Button
+          label="Continue with Apple"
+          icon="logo-apple"
           onPress={() => signInWithOAuth("apple")}
-          disabled={loading}
-        >
-          <Ionicons name="logo-apple" size={20} color={colors.textPrimary} />
-          <Text style={styles.btnOutlineText}>Continue with Apple</Text>
-        </Pressable>
-
-        {loading && (
-          <ActivityIndicator style={{ marginTop: spacing.md }} color={colors.primary} />
-        )}
-
-        {error && (
-          <Text style={styles.errorText}>{error}</Text>
-        )}
+          loading={loading}
+          variant="outline"
+        />
+        {error && <Text style={styles.errorText}>{error}</Text>}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff", paddingBottom: spacing.xl },
+  container: { flex: 1, backgroundColor: "#fff" },
+  logoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingTop: spacing.lg,
+  },
+  logoText: { fontSize: 20, fontWeight: "700", color: colors.textPrimary },
   page: {
     width,
     justifyContent: "center",
@@ -131,37 +130,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
   },
   iconCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: colors.primary + "15",
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: colors.primary + "12",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 32,
   },
-  pageTitle: { ...fonts.heading, textAlign: "center", marginBottom: spacing.md },
+  pageTitle: {
+    ...fonts.heading,
+    textAlign: "center",
+    marginBottom: spacing.sm,
+  },
   pageSubtitle: {
     ...fonts.body,
     color: colors.textSecondary,
     textAlign: "center",
     lineHeight: 24,
+    paddingHorizontal: spacing.md,
   },
-  dots: { flexDirection: "row", justifyContent: "center", marginBottom: 40 },
+  dots: { flexDirection: "row", justifyContent: "center", marginBottom: 32 },
   dot: { height: 8, borderRadius: 4, marginHorizontal: 4 },
   dotActive: { width: 24, backgroundColor: colors.primary },
-  dotInactive: { width: 8, backgroundColor: colors.primary + "33" },
-  buttons: { paddingHorizontal: spacing.xl, gap: spacing.sm },
-  btn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 14,
-    borderRadius: radius.md,
-    gap: spacing.sm,
+  dotInactive: { width: 8, backgroundColor: colors.primary + "30" },
+  buttons: { paddingHorizontal: spacing.xl, gap: spacing.sm, paddingBottom: spacing.xl },
+  errorText: {
+    color: colors.error,
+    fontSize: 13,
+    textAlign: "center",
+    marginTop: spacing.xs,
   },
-  btnPrimary: { backgroundColor: colors.primary },
-  btnPrimaryText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  btnOutline: { borderWidth: 1, borderColor: colors.border },
-  btnOutlineText: { color: colors.textPrimary, fontSize: 16, fontWeight: "600" },
-  errorText: { color: colors.error, fontSize: 13, textAlign: "center" as const, marginTop: spacing.sm },
 });

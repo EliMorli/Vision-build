@@ -3,21 +3,32 @@ import {
   View,
   Text,
   StyleSheet,
-  Pressable,
   TextInput,
+  Pressable,
   ScrollView,
+  SafeAreaView,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { BUDGET_RANGES } from "@/lib/types";
 import { useProjectStore, useLeadStore, useAuthStore } from "@/lib/store";
+import { Button, Banner, EmptyState, FullScreenLoader } from "@/components";
 
 export default function HandoffScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { currentProject } = useProjectStore();
-  const { emailPreview, matchedContractors, loading, progressMessage, error, generateBriefAndMatch, dispatchLeads, clear } = useLeadStore();
+  const {
+    emailPreview,
+    matchedContractors,
+    loading,
+    progressMessage,
+    error,
+    generateBriefAndMatch,
+    dispatchLeads,
+    clear,
+  } = useLeadStore();
   const profile = useAuthStore((s) => s.profile);
 
   const [zip, setZip] = useState("");
@@ -55,55 +66,52 @@ export default function HandoffScreen() {
 
   if (step === 0) {
     return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
-        <Text style={fonts.heading}>Almost there!</Text>
-        <Text style={[fonts.body, { color: colors.textSecondary, marginTop: 8 }]}>
-          We need a couple of details to match you with the best local contractors.
-        </Text>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+          <Text style={fonts.heading}>Almost there!</Text>
+          <Text style={styles.intro}>
+            We need a couple of details to match you with the best local contractors.
+          </Text>
 
-        <Text style={[fonts.title, { marginTop: spacing.xl, fontSize: 16 }]}>
-          Budget Range
-        </Text>
-        <View style={styles.chips}>
-          {BUDGET_RANGES.map((range) => (
-            <Pressable
-              key={range}
-              style={[styles.chip, budget === range && styles.chipSelected]}
-              onPress={() => setBudget(range)}
-            >
-              <Text
-                style={[
-                  styles.chipText,
-                  budget === range && styles.chipTextSelected,
-                ]}
+          <Text style={styles.label}>Budget Range</Text>
+          <View style={styles.chips}>
+            {BUDGET_RANGES.map((range) => (
+              <Pressable
+                key={range}
+                style={[styles.chip, budget === range && styles.chipSelected]}
+                onPress={() => setBudget(range)}
               >
-                {range}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+                <Text
+                  style={[styles.chipText, budget === range && styles.chipTextSelected]}
+                >
+                  {range}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
 
-        <Text style={[fonts.title, { marginTop: spacing.lg, fontSize: 16 }]}>
-          Zip Code
-        </Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter your zip code"
-          keyboardType="number-pad"
-          maxLength={5}
-          value={zip}
-          onChangeText={setZip}
-        />
+          <Text style={[styles.label, { marginTop: spacing.lg }]}>Zip Code</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your zip code"
+            placeholderTextColor={colors.textSecondary + "80"}
+            keyboardType="number-pad"
+            maxLength={5}
+            value={zip}
+            onChangeText={setZip}
+          />
 
-        <Pressable
-          style={[styles.btn, !canProceed && styles.btnDisabled]}
-          onPress={handleGenerateBrief}
-          disabled={!canProceed}
-        >
-          <Ionicons name="document-text-outline" size={18} color="#fff" />
-          <Text style={styles.btnText}>Generate Project Brief</Text>
-        </Pressable>
-      </ScrollView>
+          <View style={styles.btnWrap}>
+            <Button
+              label="Generate Project Brief"
+              icon="document-text-outline"
+              onPress={handleGenerateBrief}
+              disabled={!canProceed}
+              variant="primary"
+            />
+          </View>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
@@ -111,125 +119,117 @@ export default function HandoffScreen() {
 
   if (step === 1) {
     if (loading) {
-      return (
-        <View style={styles.center}>
-          <Ionicons name="hourglass-outline" size={36} color={colors.primary} />
-          <Text style={[fonts.regular, { marginTop: 16 }]}>{progressMessage}</Text>
-        </View>
-      );
+      return <FullScreenLoader message={progressMessage} />;
     }
 
     return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
-        <View style={styles.successRow}>
-          <Ionicons name="checkmark-circle" size={24} color={colors.secondary} />
-          <Text style={fonts.title}>Project Brief Generated</Text>
-        </View>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+          <Banner
+            icon="checkmark-circle"
+            iconColor={colors.secondary}
+            title="Project Brief Generated"
+          />
 
-        {/* Email preview */}
-        <View style={styles.card}>
-          <Text style={[fonts.title, { fontSize: 15 }]}>
-            Subject: {emailPreview?.subject}
-          </Text>
-          <View style={styles.divider} />
-
-          <Text style={[fonts.title, { fontSize: 14 }]}>Scope of Work:</Text>
-          {emailPreview?.scopeOfWork.map((item, i) => (
-            <Text key={i} style={fonts.regular}>
-              {"  \u2022  "}
-              {item}
+          {/* Email preview card */}
+          <View style={styles.card}>
+            <Text style={styles.cardHeading}>
+              Subject: {emailPreview?.subject}
             </Text>
-          ))}
+            <View style={styles.divider} />
 
-          <Text style={[fonts.regular, { marginTop: spacing.md }]}>
-            {emailPreview?.body}
-          </Text>
-        </View>
-
-        {/* Matched contractors */}
-        {matchedContractors.length > 0 && (
-          <>
-            <Text style={[fonts.title, { marginTop: spacing.md }]}>
-              Matched {matchedContractors.length} Contractors
-            </Text>
-            {matchedContractors.map((c) => (
-              <View key={c.id} style={styles.contractorRow}>
-                <View style={styles.contractorIcon}>
-                  <Ionicons name="business-outline" size={18} color={colors.primary} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={fonts.body}>{c.business_name}</Text>
-                  <Text style={fonts.regular}>
-                    {c.city} {"\u2022"} {c.specialties.join(", ")}
-                  </Text>
-                </View>
-                <Text style={fonts.regular}>{c.rating}/5</Text>
-              </View>
+            <Text style={styles.cardHeading}>Scope of Work</Text>
+            {emailPreview?.scopeOfWork.map((item, i) => (
+              <Text key={i} style={styles.scopeItem}>
+                {"\u2022  "}{item}
+              </Text>
             ))}
-          </>
-        )}
 
-        <Pressable
-          style={[styles.btn, { backgroundColor: colors.secondary, marginTop: spacing.lg }]}
-          onPress={handleDispatch}
-        >
-          <Ionicons name="send" size={18} color="#fff" />
-          <Text style={styles.btnText}>Connect with Contractors</Text>
-        </Pressable>
+            <Text style={[fonts.regular, { marginTop: spacing.md }]}>
+              {emailPreview?.body}
+            </Text>
+          </View>
 
-        {error && <Text style={styles.error}>{error}</Text>}
-      </ScrollView>
+          {/* Matched contractors */}
+          {matchedContractors.length > 0 && (
+            <>
+              <Text style={[styles.label, { marginTop: spacing.lg }]}>
+                Matched {matchedContractors.length} Contractors
+              </Text>
+              {matchedContractors.map((c) => (
+                <View key={c.id} style={styles.contractorRow}>
+                  <View style={styles.contractorIcon}>
+                    <Ionicons name="business-outline" size={18} color={colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.contractorName}>{c.business_name}</Text>
+                    <Text style={fonts.regular}>
+                      {c.city} {"\u2022"} {c.specialties.join(", ")}
+                    </Text>
+                  </View>
+                  <View style={styles.ratingBadge}>
+                    <Ionicons name="star" size={12} color={colors.accent} />
+                    <Text style={styles.ratingText}>{c.rating}</Text>
+                  </View>
+                </View>
+              ))}
+            </>
+          )}
+
+          <View style={styles.btnWrap}>
+            <Button
+              label="Connect with Contractors"
+              icon="send"
+              onPress={handleDispatch}
+              variant="secondary"
+            />
+          </View>
+
+          {error && <Text style={styles.error}>{error}</Text>}
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
   // ─── Step 2: Success ─────────────────────────────────────
 
   return (
-    <View style={styles.center}>
-      <View style={[styles.iconCircle, { backgroundColor: colors.secondary + "1A" }]}>
-        <Ionicons name="checkmark-circle" size={56} color={colors.secondary} />
-      </View>
-      <Text style={fonts.heading}>Leads Sent!</Text>
-      <Text
-        style={[
-          fonts.body,
-          { color: colors.textSecondary, textAlign: "center", marginTop: 12, paddingHorizontal: spacing.xl },
-        ]}
+    <SafeAreaView style={styles.safeArea}>
+      <EmptyState
+        icon="checkmark-circle"
+        title="Leads Sent!"
+        subtitle="Your project brief has been sent to matched contractors. You'll receive responses within 24-48 hours."
       >
-        Your project brief has been sent to matched contractors. You'll receive
-        responses within 24-48 hours.
-      </Text>
-      <Pressable
-        style={[styles.btn, { marginTop: spacing.xxl }]}
-        onPress={() => {
-          clear();
-          router.replace("/(tabs)");
-        }}
-      >
-        <Text style={styles.btnText}>Back to Dashboard</Text>
-      </Pressable>
-    </View>
+        <Button
+          label="Back to Dashboard"
+          onPress={() => {
+            clear();
+            router.replace("/(tabs)");
+          }}
+          variant="primary"
+        />
+      </EmptyState>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  scroll: { padding: spacing.lg },
-  center: { flex: 1, justifyContent: "center", alignItems: "center", padding: spacing.xl },
-  iconCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: spacing.xl,
+  safeArea: { flex: 1, backgroundColor: "#fff" },
+  scroll: { flex: 1 },
+  scrollContent: { padding: spacing.lg },
+  intro: {
+    ...fonts.body,
+    color: colors.textSecondary,
+    marginTop: spacing.sm,
+    marginBottom: spacing.md,
   },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: spacing.sm },
+  label: { ...fonts.title, fontSize: 16, marginBottom: spacing.xs },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: radius.full,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
   },
   chipSelected: {
@@ -239,26 +239,15 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 14, color: colors.textPrimary },
   chipTextSelected: { color: colors.primary, fontWeight: "600" },
   input: {
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
     borderRadius: radius.md,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    marginTop: spacing.sm,
+    color: colors.textPrimary,
   },
-  btn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.primary,
-    paddingVertical: 16,
-    borderRadius: radius.md,
-    gap: 8,
-    marginTop: spacing.xl,
-  },
-  btnDisabled: { opacity: 0.4 },
-  btnText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  btnWrap: { marginTop: spacing.xl },
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
@@ -266,21 +255,40 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     gap: 6,
   },
+  cardHeading: { fontSize: 15, fontWeight: "600", color: colors.textPrimary },
   divider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.sm },
-  successRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  scopeItem: { ...fonts.regular, lineHeight: 22 },
   contractorRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
     paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border + "60",
   },
   contractorIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.primary + "15",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary + "12",
     justifyContent: "center",
     alignItems: "center",
   },
-  error: { color: colors.error, textAlign: "center", marginTop: spacing.sm, fontSize: 13 },
+  contractorName: { ...fonts.body, fontWeight: "600" },
+  ratingBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: colors.accent + "1A",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radius.full,
+  },
+  ratingText: { fontSize: 13, fontWeight: "600", color: colors.accent },
+  error: {
+    color: colors.error,
+    textAlign: "center",
+    marginTop: spacing.sm,
+    fontSize: 13,
+  },
 });

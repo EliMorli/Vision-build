@@ -5,13 +5,14 @@ import {
   StyleSheet,
   Pressable,
   Image,
-  ActivityIndicator,
+  SafeAreaView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore } from "@/lib/store";
+import { Button, ProgressBar } from "@/components";
 
 export default function CameraScreen() {
   const router = useRouter();
@@ -38,7 +39,6 @@ export default function CameraScreen() {
 
   const handleAnalyze = async () => {
     if (!imageUri) return;
-
     const project = await uploadAndAnalyze(imageUri);
     if (project) {
       router.push(`/editor/${project.id}`);
@@ -46,96 +46,107 @@ export default function CameraScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={fonts.body}>
-        Take a photo or upload an image of the room you want to renovate.
+    <SafeAreaView style={styles.container}>
+      {/* Header hint */}
+      <Text style={styles.hint}>
+        Take a photo or pick one from your gallery to get started.
       </Text>
 
-      {/* Image preview */}
-      <View style={styles.preview}>
+      {/* Image preview area */}
+      <View style={styles.previewArea}>
         {imageUri ? (
-          <Image source={{ uri: imageUri }} style={styles.image} />
+          <Pressable onPress={() => !loading && pickImage(false)} style={styles.imageFill}>
+            <Image source={{ uri: imageUri }} style={styles.image} />
+            {!loading && (
+              <View style={styles.retapHint}>
+                <Ionicons name="refresh" size={14} color="#fff" />
+                <Text style={styles.retapText}>Tap to change</Text>
+              </View>
+            )}
+          </Pressable>
         ) : (
-          <Pressable
-            style={styles.placeholder}
-            onPress={() => pickImage(false)}
-          >
-            <Ionicons
-              name="add-circle-outline"
-              size={64}
-              color={colors.primary + "80"}
-            />
-            <Text style={[fonts.title, { color: colors.textSecondary, marginTop: 16 }]}>
-              Tap to add a photo
+          <Pressable style={styles.placeholder} onPress={() => pickImage(false)}>
+            <View style={styles.placeholderIcon}>
+              <Ionicons name="image-outline" size={48} color={colors.primary} />
+            </View>
+            <Text style={styles.placeholderTitle}>Add a Room Photo</Text>
+            <Text style={styles.placeholderSub}>
+              Take a photo or choose from your gallery
             </Text>
-            <Text style={fonts.regular}>Take a photo or choose from gallery</Text>
           </Pressable>
         )}
       </View>
 
-      {/* Progress */}
+      {/* Progress bar when loading */}
       {loading && (
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <View
-              style={[styles.progressFill, { width: `${progress * 100}%` }]}
-            />
-          </View>
-          <Text style={fonts.regular}>{progressMessage}</Text>
+        <View style={styles.progressWrap}>
+          <ProgressBar progress={progress} message={progressMessage} />
         </View>
       )}
 
       {/* Error */}
       {error && <Text style={styles.error}>{error}</Text>}
 
-      {/* Buttons */}
+      {/* Action buttons */}
       {!loading && (
         <View style={styles.buttons}>
           {imageUri ? (
-            <>
-              <Pressable
-                style={[styles.btn, styles.btnOutline, { flex: 1 }]}
-                onPress={() => pickImage(false)}
-              >
-                <Ionicons name="refresh" size={18} color={colors.primary} />
-                <Text style={styles.btnOutlineText}>Retake</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.btn, styles.btnPrimary, { flex: 2 }]}
-                onPress={handleAnalyze}
-              >
-                <Ionicons name="sparkles" size={18} color="#fff" />
-                <Text style={styles.btnPrimaryText}>Analyze Room</Text>
-              </Pressable>
-            </>
+            <Button
+              label="Analyze Room"
+              icon="sparkles"
+              onPress={handleAnalyze}
+              variant="primary"
+            />
           ) : (
-            <>
-              <Pressable
-                style={[styles.btn, styles.btnPrimary, { flex: 1 }]}
+            <View style={styles.buttonRow}>
+              <Button
+                label="Camera"
+                icon="camera"
                 onPress={() => pickImage(true)}
-              >
-                <Ionicons name="camera" size={18} color="#fff" />
-                <Text style={styles.btnPrimaryText}>Camera</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.btn, styles.btnOutline, { flex: 1 }]}
+                variant="primary"
+                fullWidth={false}
+                style={styles.flexBtn}
+              />
+              <Button
+                label="Gallery"
+                icon="images"
                 onPress={() => pickImage(false)}
-              >
-                <Ionicons name="images" size={18} color={colors.primary} />
-                <Text style={styles.btnOutlineText}>Gallery</Text>
-              </Pressable>
-            </>
+                variant="outline"
+                fullWidth={false}
+                style={styles.flexBtn}
+              />
+            </View>
           )}
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: spacing.lg, backgroundColor: "#fff" },
-  preview: { flex: 1, marginVertical: spacing.md },
-  image: { flex: 1, borderRadius: radius.lg },
+  container: { flex: 1, backgroundColor: "#fff", padding: spacing.lg },
+  hint: {
+    ...fonts.body,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginBottom: spacing.md,
+  },
+  previewArea: { flex: 1, marginBottom: spacing.md },
+  imageFill: { flex: 1, borderRadius: radius.lg, overflow: "hidden" },
+  image: { flex: 1 },
+  retapHint: {
+    position: "absolute",
+    bottom: 12,
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+  },
+  retapText: { color: "#fff", fontSize: 12 },
   placeholder: {
     flex: 1,
     borderRadius: radius.lg,
@@ -145,28 +156,26 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     justifyContent: "center",
     alignItems: "center",
+    gap: 12,
   },
-  progressContainer: { alignItems: "center", gap: spacing.sm, marginBottom: spacing.md },
-  progressBar: {
-    width: "100%",
-    height: 4,
-    backgroundColor: colors.primary + "1A",
-    borderRadius: 2,
-    overflow: "hidden",
-  },
-  progressFill: { height: "100%", backgroundColor: colors.primary },
-  error: { color: colors.error, fontSize: 13, textAlign: "center", marginBottom: spacing.sm },
-  buttons: { flexDirection: "row", gap: spacing.sm },
-  btn: {
-    flexDirection: "row",
-    alignItems: "center",
+  placeholderIcon: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: colors.primary + "12",
     justifyContent: "center",
-    paddingVertical: 14,
-    borderRadius: radius.md,
-    gap: 8,
+    alignItems: "center",
   },
-  btnPrimary: { backgroundColor: colors.primary },
-  btnPrimaryText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  btnOutline: { borderWidth: 1, borderColor: colors.border },
-  btnOutlineText: { color: colors.primary, fontSize: 16, fontWeight: "600" },
+  placeholderTitle: { ...fonts.title, fontSize: 18 },
+  placeholderSub: { ...fonts.regular, textAlign: "center" },
+  progressWrap: { marginBottom: spacing.md },
+  error: {
+    color: colors.error,
+    fontSize: 13,
+    textAlign: "center",
+    marginBottom: spacing.sm,
+  },
+  buttons: { paddingBottom: spacing.sm },
+  buttonRow: { flexDirection: "row", gap: spacing.sm },
+  flexBtn: { flex: 1 },
 });

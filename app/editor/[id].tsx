@@ -4,14 +4,15 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  ScrollView,
   FlatList,
+  SafeAreaView,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { STYLE_OPTIONS, StyleOption } from "@/lib/types";
 import { useProjectStore } from "@/lib/store";
+import { Button, ProgressBar, Banner } from "@/components";
 
 export default function EditorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -34,20 +35,16 @@ export default function EditorScreen() {
     s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, " ");
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Room analysis banner */}
       {analysis && (
-        <View style={styles.analysisBanner}>
-          <View style={styles.analysisHeader}>
-            <Ionicons name="checkmark-circle" size={20} color={colors.secondary} />
-            <Text style={[fonts.title, { color: colors.secondary, fontSize: 16 }]}>
-              Room Analyzed
-            </Text>
-          </View>
-          <Text style={fonts.regular}>
-            {capitalize(analysis.roomType)}, approx {analysis.estimatedSqFt} sq ft,{" "}
-            {analysis.currentStyle}
-          </Text>
+        <Banner
+          icon="checkmark-circle"
+          iconColor={colors.secondary}
+          title="Room Analyzed"
+          subtitle={`${capitalize(analysis.roomType)}, approx ${analysis.estimatedSqFt} sq ft, ${analysis.currentStyle}`}
+          style={styles.banner}
+        >
           {analysis.keyElements.length > 0 && (
             <View style={styles.chips}>
               {analysis.keyElements.map((el, i) => (
@@ -57,12 +54,10 @@ export default function EditorScreen() {
               ))}
             </View>
           )}
-        </View>
+        </Banner>
       )}
 
-      <Text style={[fonts.title, { marginHorizontal: spacing.md, marginTop: spacing.md }]}>
-        Select a Design Style
-      </Text>
+      <Text style={styles.sectionTitle}>Select a Design Style</Text>
 
       {/* Style grid */}
       <FlatList
@@ -75,26 +70,28 @@ export default function EditorScreen() {
           const isSelected = selectedStyle?.id === item.id;
           return (
             <Pressable
-              style={[
-                styles.styleCard,
-                isSelected && styles.styleCardSelected,
-              ]}
+              style={[styles.styleCard, isSelected && styles.styleCardSelected]}
               onPress={() => setSelectedStyle(item)}
             >
+              {isSelected && (
+                <View style={styles.checkBadge}>
+                  <Ionicons name="checkmark" size={14} color="#fff" />
+                </View>
+              )}
               <Ionicons
                 name={item.icon as any}
-                size={32}
+                size={30}
                 color={isSelected ? colors.primary : colors.textSecondary}
               />
               <Text
                 style={[
-                  fonts.title,
-                  { fontSize: 14, color: isSelected ? colors.primary : colors.textPrimary },
+                  styles.styleName,
+                  isSelected && { color: colors.primary },
                 ]}
               >
                 {item.name}
               </Text>
-              <Text style={[fonts.regular, { textAlign: "center", fontSize: 12 }]} numberOfLines={2}>
+              <Text style={styles.styleDesc} numberOfLines={2}>
                 {item.description}
               </Text>
             </Pressable>
@@ -102,49 +99,41 @@ export default function EditorScreen() {
         }}
       />
 
-      {/* Generate button */}
+      {/* Footer */}
       <View style={styles.footer}>
         {loading ? (
-          <View style={styles.progressContainer}>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
-            </View>
-            <Text style={fonts.regular}>{progressMessage}</Text>
-          </View>
+          <ProgressBar progress={progress} message={progressMessage} />
         ) : (
-          <Pressable
-            style={[styles.btn, !selectedStyle && styles.btnDisabled]}
+          <Button
+            label="Generate 4 Designs"
+            icon="sparkles"
             onPress={handleGenerate}
             disabled={!selectedStyle}
-          >
-            <Ionicons name="sparkles" size={18} color="#fff" />
-            <Text style={styles.btnText}>Generate 4 Designs</Text>
-          </Pressable>
+            variant="primary"
+          />
         )}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
-  analysisBanner: {
-    margin: spacing.md,
-    padding: spacing.md,
-    backgroundColor: colors.primary + "0D",
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.primary + "33",
-  },
-  analysisHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 },
+  banner: { margin: spacing.md },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: spacing.sm },
   chip: {
     backgroundColor: colors.primary + "1A",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: radius.sm,
   },
-  chipText: { fontSize: 12, color: colors.primary },
+  chipText: { fontSize: 12, color: colors.primary, fontWeight: "500" },
+  sectionTitle: {
+    ...fonts.title,
+    fontSize: 18,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.sm,
+  },
   grid: { padding: spacing.md, gap: spacing.sm },
   styleCard: {
     flex: 1,
@@ -152,36 +141,29 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: spacing.md,
     borderRadius: radius.lg,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
     backgroundColor: "#fff",
-    gap: 8,
+    gap: 6,
     minHeight: 130,
   },
   styleCardSelected: {
     borderColor: colors.primary,
     borderWidth: 2,
-    backgroundColor: colors.primary + "0D",
+    backgroundColor: colors.primary + "0A",
   },
-  footer: { padding: spacing.md },
-  progressContainer: { alignItems: "center", gap: spacing.sm },
-  progressBar: {
-    width: "100%",
-    height: 4,
-    backgroundColor: colors.primary + "1A",
-    borderRadius: 2,
-    overflow: "hidden",
-  },
-  progressFill: { height: "100%", backgroundColor: colors.primary },
-  btn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+  checkBadge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: colors.primary,
-    paddingVertical: 16,
-    borderRadius: radius.md,
-    gap: 8,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  btnDisabled: { opacity: 0.4 },
-  btnText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  styleName: { fontSize: 14, fontWeight: "600", color: colors.textPrimary },
+  styleDesc: { ...fonts.regular, textAlign: "center", fontSize: 12 },
+  footer: { padding: spacing.md },
 });

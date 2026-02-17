@@ -9,11 +9,13 @@ import {
   FlatList,
   Modal,
   ViewToken,
+  SafeAreaView,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore } from "@/lib/store";
+import { Button } from "@/components";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.82;
@@ -37,6 +39,8 @@ export default function ResultScreen() {
     }
   ).current;
 
+  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
+
   const handleSelect = (url: string) => {
     setSelectedUrl(url);
   };
@@ -48,30 +52,27 @@ export default function ResultScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={[fonts.regular, { textAlign: "center" }]}>
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.subtitle}>
         Swipe to browse. Tap to select your favorite.
       </Text>
 
-      {/* Hint */}
+      {/* Hint pill */}
       <View style={styles.hint}>
-        <Ionicons name="swap-horizontal" size={16} color={colors.textSecondary} />
-        <Text style={fonts.regular}>
-          Long-press any image to compare with original
-        </Text>
+        <Ionicons name="swap-horizontal" size={14} color={colors.textSecondary} />
+        <Text style={styles.hintText}>Long-press any image to compare with original</Text>
       </View>
 
       {/* Carousel */}
       <FlatList
         data={images}
         horizontal
-        pagingEnabled
         showsHorizontalScrollIndicator={false}
         snapToInterval={CARD_WIDTH + spacing.md}
         decelerationRate="fast"
         contentContainerStyle={{ paddingHorizontal: (width - CARD_WIDTH) / 2 }}
         onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={{ viewAreaCoveragePercentThreshold: 50 }}
+        viewabilityConfig={viewabilityConfig}
         keyExtractor={(_, i) => String(i)}
         renderItem={({ item: url, index }) => {
           const isSelected = selectedUrl === url;
@@ -87,7 +88,7 @@ export default function ResultScreen() {
               <Image source={{ uri: url }} style={styles.cardImage} />
               {isSelected && (
                 <View style={styles.checkBadge}>
-                  <Ionicons name="checkmark" size={20} color="#fff" />
+                  <Ionicons name="checkmark" size={18} color="#fff" />
                 </View>
               )}
               <View style={styles.optionLabel}>
@@ -103,39 +104,45 @@ export default function ResultScreen() {
         {images.map((_, i) => (
           <View
             key={i}
-            style={[
-              styles.dot,
-              currentIndex === i ? styles.dotActive : styles.dotInactive,
-            ]}
+            style={[styles.dot, currentIndex === i ? styles.dotActive : styles.dotInactive]}
           />
         ))}
       </View>
 
       {/* CTA */}
-      <Pressable
-        style={[styles.ctaBtn, !selectedUrl && styles.ctaBtnDisabled]}
-        onPress={handleContinue}
-        disabled={!selectedUrl}
-      >
-        <Ionicons name="handshake-outline" size={20} color="#fff" />
-        <Text style={styles.ctaText}>Get Estimates</Text>
-      </Pressable>
+      <View style={styles.cta}>
+        <Button
+          label="Get Estimates"
+          icon="briefcase-outline"
+          onPress={handleContinue}
+          disabled={!selectedUrl}
+          variant="secondary"
+        />
+      </View>
 
       {/* Before/After Modal */}
       <Modal visible={showCompare} transparent animationType="fade">
         <Pressable style={styles.modal} onPress={() => setShowCompare(false)}>
           <View style={styles.modalContent}>
-            <Text style={fonts.title}>Before & After</Text>
-            <Image
-              source={{ uri: currentProject?.original_image_url }}
-              style={styles.compareImg}
-            />
-            <Ionicons name="arrow-down" size={24} color={colors.primary} />
-            <Image source={{ uri: compareUrl }} style={styles.compareImg} />
+            <Text style={styles.modalTitle}>Before & After</Text>
+            <View style={styles.compareRow}>
+              <View style={styles.compareCol}>
+                <Image
+                  source={{ uri: currentProject?.original_image_url }}
+                  style={styles.compareImg}
+                />
+                <Text style={styles.compareLabel}>Original</Text>
+              </View>
+              <View style={styles.compareCol}>
+                <Image source={{ uri: compareUrl }} style={styles.compareImg} />
+                <Text style={styles.compareLabel}>Redesign</Text>
+              </View>
+            </View>
+            <Text style={styles.tapHint}>Tap anywhere to close</Text>
           </View>
         </Pressable>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -144,19 +151,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
     paddingTop: spacing.sm,
-    paddingBottom: spacing.lg,
+  },
+  subtitle: {
+    ...fonts.body,
+    color: colors.textSecondary,
+    textAlign: "center",
   },
   hint: {
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "center",
-    gap: 8,
+    gap: 6,
     backgroundColor: colors.accent + "1A",
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: radius.sm,
-    marginVertical: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+    marginVertical: spacing.sm,
   },
+  hintText: { fontSize: 12, color: colors.textSecondary },
   card: {
     width: CARD_WIDTH,
     marginRight: spacing.md,
@@ -189,47 +201,41 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.55)",
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: radius.md,
+    borderRadius: radius.full,
   },
-  optionText: { color: "#fff", fontSize: 13 },
+  optionText: { color: "#fff", fontSize: 12, fontWeight: "500" },
   dots: {
     flexDirection: "row",
     justifyContent: "center",
     marginTop: spacing.md,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   dot: { height: 8, borderRadius: 4, marginHorizontal: 4 },
   dotActive: { width: 24, backgroundColor: colors.primary },
   dotInactive: { width: 8, backgroundColor: colors.primary + "33" },
-  ctaBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginHorizontal: spacing.lg,
-    paddingVertical: 16,
-    borderRadius: radius.md,
-    backgroundColor: colors.secondary,
-    gap: 8,
-  },
-  ctaBtnDisabled: { opacity: 0.4 },
-  ctaText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  cta: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg },
   modal: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.6)",
     justifyContent: "center",
     alignItems: "center",
   },
   modalContent: {
     backgroundColor: "#fff",
     borderRadius: radius.lg,
-    padding: spacing.md,
+    padding: spacing.lg,
     alignItems: "center",
-    gap: spacing.sm,
-    width: width * 0.9,
+    width: width * 0.92,
   },
+  modalTitle: { ...fonts.title, marginBottom: spacing.md },
+  compareRow: { flexDirection: "row", gap: spacing.sm, width: "100%" },
+  compareCol: { flex: 1, alignItems: "center", gap: 6 },
   compareImg: {
     width: "100%",
     height: 180,
     borderRadius: radius.md,
+    backgroundColor: colors.surface,
   },
+  compareLabel: { ...fonts.regular, fontSize: 12 },
+  tapHint: { ...fonts.regular, fontSize: 12, marginTop: spacing.md },
 });
