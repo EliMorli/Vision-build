@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useAuthStore, usePrivacyStore } from "@/lib/store";
 import { SUPPORT_EMAIL } from "@/lib/config";
+import { supabase } from "@/lib/supabase";
 
 interface Setting {
   id: string;
@@ -72,8 +73,7 @@ export default function ProfileSettingsScreen() {
             }
 
             try {
-              const { supabase: supabaseClient } = await import("@/lib/supabase");
-              const { error } = await supabaseClient.functions.invoke("delete-account");
+              const { error } = await supabase.functions.invoke("delete-account");
               
               if (error) throw error;
               
