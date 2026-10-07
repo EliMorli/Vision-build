@@ -15,8 +15,10 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { mockAssistantProvider } from "@/lib/providers/MockAssistantProvider";
+import { realAssistantProvider } from "@/lib/providers/RealAssistantProvider";
 import { AssistantMessage } from "@/lib/providers/AssistantProvider";
 import { Button, ReportModal } from "@/components";
+import Constants from "expo-constants";
 
 const WELCOME_MESSAGE: AssistantMessage = {
   id: "welcome",
@@ -25,6 +27,10 @@ const WELCOME_MESSAGE: AssistantMessage = {
     "Hi! I'm Vi, your design assistant. I'm here to help you bring your renovation ideas to life. Tell me about the space you're working on!",
   timestamp: 0,
 };
+
+// Use real provider unless in mock mode
+const useMockMode = __DEV__ && Constants.expoConfig?.extra?.EXPO_PUBLIC_DEV_MOCK_SESSION === "true";
+const assistantProvider = useMockMode ? mockAssistantProvider : realAssistantProvider;
 
 export default function AssistantChatScreen() {
   const router = useRouter();
@@ -57,7 +63,7 @@ export default function AssistantChatScreen() {
     setIsLoading(true);
 
     try {
-      const response = await mockAssistantProvider.chat(
+      const response = await assistantProvider.chat(
         messages,
         userMessage.content
       );
@@ -75,7 +81,7 @@ export default function AssistantChatScreen() {
     setIsLoading(true);
 
     try {
-      const response = await mockAssistantProvider.generateDesign(
+      const response = await assistantProvider.generateDesign(
         messages,
         "Generate design based on our conversation"
       );

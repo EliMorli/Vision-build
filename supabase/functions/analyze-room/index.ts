@@ -1,13 +1,17 @@
 // Supabase Edge Function: analyze-room
-// Sends a room photo to OpenAI GPT-4o for structured analysis.
+// Sends a room photo to AI (OpenRouter/OpenAI) for structured analysis.
 //
 // Required secrets (set in Supabase Dashboard):
-//   OPENAI_API_KEY
+//   AI_API_KEY (or OPENAI_API_KEY for backward compatibility)
+// Optional:
+//   AI_BASE_URL (default: https://openrouter.ai/api/v1)
+//   AI_MODEL_VISION (default: openai/gpt-4o-2024-11-20)
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { verifyAuth } from "../_shared/auth.ts";
 import { checkRateLimit, recordUsage } from "../_shared/rate-limit.ts";
+import { analyzeRoom } from "../_shared/ai.ts";
 
 serve(async (req: Request) => {
   // Handle CORS preflight
@@ -38,61 +42,8 @@ serve(async (req: Request) => {
       );
     }
 
-    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
-
-    const prompt = `You are an expert interior designer and construction analyst. Analyze the provided room photo and return ONLY a valid JSON object (no markdown, no explanation) with this exact schema:
-
-{
-  "roomType": "kitchen|bathroom|bedroom|living_room|dining_room|office|other",
-  "currentStyle": "a short style description, e.g. dated oak traditional",
-  "estimatedSqFt": 150,
-  "keyElements": ["oak cabinets", "tile flooring", "fluorescent lighting"],
-  "rawAnalysis": "A 2-3 sentence human-readable summary of what you see."
-}
-
-Be specific about materials, finishes, and notable features. Estimate square footage based on visual cues.`;
-
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: prompt },
-              { type: "image_url", image_url: { url: imageUrl } },
-            ],
-          },
-        ],
-        max_tokens: 800,
-      }),
-    });
-
-    const data = await response.json();
-    const text = data.choices?.[0]?.message?.content ?? "";
-
-    // Parse the JSON response
-    let analysis;
-    try {
-      const cleaned = text
-        .replace(/```json\s*/g, "")
-        .replace(/```\s*/g, "")
-        .trim();
-      analysis = JSON.parse(cleaned);
-    } catch {
-      analysis = {
-        roomType: "other",
-        currentStyle: "unknown",
-        estimatedSqFt: 0,
-        keyElements: [],
-        rawAnalysis: text,
-      };
-    }
+    // Analyze room using shared AI module
+    const analysis = await analyzeRoom(imageUrl);
 
     // Record usage
     await recordUsage(anonClient, userId, "analyze-room");

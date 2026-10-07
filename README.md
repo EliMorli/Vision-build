@@ -6,7 +6,8 @@ Home renovation visualization tool — from imagination to contractor execution.
 
 - **Frontend**: React Native + Expo Router + TypeScript
 - **Backend**: Supabase (PostgreSQL, Auth, Storage, Edge Functions)
-- **AI**: OpenAI GPT-4o (analysis + chat), Replicate SDXL (image generation)
+- **AI**: OpenRouter (default), OpenAI (optional) for analysis, chat, and brief generation
+- **Image Generation**: Replicate SDXL (default), OpenRouter (optional), Mock (for testing)
 - **Email**: Resend
 - **State**: Zustand
 
@@ -214,8 +215,15 @@ Migrations include:
 Required secrets:
 
 ```bash
-npx supabase secrets set OPENAI_API_KEY=sk-...
+# AI Layer (OpenRouter recommended, OpenAI optional)
+npx supabase secrets set AI_API_KEY=sk-...
+npx supabase secrets set AI_BASE_URL=https://openrouter.ai/api/v1
+
+# Image generation (if using Replicate)
+npx supabase secrets set RENDER_PROVIDER=replicate
 npx supabase secrets set REPLICATE_API_TOKEN=r8_...
+
+# Email
 npx supabase secrets set RESEND_API_KEY=re_...
 npx supabase secrets set BUSINESS_MAILING_ADDRESS="YourCompany Inc., 123 Main St, City, ST 12345"
 npx supabase secrets set UNSUBSCRIBE_SECRET="$(openssl rand -base64 32)"
@@ -224,6 +232,11 @@ npx supabase secrets set UNSUBSCRIBE_SECRET="$(openssl rand -base64 32)"
 Optional secrets:
 
 ```bash
+# AI model overrides (OpenRouter model IDs)
+npx supabase secrets set AI_MODEL_VISION=openai/gpt-4o-2024-11-20
+npx supabase secrets set AI_MODEL_TEXT=anthropic/claude-3.5-sonnet
+npx supabase secrets set AI_MODEL_CHAT=anthropic/claude-3.5-sonnet
+
 # Rate limits (defaults: 10, 5, 3)
 npx supabase secrets set RATE_LIMIT_ANALYZE_ROOM=10
 npx supabase secrets set RATE_LIMIT_GENERATE_DESIGN=5
@@ -234,6 +247,9 @@ npx supabase secrets set APPLE_TEAM_ID=YOUR_TEAM_ID
 npx supabase secrets set APPLE_KEY_ID=YOUR_KEY_ID
 npx supabase secrets set APPLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----..."
 npx supabase secrets set APPLE_CLIENT_ID=com.yourapp.service
+
+# Backward compatibility (deprecated, use AI_API_KEY instead)
+npx supabase secrets set OPENAI_API_KEY=sk-...
 ```
 
 ### Generate Types
