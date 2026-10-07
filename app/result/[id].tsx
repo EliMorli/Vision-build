@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore } from "@/lib/store";
 import { Button, ReportModal } from "@/components";
+import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.82;
@@ -27,6 +28,7 @@ export default function ResultScreen() {
   const { currentProject, selectDesign, loading } = useProjectStore();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
+  const reduceMotion = useReducedMotion();
   const [showCompare, setShowCompare] = useState(false);
   const [compareUrl, setCompareUrl] = useState("");
   const [reportModalVisible, setReportModalVisible] = useState(false);
@@ -153,7 +155,7 @@ export default function ResultScreen() {
       </View>
 
       {/* Before/After Modal */}
-      <Modal visible={showCompare} transparent animationType="fade">
+      <Modal visible={showCompare} transparent animationType={reduceMotion ? "none" : "fade"}>
         <Pressable style={styles.modal} onPress={() => setShowCompare(false)}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Before & After</Text>

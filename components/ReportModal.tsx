@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { Button } from "./Button";
 import { useReportStore } from "@/lib/store";
+import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 
 interface ReportModalProps {
   visible: boolean;
@@ -50,6 +51,7 @@ export function ReportModal({ visible, onClose, type, itemId }: ReportModalProps
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitReport = useReportStore((s) => s.submitReport);
+  const reduceMotion = useReducedMotion();
 
   const reasons = REPORT_REASONS[type];
 
@@ -93,7 +95,7 @@ export function ReportModal({ visible, onClose, type, itemId }: ReportModalProps
   return (
     <Modal
       visible={visible}
-      animationType="slide"
+      animationType={reduceMotion ? "none" : "slide"}
       presentationStyle="pageSheet"
       onRequestClose={handleClose}
     >
