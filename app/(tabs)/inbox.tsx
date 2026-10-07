@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   View,
   Text,
@@ -5,10 +6,11 @@ import {
   FlatList,
   Pressable,
   SafeAreaView,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
-import { EmptyState } from "@/components";
+import { EmptyState, ReportModal } from "@/components";
 
 // Placeholder outreach tracker data
 const OUTREACH_TRACKER = {
@@ -38,6 +40,45 @@ const PLACEHOLDER_THREADS = Array.from({ length: 8 }, (_, i) => ({
 
 export default function InboxScreen() {
   const hasMessages = PLACEHOLDER_THREADS.length > 0;
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportContractorId, setReportContractorId] = useState("");
+
+  const handleReportBlock = (contractorId: string, contractorName: string) => {
+    Alert.alert(
+      contractorName,
+      "What would you like to do?",
+      [
+        {
+          text: "Report",
+          onPress: () => {
+            setReportContractorId(contractorId);
+            setReportModalVisible(true);
+          },
+        },
+        {
+          text: "Block",
+          style: "destructive",
+          onPress: () => {
+            Alert.alert(
+              "Block Contractor",
+              `Block ${contractorName}? They won't be able to contact you again.`,
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Block",
+                  style: "destructive",
+                  onPress: () => {
+                    console.log("Blocked contractor:", contractorId);
+                  },
+                },
+              ]
+            );
+          },
+        },
+        { text: "Cancel", style: "cancel" },
+      ]
+    );
+  };
 
   if (!hasMessages) {
     return (
@@ -53,6 +94,12 @@ export default function InboxScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <ReportModal
+        visible={reportModalVisible}
+        onClose={() => setReportModalVisible(false)}
+        type="contractor"
+        itemId={reportContractorId}
+      />
       <FlatList
         data={PLACEHOLDER_THREADS}
         keyExtractor={(item) => item.id}
@@ -113,31 +160,43 @@ export default function InboxScreen() {
           </View>
         )}
         renderItem={({ item }) => (
-          <Pressable style={styles.thread}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="business-outline" size={24} color={colors.primary} />
-            </View>
-            <View style={styles.threadBody}>
-              <View style={styles.threadHeader}>
-                <Text style={[styles.threadName, item.unread && styles.unreadText]}>
-                  {item.contractorName}
-                </Text>
-                <Text style={styles.timestamp}>{item.timestamp}</Text>
+          <View style={styles.threadWrapper}>
+            <Pressable style={styles.thread}>
+              <View style={styles.iconCircle}>
+                <Ionicons name="business-outline" size={24} color={colors.primary} />
               </View>
-              <View style={styles.messageRow}>
-                <Text style={styles.lastMessage} numberOfLines={2}>
-                  {item.lastMessage}
-                </Text>
-                {item.unread && <View style={styles.unreadBadge} />}
-              </View>
-              {item.hasQuote && (
-                <View style={styles.quoteBadge}>
-                  <Ionicons name="document-text" size={12} color={colors.secondary} />
-                  <Text style={styles.quoteText}>Quote attached</Text>
+              <View style={styles.threadBody}>
+                <View style={styles.threadHeader}>
+                  <Text style={[styles.threadName, item.unread && styles.unreadText]}>
+                    {item.contractorName}
+                  </Text>
+                  <Text style={styles.timestamp}>{item.timestamp}</Text>
                 </View>
-              )}
-            </View>
-          </Pressable>
+                <View style={styles.messageRow}>
+                  <Text style={styles.lastMessage} numberOfLines={2}>
+                    {item.lastMessage}
+                  </Text>
+                  {item.unread && <View style={styles.unreadBadge} />}
+                </View>
+                {item.hasQuote && (
+                  <View style={styles.quoteBadge}>
+                    <Ionicons name="document-text" size={12} color={colors.secondary} />
+                    <Text style={styles.quoteText}>Quote attached</Text>
+                  </View>
+                )}
+                <View style={styles.threadActions}>
+                  <Pressable
+                    style={styles.actionButton}
+                    onPress={() => handleReportBlock(item.id, item.contractorName)}
+                    hitSlop={8}
+                  >
+                    <Ionicons name="ellipsis-horizontal" size={16} color={colors.textSecondary} />
+                    <Text style={styles.actionButtonText}>Report or Block</Text>
+                  </Pressable>
+                </View>
+              </View>
+            </Pressable>
+          </View>
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
@@ -232,6 +291,9 @@ const styles = StyleSheet.create({
     ...fonts.regular,
     fontSize: 13,
   },
+  threadWrapper: {
+    backgroundColor: "#fff",
+  },
   thread: {
     flexDirection: "row",
     padding: spacing.md,
@@ -298,6 +360,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     color: colors.secondary,
+  },
+  threadActions: {
+    flexDirection: "row",
+    marginTop: spacing.xs,
+  },
+  actionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 4,
+  },
+  actionButtonText: {
+    ...fonts.regular,
+    fontSize: 12,
+    color: colors.textSecondary,
   },
   separator: {
     height: 1,

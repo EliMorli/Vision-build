@@ -12,11 +12,12 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { Button } from "./Button";
+import { useReportStore } from "@/lib/store";
 
 interface ReportModalProps {
   visible: boolean;
   onClose: () => void;
-  type: "design" | "message";
+  type: "design" | "message" | "contractor";
   itemId: string;
 }
 
@@ -36,11 +37,19 @@ const REPORT_REASONS = {
     { id: "spam", label: "Spam or unwanted" },
     { id: "other", label: "Something else" },
   ],
+  contractor: [
+    { id: "inappropriate", label: "Inappropriate behavior" },
+    { id: "spam", label: "Spam or unwanted contact" },
+    { id: "scam", label: "Suspected scam or fraud" },
+    { id: "unprofessional", label: "Unprofessional conduct" },
+    { id: "other", label: "Something else" },
+  ],
 };
 
 export function ReportModal({ visible, onClose, type, itemId }: ReportModalProps) {
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitReport = useReportStore((s) => s.submitReport);
 
   const reasons = REPORT_REASONS[type];
 
@@ -49,20 +58,31 @@ export function ReportModal({ visible, onClose, type, itemId }: ReportModalProps
 
     setIsSubmitting(true);
 
-    // Mock submission delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    try {
+      await submitReport({
+        targetType: type,
+        targetId: itemId,
+        reason: selectedReason,
+      });
 
-    setIsSubmitting(false);
-    onClose();
+      setIsSubmitting(false);
+      onClose();
 
-    // Show thank you alert
-    Alert.alert(
-      "Thank You",
-      "Your report has been submitted. Our team will review it and take appropriate action.",
-      [{ text: "OK" }]
-    );
+      Alert.alert(
+        "Thank You",
+        "Your report has been submitted. Our team will review it and take appropriate action.",
+        [{ text: "OK" }]
+      );
 
-    setSelectedReason(null);
+      setSelectedReason(null);
+    } catch (error) {
+      setIsSubmitting(false);
+      Alert.alert(
+        "Error",
+        "Failed to submit report. Please try again.",
+        [{ text: "OK" }]
+      );
+    }
   };
 
   const handleClose = () => {
@@ -84,7 +104,7 @@ export function ReportModal({ visible, onClose, type, itemId }: ReportModalProps
             <Ionicons name="close" size={28} color={colors.textPrimary} />
           </Pressable>
           <Text style={styles.headerTitle}>
-            Report {type === "design" ? "Design" : "Message"}
+            Report {type === "design" ? "Design" : type === "contractor" ? "Contractor" : "Message"}
           </Text>
           <View style={{ width: 28 }} />
         </View>

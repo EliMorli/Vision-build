@@ -32,7 +32,7 @@ const PAGES = [
   {
     icon: "people-outline" as const,
     title: "Get Real Estimates",
-    subtitle: "We create a professional project brief and connect you with vetted local contractors in 24 hours.",
+    subtitle: "We create a professional project brief and connect you with local contractors in 24 hours.",
   },
 ];
 

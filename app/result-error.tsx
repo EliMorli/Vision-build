@@ -16,9 +16,8 @@ export default function ResultErrorScreen() {
         return {
           title: "Daily Render Limit Reached",
           message:
-            "You've used all your free renders for today. Your limit resets at midnight. Want unlimited renders? Upgrade to Pro!",
+            "You've used all your free renders for today. Your limit resets at midnight. Please check back tomorrow!",
           icon: "hourglass" as const,
-          retryLabel: "View Pricing",
         };
       case "upload":
         return {

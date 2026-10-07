@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,7 +12,8 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
-import { useAuthStore } from "@/lib/store";
+import { useAuthStore, usePrivacyStore } from "@/lib/store";
+import { SUPPORT_EMAIL } from "@/lib/config";
 
 interface Setting {
   id: string;
@@ -27,16 +28,28 @@ interface Setting {
 export default function ProfileSettingsScreen() {
   const router = useRouter();
   const signOut = useAuthStore((s) => s.signOut);
+  const { privacyOptOut, reduceMotion, loadPrivacySettings, setPrivacyOptOut, setReduceMotion } = usePrivacyStore();
 
   const [settings, setSettings] = useState({
     notifications: true,
     marketing: false,
     publicDefault: false,
-    reduceMotion: false,
   });
+
+  useEffect(() => {
+    loadPrivacySettings();
+  }, []);
 
   const toggleSetting = (key: keyof typeof settings) => {
     setSettings(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handlePrivacyOptOut = async (optOut: boolean) => {
+    await setPrivacyOptOut(optOut);
+  };
+
+  const handleReduceMotion = async (reduce: boolean) => {
+    await setReduceMotion(reduce);
   };
 
   const handleDeleteAccount = () => {
@@ -51,28 +64,40 @@ export default function ProfileSettingsScreen() {
         {
           text: "Delete My Account",
           style: "destructive",
-          onPress: () => {
-            // In production, this would call the delete account API
-            Alert.alert("Account Deleted", "Your account has been scheduled for deletion.");
-            signOut();
+          onPress: async () => {
+            const { supabase } = await import("@/lib/supabase");
+            
+            if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+              Alert.alert("Account Deleted", "Your account has been scheduled for deletion.");
+              signOut();
+              return;
+            }
+
+            try {
+              const { error } = await supabase.functions.invoke("delete-account");
+              
+              if (error) throw error;
+              
+              await signOut();
+            } catch (error: any) {
+              Alert.alert(
+                "Error",
+                "Failed to delete account. Please try again or contact support.",
+                [{ text: "OK" }]
+              );
+            }
           },
         },
       ]
     );
   };
 
-  const handleYourPrivacyChoices = () => {
-    // In production, this would open the CCPA/GDPR privacy choices screen
-    Alert.alert(
-      "Your Privacy Choices",
-      "Manage your privacy preferences including data sharing, targeted advertising, and data deletion rights.",
-      [
-        { text: "Do Not Sell My Info", onPress: () => {} },
-        { text: "Manage Cookies", onPress: () => {} },
-        { text: "Download My Data", onPress: () => {} },
-        { text: "Close", style: "cancel" },
-      ]
-    );
+  const handleRequestData = () => {
+    if (SUPPORT_EMAIL) {
+      Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=Data Request - VisionBuild&body=I would like to request a copy of my personal data.`);
+    } else {
+      router.push("/profile-settings");
+    }
   };
 
   const openLink = (url: string) => {
@@ -171,19 +196,48 @@ export default function ProfileSettingsScreen() {
                 ]} />
               </View>
             </Pressable>
+          </View>
+        </View>
+
+        {/* Your Privacy Choices */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Your Privacy Choices</Text>
+          <View style={styles.privacyCard}>
+            <Text style={styles.privacyDescription}>
+              We don't sell your personal information or run targeted ads. Your photos and chats 
+              go to our AI partners (OpenAI and Replicate) only to create your designs.
+            </Text>
+            
+            <Pressable
+              style={styles.settingRow}
+              onPress={() => handlePrivacyOptOut(!privacyOptOut)}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: privacyOptOut }}
+            >
+              <View style={styles.settingInfo}>
+                <Text style={styles.settingLabel}>Opt out of sharing</Text>
+                <Text style={styles.settingDescription}>
+                  Disable sharing data with AI partners (design generation won't work)
+                </Text>
+              </View>
+              <View style={[
+                styles.switch,
+                privacyOptOut && styles.switchOn,
+              ]}>
+                <View style={[
+                  styles.switchThumb,
+                  privacyOptOut && styles.switchThumbOn,
+                ]} />
+              </View>
+            </Pressable>
 
             <View style={styles.separator} />
 
             <Pressable
               style={styles.settingRow}
-              onPress={handleYourPrivacyChoices}
+              onPress={handleRequestData}
             >
-              <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>Your Privacy Choices</Text>
-                <Text style={styles.settingDescription}>
-                  Manage data sharing and advertising preferences
-                </Text>
-              </View>
+              <Text style={styles.settingLabel}>Request my data or deletion</Text>
               <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
             </Pressable>
           </View>
@@ -195,9 +249,9 @@ export default function ProfileSettingsScreen() {
           <View style={styles.settingCard}>
             <Pressable
               style={styles.settingRow}
-              onPress={() => toggleSetting("reduceMotion")}
+              onPress={() => handleReduceMotion(!reduceMotion)}
               accessibilityRole="switch"
-              accessibilityState={{ checked: settings.reduceMotion }}
+              accessibilityState={{ checked: reduceMotion }}
             >
               <View style={styles.settingInfo}>
                 <Text style={styles.settingLabel}>Reduce Motion</Text>
@@ -207,11 +261,11 @@ export default function ProfileSettingsScreen() {
               </View>
               <View style={[
                 styles.switch,
-                settings.reduceMotion && styles.switchOn,
+                reduceMotion && styles.switchOn,
               ]}>
                 <View style={[
                   styles.switchThumb,
-                  settings.reduceMotion && styles.switchThumbOn,
+                  reduceMotion && styles.switchThumbOn,
                 ]} />
               </View>
             </Pressable>
@@ -339,6 +393,21 @@ const styles = StyleSheet.create({
     ...fonts.regular,
     fontSize: 13,
     lineHeight: 18,
+  },
+  privacyCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+  },
+  privacyDescription: {
+    ...fonts.body,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.textSecondary,
+    padding: spacing.md,
+    backgroundColor: colors.primary + "08",
   },
   separator: {
     height: 1,

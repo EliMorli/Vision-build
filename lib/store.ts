@@ -460,3 +460,99 @@ export const useLeadStore = create<LeadState>((set) => ({
   clear: () =>
     set({ matchedContractors: [], emailPreview: null, error: null }),
 }));
+
+// ─── Report Slice ──────────────────────────────────────────
+
+interface ReportState {
+  submitReport: (params: {
+    targetType: "design" | "message" | "contractor";
+    targetId: string;
+    reason: string;
+  }) => Promise<void>;
+}
+
+export const useReportStore = create<ReportState>(() => ({
+  submitReport: async ({ targetType, targetId, reason }) => {
+    const userId = useAuthStore.getState().session?.user?.id;
+
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      console.log("[Mock] Report submitted:", { targetType, targetId, reason, userId: userId || "mock-user" });
+      return;
+    }
+
+    if (!userId) return;
+
+    const { error } = await supabase.from("reports").insert([
+      {
+        user_id: userId,
+        target_type: targetType,
+        target_id: targetId,
+        reason,
+      },
+    ]);
+
+    if (error) {
+      console.error("Failed to submit report:", error);
+      throw error;
+    }
+  },
+}));
+
+// ─── Privacy Slice ─────────────────────────────────────────
+
+interface PrivacyState {
+  privacyOptOut: boolean;
+  reduceMotion: boolean;
+  loadPrivacySettings: () => Promise<void>;
+  setPrivacyOptOut: (optOut: boolean) => Promise<void>;
+  setReduceMotion: (reduce: boolean) => Promise<void>;
+}
+
+export const usePrivacyStore = create<PrivacyState>((set, get) => ({
+  privacyOptOut: false,
+  reduceMotion: false,
+
+  loadPrivacySettings: async () => {
+    const userId = useAuthStore.getState().session?.user?.id;
+
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      return;
+    }
+
+    if (!userId) return;
+
+    const { data } = await supabase
+      .from("profiles")
+      .select("privacy_opt_out")
+      .eq("id", userId)
+      .single();
+
+    if (data) {
+      set({ privacyOptOut: data.privacy_opt_out ?? false });
+    }
+  },
+
+  setPrivacyOptOut: async (optOut: boolean) => {
+    const userId = useAuthStore.getState().session?.user?.id;
+
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      set({ privacyOptOut: optOut });
+      return;
+    }
+
+    if (!userId) return;
+
+    const { error } = await (supabase
+      .from("profiles") as any)
+      .update({ privacy_opt_out: optOut })
+      .eq("id", userId);
+
+    if (!error) {
+      set({ privacyOptOut: optOut });
+    }
+  },
+
+  setReduceMotion: async (reduce: boolean) => {
+    set({ reduceMotion: reduce });
+  },
+}));

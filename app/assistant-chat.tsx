@@ -16,7 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { mockAssistantProvider } from "@/lib/providers/MockAssistantProvider";
 import { AssistantMessage } from "@/lib/providers/AssistantProvider";
-import { Button } from "@/components";
+import { Button, ReportModal } from "@/components";
 
 export default function AssistantChatScreen() {
   const router = useRouter();
@@ -31,6 +31,8 @@ export default function AssistantChatScreen() {
   ]);
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportMessageId, setReportMessageId] = useState("");
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
@@ -123,6 +125,19 @@ export default function AssistantChatScreen() {
               ))}
             </View>
           )}
+          {!isUser && (
+            <Pressable
+              style={styles.reportButton}
+              onPress={() => {
+                setReportMessageId(item.id);
+                setReportModalVisible(true);
+              }}
+              hitSlop={8}
+            >
+              <Ionicons name="flag-outline" size={14} color={colors.textSecondary} />
+              <Text style={styles.reportButtonText}>Report</Text>
+            </Pressable>
+          )}
         </View>
       </View>
     );
@@ -130,6 +145,12 @@ export default function AssistantChatScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <ReportModal
+        visible={reportModalVisible}
+        onClose={() => setReportModalVisible(false)}
+        type="message"
+        itemId={reportMessageId}
+      />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -277,6 +298,18 @@ const styles = StyleSheet.create({
   },
   assistantText: {
     color: colors.textPrimary,
+  },
+  reportButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: spacing.xs,
+    paddingVertical: 4,
+  },
+  reportButtonText: {
+    ...fonts.regular,
+    fontSize: 12,
+    color: colors.textSecondary,
   },
   imagesGrid: {
     flexDirection: "row",

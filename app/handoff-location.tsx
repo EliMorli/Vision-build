@@ -66,7 +66,7 @@ export default function HandoffLocationScreen() {
 
           {/* Description */}
           <Text style={styles.description}>
-            We need your ZIP code to match you with licensed contractors in your area. 
+            We need your ZIP code to match you with local contractors in your area. 
             Your exact address stays private until you choose to share it with a specific pro.
           </Text>
 

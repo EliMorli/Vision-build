@@ -10,12 +10,13 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
+import { SUPPORT_EMAIL } from "@/lib/config";
 
 const FAQ_ITEMS = [
   {
     question: "How does VisionBuild work?",
     answer:
-      "Upload a photo of your room, choose a style, and our AI generates design visualizations. Then connect with licensed contractors to bring your vision to life.",
+      "Upload a photo of your room, choose a style, and our AI generates design visualizations. Then connect with local contractors to bring your vision to life.",
   },
   {
     question: "Is my data secure?",
@@ -23,14 +24,9 @@ const FAQ_ITEMS = [
       "Yes! Your photos are encrypted and only used to generate your designs. We never share your personal information without your explicit permission.",
   },
   {
-    question: "How much does it cost?",
-    answer:
-      "VisionBuild is free to use. You only pay when you choose to work with a contractor, and pricing is transparent upfront.",
-  },
-  {
     question: "How do I contact a contractor?",
     answer:
-      "After generating designs, tap 'Find Me a Pro' to match with licensed contractors. You control what information is shared at each step.",
+      "After generating designs, tap 'Find Me a Pro' to match with local contractors. You control what information is shared at each step.",
   },
 ];
 
@@ -42,7 +38,9 @@ export default function HelpContactScreen() {
   };
 
   const sendEmail = () => {
-    Linking.openURL("mailto:support@visionbuild.app?subject=VisionBuild Support Request");
+    if (SUPPORT_EMAIL) {
+      Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=VisionBuild Support Request`);
+    }
   };
 
   return (
@@ -58,19 +56,21 @@ export default function HelpContactScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Contact Support */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Get Help</Text>
-          <Pressable style={styles.contactCard} onPress={sendEmail}>
-            <View style={styles.contactIcon}>
-              <Ionicons name="mail" size={24} color={colors.primary} />
-            </View>
-            <View style={styles.contactInfo}>
-              <Text style={styles.contactLabel}>Email Support</Text>
-              <Text style={styles.contactValue}>support@visionbuild.app</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-          </Pressable>
-        </View>
+        {SUPPORT_EMAIL && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Get Help</Text>
+            <Pressable style={styles.contactCard} onPress={sendEmail}>
+              <View style={styles.contactIcon}>
+                <Ionicons name="mail" size={24} color={colors.primary} />
+              </View>
+              <View style={styles.contactInfo}>
+                <Text style={styles.contactLabel}>Email Support</Text>
+                <Text style={styles.contactValue}>{SUPPORT_EMAIL}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+            </Pressable>
+          </View>
+        )}
 
         {/* FAQ */}
         <View style={styles.section}>

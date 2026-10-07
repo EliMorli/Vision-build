@@ -1,22 +1,39 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, StyleSheet, SafeAreaView, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { Button } from "@/components";
+import { supabase } from "@/lib/supabase";
+import { useAuthStore } from "@/lib/store";
+import { AI_CONSENT_VERSION } from "@/lib/config";
 
 const AI_CONSENT_KEY = "@visionbuild:ai_consent";
+const AI_CONSENT_VERSION_KEY = "@visionbuild:ai_consent_version";
 
 export default function AIConsentScreen() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const userId = useAuthStore((s) => s.session?.user?.id);
 
   const handleAccept = async () => {
     setIsLoading(true);
     try {
       await AsyncStorage.setItem(AI_CONSENT_KEY, "true");
-      // Navigate back to wherever they came from
+      await AsyncStorage.setItem(AI_CONSENT_VERSION_KEY, AI_CONSENT_VERSION);
+
+      if (userId && !(__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true")) {
+        await supabase.from("consents").insert([
+          {
+            user_id: userId,
+            kind: "ai_processing",
+            version: AI_CONSENT_VERSION,
+            accepted_at: new Date().toISOString(),
+          },
+        ]);
+      }
+
       if (router.canGoBack()) {
         router.back();
       } else {
