@@ -42,10 +42,17 @@ function getAIConfig() {
     );
   }
   
-  // Model defaults - OpenRouter model IDs
-  const modelVision = Deno.env.get("AI_MODEL_VISION") || "openai/gpt-4o-2024-11-20";
-  const modelText = Deno.env.get("AI_MODEL_TEXT") || "anthropic/claude-3.5-sonnet";
-  const modelChat = Deno.env.get("AI_MODEL_CHAT") || "anthropic/claude-3.5-sonnet";
+  // Model defaults - OpenRouter model IDs (all on ZDR endpoint list)
+  // Vision: Need image understanding for room analysis
+  const modelVision = Deno.env.get("AI_MODEL_VISION") || "google/gemini-2.5-pro";
+  // Text: High-quality text generation for contractor emails
+  const modelText = Deno.env.get("AI_MODEL_TEXT") || "anthropic/claude-sonnet-5.5";
+  // Chat: Conversational AI for Vi assistant
+  const modelChat = Deno.env.get("AI_MODEL_CHAT") || "anthropic/claude-sonnet-5.5";
+  // Render preview: Fast single image for user iteration (Nano Banana 2)
+  const modelRenderPreview = Deno.env.get("AI_MODEL_RENDER_PREVIEW") || "google/gemini-3.1-flash-image";
+  // Render final: Full set of design images (Nano Banana 2)
+  const modelRenderFinal = Deno.env.get("AI_MODEL_RENDER_FINAL") || "google/gemini-3.1-flash-image";
   
   return {
     baseUrl,
@@ -53,6 +60,8 @@ function getAIConfig() {
     modelVision,
     modelText,
     modelChat,
+    modelRenderPreview,
+    modelRenderFinal,
     isOpenRouter,
     isProduction,
   };

@@ -191,8 +191,11 @@ npm start          # Start Expo dev server
 npm run android    # Run on Android
 npm run ios        # Run on iOS
 npm run web        # Run in browser
-npm run lint       # Run ESLint (requires setup)
+npm run lint       # Run ESLint
+npm run check:models  # Validate AI models are on OpenRouter's ZDR list
 ```
+
+**Important:** Before changing any `AI_MODEL_*` environment variables, run `npm run check:models` to verify all configured models support Zero Data Retention. Using non-ZDR models in production would violate our privacy commitments.
 
 ## Supabase Setup
 
@@ -232,10 +235,12 @@ npx supabase secrets set UNSUBSCRIBE_SECRET="$(openssl rand -base64 32)"
 Optional secrets:
 
 ```bash
-# AI model overrides (OpenRouter model IDs)
-npx supabase secrets set AI_MODEL_VISION=openai/gpt-4o-2024-11-20
-npx supabase secrets set AI_MODEL_TEXT=anthropic/claude-3.5-sonnet
-npx supabase secrets set AI_MODEL_CHAT=anthropic/claude-3.5-sonnet
+# AI model overrides (OpenRouter model IDs - run npm run check:models first!)
+npx supabase secrets set AI_MODEL_VISION=google/gemini-2.5-pro
+npx supabase secrets set AI_MODEL_TEXT=anthropic/claude-sonnet-5.5
+npx supabase secrets set AI_MODEL_CHAT=anthropic/claude-sonnet-5.5
+npx supabase secrets set AI_MODEL_RENDER_PREVIEW=google/gemini-3.1-flash-image
+npx supabase secrets set AI_MODEL_RENDER_FINAL=google/gemini-3.1-flash-image
 
 # Rate limits (defaults: 10, 5, 3)
 npx supabase secrets set RATE_LIMIT_ANALYZE_ROOM=10

@@ -383,10 +383,10 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
 
   generateDesigns: async (projectId: string, stylePrompt: string) => {
-    set({ loading: true, progress: 0, progressMessage: "Generating designs...", error: null });
+    set({ loading: true, progress: 0, progressMessage: "Creating designs...", error: null });
 
     try {
-      set({ progress: 0.3 });
+      set({ progress: 0.3, progressMessage: "Rendering images..." });
 
       const { error } = await supabase.functions.invoke("generate-design", {
         body: {
@@ -398,7 +398,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
       if (error) throw error;
 
-      set({ progress: 0.8, progressMessage: "Saving designs..." });
+      set({ progress: 0.9, progressMessage: "Finishing up..." });
 
       // Refresh the project from DB
       const { data: updated } = await supabase

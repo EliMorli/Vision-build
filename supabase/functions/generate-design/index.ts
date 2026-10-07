@@ -118,16 +118,19 @@ async function generateWithOpenRouter(
   count: number,
   userId: string,
   projectId: string,
-  supabase: any
+  supabase: any,
+  isPreview = false
 ): Promise<string[]> {
   const AI_API_KEY = Deno.env.get("AI_API_KEY") || Deno.env.get("OPENAI_API_KEY")!;
   const AI_BASE_URL = Deno.env.get("AI_BASE_URL") || "https://openrouter.ai/api/v1";
   const generatedUrls: string[] = [];
 
-  // Use an image-capable model through OpenRouter
-  // For image generation with room structure preservation, we'll use a vision model
-  // to describe the changes, then use that with an image editing model
-  const model = Deno.env.get("AI_MODEL_VISION") || "openai/gpt-4o-2024-11-20";
+  // Use render-specific models (Nano Banana 2 on OpenRouter's ZDR list)
+  // Preview: 1 quick image for iteration with Vi (google/gemini-3.1-flash-image)
+  // Final: 4 images for full set (google/gemini-3.1-flash-image)
+  const model = isPreview
+    ? (Deno.env.get("AI_MODEL_RENDER_PREVIEW") || "google/gemini-3.1-flash-image")
+    : (Deno.env.get("AI_MODEL_RENDER_FINAL") || "google/gemini-3.1-flash-image");
 
   const siteUrl = Deno.env.get("SUPABASE_URL")?.replace("/rest/v1", "") || "https://visionbuild.app";
 
@@ -163,6 +166,8 @@ async function generateWithOpenRouter(
           max_tokens: 1000,
           provider: {
             data_collection: "deny",
+            zdr: true,
+            allow_fallbacks: false,
           },
         }),
       });
@@ -237,7 +242,7 @@ serve(async (req: Request) => {
     }
     const { userId, anonClient } = authResult;
 
-    const { projectId, stylePrompt, roomAnalysis } = await req.json();
+    const { projectId, stylePrompt, roomAnalysis, isPreview } = await req.json();
 
     if (!projectId || !stylePrompt) {
       return new Response(
@@ -245,6 +250,10 @@ serve(async (req: Request) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    
+    // Preview mode: 1 quick image for iteration with Vi
+    // Final mode: 4 images for full set
+    const imageCount = isPreview ? 1 : 4;
 
     // Verify project ownership
     const ownershipResult = await verifyProjectOwnership(anonClient, userId, projectId);
@@ -292,17 +301,18 @@ Professional interior design rendering, photorealistic, well-lit, high detail.`;
         generatedUrls = await generateWithOpenRouter(
           project.original_image_url,
           prompt,
-          4,
+          imageCount,
           userId,
           projectId,
-          supabase
+          supabase,
+          isPreview
         );
         break;
       case "mock":
         generatedUrls = await generateWithMock(
           project.original_image_url,
           prompt,
-          4,
+          imageCount,
           userId,
           projectId,
           supabase
@@ -313,7 +323,7 @@ Professional interior design rendering, photorealistic, well-lit, high detail.`;
         generatedUrls = await generateWithReplicate(
           project.original_image_url,
           prompt,
-          4,
+          imageCount,
           userId,
           projectId,
           supabase
