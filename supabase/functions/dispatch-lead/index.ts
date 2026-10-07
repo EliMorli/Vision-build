@@ -193,16 +193,36 @@ Client: Zip: ${zipCode}, Budget: ${budgetRange}, Room: ${roomType}, Timeline: Fl
 
     const leadIds: string[] = [];
     const unsubscribeBaseUrl = Deno.env.get("SUPABASE_URL")!.replace("/rest/v1", "") + "/functions/v1/unsubscribe";
+    const UNSUBSCRIBE_SECRET = Deno.env.get("UNSUBSCRIBE_SECRET") || "default-secret-change-me";
 
     for (const contractor of eligibleContractors) {
-      // Append footer with business address and unsubscribe link
+      // Generate HMAC token for unsubscribe link
+      const message = contractor.email.toLowerCase();
+      const encoder = new TextEncoder();
+      const keyData = encoder.encode(UNSUBSCRIBE_SECRET);
+      const messageData = encoder.encode(message);
+      
+      const cryptoKey = await crypto.subtle.importKey(
+        "raw",
+        keyData,
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"]
+      );
+      
+      const signature = await crypto.subtle.sign("HMAC", cryptoKey, messageData);
+      const token = Array.from(new Uint8Array(signature))
+        .map(b => b.toString(16).padStart(2, "0"))
+        .join("");
+
+      // Append footer with business address and signed unsubscribe link
       const footer = `
 
 ---
 
 ${BUSINESS_MAILING_ADDRESS}
 
-To unsubscribe from future project leads, click here: ${unsubscribeBaseUrl}?email=${encodeURIComponent(contractor.email)}`;
+To unsubscribe from future project leads, click here: ${unsubscribeBaseUrl}?email=${encodeURIComponent(contractor.email)}&token=${token}`;
 
       const fullEmailBody = emailData.body + footer;
 
