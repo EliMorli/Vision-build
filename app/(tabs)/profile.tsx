@@ -6,23 +6,24 @@ import {
   Pressable,
   SafeAreaView,
 } from "react-native";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useAuthStore } from "@/lib/store";
 import { Button } from "@/components";
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const profile = useAuthStore((s) => s.profile);
   const signOut = useAuthStore((s) => s.signOut);
 
   const menuItems = [
-    { icon: "person-outline" as const, label: "Edit Profile", badge: null },
-    { icon: "notifications-outline" as const, label: "Notifications", badge: null },
-    { icon: "card-outline" as const, label: "Payment Methods", badge: null },
-    { icon: "home-outline" as const, label: "My Properties", badge: "3" },
-    { icon: "heart-outline" as const, label: "Saved Designs", badge: "12" },
-    { icon: "help-circle-outline" as const, label: "Help & Support", badge: null },
-    { icon: "document-text-outline" as const, label: "Terms & Privacy", badge: null },
+    { icon: "person-outline" as const, label: "Edit Profile", badge: null, route: null },
+    { icon: "settings-outline" as const, label: "Settings & Privacy", badge: null, route: "/profile-settings" },
+    { icon: "card-outline" as const, label: "Payment Methods", badge: null, route: null },
+    { icon: "home-outline" as const, label: "My Properties", badge: "3", route: null },
+    { icon: "heart-outline" as const, label: "Saved Designs", badge: "12", route: null },
+    { icon: "help-circle-outline" as const, label: "Help & Support", badge: null, route: null },
   ];
 
   return (
@@ -40,12 +41,13 @@ export default function ProfileScreen() {
         {/* Menu items */}
         <View style={styles.section}>
           {menuItems.map((item, index) => (
-            <Pressable
+              <Pressable
               key={item.label}
               style={[
                 styles.menuItem,
                 index === menuItems.length - 1 && styles.lastMenuItem,
               ]}
+              onPress={() => item.route && router.push(item.route as any)}
             >
               <View style={styles.menuItemLeft}>
                 <Ionicons name={item.icon} size={22} color={colors.textPrimary} />

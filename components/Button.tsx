@@ -40,12 +40,15 @@ export function Button({
         pressed && !isDisabled && { borderBottomWidth: 2, marginTop: 3 },
         style,
       ]}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
     >
       {loading ? (
         <ActivityIndicator size="small" color={bg.textColor} />
       ) : (
         <>
-          {icon && <Ionicons name={icon} size={18} color={bg.textColor} />}
+          {icon && <Ionicons name={icon} size={18} color={bg.textColor} accessibilityElementsHidden />}
           <Text style={[styles.label, { color: bg.textColor }]}>{label}</Text>
         </>
       )}

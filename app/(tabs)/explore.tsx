@@ -8,6 +8,7 @@ import {
   Image,
   Pressable,
   SafeAreaView,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
@@ -23,6 +24,19 @@ const PLACEHOLDER_DESIGNS = Array.from({ length: 12 }, (_, i) => ({
 
 export default function ExploreScreen() {
   const [searchQuery, setSearchQuery] = useState("");
+
+  const handleReport = (id: string) => {
+    Alert.alert(
+      "Report Design",
+      "Why are you reporting this design?",
+      [
+        { text: "Inappropriate content", onPress: () => console.log("Report: inappropriate") },
+        { text: "Spam or misleading", onPress: () => console.log("Report: spam") },
+        { text: "Copyright violation", onPress: () => console.log("Report: copyright") },
+        { text: "Cancel", style: "cancel" },
+      ]
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -50,6 +64,14 @@ export default function ExploreScreen() {
         renderItem={({ item }) => (
           <Pressable style={styles.card}>
             <Image source={{ uri: item.imageUrl }} style={styles.cardImage} />
+            <Pressable
+              style={styles.moreButton}
+              onPress={() => handleReport(item.id)}
+              accessibilityLabel="Report or block"
+              hitSlop={8}
+            >
+              <Ionicons name="ellipsis-horizontal" size={20} color="#fff" />
+            </Pressable>
             <View style={styles.cardOverlay}>
               <Text style={styles.cardTitle} numberOfLines={1}>
                 {item.title}
@@ -103,6 +125,18 @@ const styles = StyleSheet.create({
   cardImage: {
     width: "100%",
     height: "100%",
+  },
+  moreButton: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1,
   },
   cardOverlay: {
     position: "absolute",

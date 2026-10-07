@@ -60,6 +60,14 @@ export default function ResultScreen() {
         Swipe to browse. Tap to select your favorite.
       </Text>
 
+      {/* AI disclaimer */}
+      <View style={styles.aiDisclaimer}>
+        <Ionicons name="information-circle" size={14} color={colors.textSecondary} />
+        <Text style={styles.aiDisclaimerText}>
+          AI visualization, not a plan or quote
+        </Text>
+      </View>
+
       {/* Hint pill */}
       <View style={styles.hint}>
         <Ionicons name="swap-horizontal" size={14} color={colors.textSecondary} />
@@ -178,6 +186,19 @@ const styles = StyleSheet.create({
     ...fonts.body,
     color: colors.textSecondary,
     textAlign: "center",
+  },
+  aiDisclaimer: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "center",
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    marginTop: spacing.xs,
+  },
+  aiDisclaimerText: {
+    fontSize: 11,
+    color: colors.textSecondary,
   },
   hint: {
     flexDirection: "row",

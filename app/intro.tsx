@@ -10,6 +10,7 @@ import {
   SafeAreaView,
   Animated,
   PanResponder,
+  Pressable,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -45,13 +46,13 @@ const PAGES = [
 function BeforeAfterSlider() {
   const sliderPosition = useRef(new Animated.Value(0.5)).current;
   const [dividerX, setDividerX] = useState(width * 0.4 * 0.5); // center of the image width
+  const imageWidth = width * 0.8;
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderMove: (_, gesture) => {
-        const imageWidth = width * 0.8;
         const offset = (width - imageWidth) / 2;
         const relativeX = gesture.moveX - offset;
         const clampedX = Math.max(0, Math.min(imageWidth, relativeX));
@@ -61,6 +62,15 @@ function BeforeAfterSlider() {
       },
     })
   ).current;
+
+  const handleButtonSlide = (direction: "left" | "right") => {
+    const newX = direction === "left"
+      ? Math.max(0, dividerX - imageWidth * 0.1)
+      : Math.min(imageWidth, dividerX + imageWidth * 0.1);
+    const newPosition = newX / imageWidth;
+    sliderPosition.setValue(newPosition);
+    setDividerX(newX);
+  };
 
   return (
     <View style={sliderStyles.container}>
@@ -75,6 +85,7 @@ function BeforeAfterSlider() {
         <Image
           source={{ uri: "https://placehold.co/600x400/E0E0E0/808080?text=Before" }}
           style={sliderStyles.image}
+          accessibilityLabel="Before: dated room with old fixtures"
         />
 
         {/* After image - clipped based on slider */}
@@ -82,6 +93,7 @@ function BeforeAfterSlider() {
           <Image
             source={{ uri: "https://placehold.co/600x400/1A73E8/FFFFFF?text=After" }}
             style={sliderStyles.image}
+            accessibilityLabel="After: modern redesigned room"
           />
         </View>
 
@@ -92,6 +104,28 @@ function BeforeAfterSlider() {
             <Ionicons name="chevron-forward" size={12} color="#fff" />
           </View>
         </View>
+      </View>
+
+      {/* Button controls for accessibility */}
+      <View style={sliderStyles.buttonControls}>
+        <Pressable
+          style={sliderStyles.controlButton}
+          onPress={() => handleButtonSlide("left")}
+          accessibilityLabel="Show more of before image"
+          accessibilityRole="button"
+        >
+          <Ionicons name="chevron-back" size={20} color={colors.primary} />
+          <Text style={sliderStyles.controlText}>Before</Text>
+        </Pressable>
+        <Pressable
+          style={sliderStyles.controlButton}
+          onPress={() => handleButtonSlide("right")}
+          accessibilityLabel="Show more of after image"
+          accessibilityRole="button"
+        >
+          <Text style={sliderStyles.controlText}>After</Text>
+          <Ionicons name="chevron-forward" size={20} color={colors.primary} />
+        </Pressable>
       </View>
     </View>
   );
@@ -292,5 +326,29 @@ const sliderStyles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
+  },
+  buttonControls: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: spacing.md,
+    gap: spacing.md,
+  },
+  controlButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    padding: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    minHeight: 44,
+  },
+  controlText: {
+    ...fonts.body,
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.primary,
   },
 });

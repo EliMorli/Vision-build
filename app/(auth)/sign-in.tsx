@@ -7,6 +7,8 @@ import {
   FlatList,
   ViewToken,
   SafeAreaView,
+  Pressable,
+  Linking,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -36,12 +38,17 @@ const PAGES = [
 
 export default function SignInScreen() {
   const [currentPage, setCurrentPage] = useState(0);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const { signInWithOAuth, loading, error, session } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
     if (session) router.replace("/(tabs)");
   }, [session]);
+
+  const openLink = (url: string) => {
+    Linking.openURL(url);
+  };
 
   const onViewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
@@ -91,6 +98,20 @@ export default function SignInScreen() {
         ))}
       </View>
 
+      {/* Age confirmation */}
+      <Pressable
+        style={styles.ageConfirmRow}
+        onPress={() => setAgeConfirmed(!ageConfirmed)}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: ageConfirmed }}
+        accessibilityLabel="I confirm I am 13 years or older"
+      >
+        <View style={[styles.checkbox, ageConfirmed && styles.checkboxChecked]}>
+          {ageConfirmed && <Ionicons name="checkmark" size={16} color="#fff" />}
+        </View>
+        <Text style={styles.ageText}>I confirm I am 13 years or older</Text>
+      </Pressable>
+
       {/* Auth buttons */}
       <View style={styles.buttons}>
         <Button
@@ -99,6 +120,7 @@ export default function SignInScreen() {
           onPress={() => signInWithOAuth("google")}
           loading={loading}
           variant="primary"
+          disabled={!ageConfirmed}
         />
         <Button
           label="Continue with Apple"
@@ -106,9 +128,31 @@ export default function SignInScreen() {
           onPress={() => signInWithOAuth("apple")}
           loading={loading}
           variant="outline"
+          disabled={!ageConfirmed}
         />
         {error && <Text style={styles.errorText}>{error}</Text>}
       </View>
+
+      {/* Terms and Privacy */}
+      <Text style={styles.legalText}>
+        By continuing, you agree to our{" "}
+        <Text
+          style={styles.legalLink}
+          onPress={() => openLink("https://visionbuild.app/terms")}
+          accessibilityRole="link"
+        >
+          Terms of Service
+        </Text>{" "}
+        and{" "}
+        <Text
+          style={styles.legalLink}
+          onPress={() => openLink("https://visionbuild.app/privacy")}
+          accessibilityRole="link"
+        >
+          Privacy Policy
+        </Text>
+        .
+      </Text>
     </SafeAreaView>
   );
 }
@@ -150,15 +194,54 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     paddingHorizontal: spacing.md,
   },
-  dots: { flexDirection: "row", justifyContent: "center", marginBottom: 32 },
+  dots: { flexDirection: "row", justifyContent: "center", marginBottom: spacing.lg },
   dot: { height: 8, borderRadius: 4, marginHorizontal: 4 },
   dotActive: { width: 24, backgroundColor: colors.primary },
   dotInactive: { width: 8, backgroundColor: colors.primary + "30" },
-  buttons: { paddingHorizontal: spacing.xl, gap: spacing.sm, paddingBottom: spacing.xl },
+  ageConfirmRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.xl,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: colors.border,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  checkboxChecked: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  ageText: {
+    ...fonts.body,
+    fontSize: 15,
+    flex: 1,
+  },
+  buttons: { paddingHorizontal: spacing.xl, gap: spacing.sm },
   errorText: {
     color: colors.error,
     fontSize: 13,
     textAlign: "center",
     marginTop: spacing.xs,
+  },
+  legalText: {
+    ...fonts.regular,
+    fontSize: 12,
+    textAlign: "center",
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xl,
+    lineHeight: 18,
+  },
+  legalLink: {
+    color: colors.primary,
+    fontWeight: "600",
   },
 });
