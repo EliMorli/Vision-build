@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { Session } from "@supabase/supabase-js";
 import * as WebBrowser from "expo-web-browser";
 import { makeRedirectUri } from "expo-auth-session";
+import * as ImageManipulator from "expo-image-manipulator";
 import { supabase } from "./supabase";
 import { Project, Profile, Contractor } from "./types";
 
