@@ -13,13 +13,14 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 
-// Placeholder data
-const PLACEHOLDER_DESIGNS = Array.from({ length: 12 }, (_, i) => ({
+// Placeholder data - only public projects
+const PLACEHOLDER_DESIGNS = Array.from({ length: 8 }, (_, i) => ({
   id: String(i + 1),
   title: `Design ${i + 1}`,
-  style: ["Modern", "Coastal", "Farmhouse", "Industrial"][i % 4],
-  imageUrl: `https://placehold.co/300x300/${["1A73E8", "34A853", "FBBC04", "EA4335"][i % 4]}/FFFFFF?text=Design+${i + 1}`,
+  style: ["Modern", "Coastal", "Farmhouse", "Industrial", "Luxury", "Scandinavian"][i % 6],
+  imageUrl: `https://placehold.co/300x300/${["1A73E8", "34A853", "FBBC04", "EA4335", "8E44AD", "E67E22"][i % 6]}/FFFFFF?text=Design+${i + 1}`,
   likes: Math.floor(Math.random() * 500) + 50,
+  isPublic: true,
 }));
 
 export default function ExploreScreen() {

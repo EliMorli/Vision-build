@@ -72,6 +72,7 @@ export interface Project {
   selected_generation_url: string | null;
   status: ProjectStatus;
   lead_info: LeadInfo | null;
+  is_public: boolean;
   created_at: string;
   updated_at: string;
 }

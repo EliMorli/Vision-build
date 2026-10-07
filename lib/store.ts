@@ -108,6 +108,7 @@ interface ProjectState {
 
   fetchProjects: () => Promise<void>;
   setCurrentProject: (project: Project) => void;
+  toggleProjectPrivacy: (projectId: string, isPublic: boolean) => Promise<void>;
 
   uploadAndAnalyze: (imageUri: string) => Promise<Project | null>;
   generateDesigns: (projectId: string, stylePrompt: string) => Promise<Project | null>;
@@ -150,6 +151,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           selected_generation_url: "https://placehold.co/600x400/1A73E8/FFFFFF?text=Design+1",
           status: "generated",
           lead_info: null,
+          is_public: false,
           created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
           updated_at: new Date(Date.now() - 86400000).toISOString(),
         },
@@ -173,8 +175,34 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           selected_generation_url: null,
           status: "generated",
           lead_info: null,
+          is_public: false,
           created_at: new Date(Date.now() - 7 * 86400000).toISOString(),
           updated_at: new Date(Date.now() - 2 * 86400000).toISOString(),
+        },
+        {
+          id: "mock-3",
+          user_id: "mock-user",
+          title: "Backyard Oasis",
+          original_image_url: "https://placehold.co/800x500/C8E6C9/4CAF50?text=Backyard+Before",
+          room_analysis: {
+            roomType: "backyard",
+            currentStyle: "basic",
+            estimatedSqFt: 400,
+            keyElements: ["grass", "fence", "patio slab"],
+            rawAnalysis: "Large backyard with potential for landscaping",
+          },
+          selected_style: "luxury",
+          generated_image_urls: [
+            "https://placehold.co/600x400/8BC34A/FFFFFF?text=Yard+1",
+            "https://placehold.co/600x400/4CAF50/FFFFFF?text=Yard+2",
+            "https://placehold.co/600x400/66BB6A/FFFFFF?text=Yard+3",
+          ],
+          selected_generation_url: "https://placehold.co/600x400/8BC34A/FFFFFF?text=Yard+1",
+          status: "generated",
+          lead_info: null,
+          is_public: true,
+          created_at: new Date(Date.now() - 14 * 86400000).toISOString(),
+          updated_at: new Date(Date.now() - 5 * 86400000).toISOString(),
         },
       ];
       set({ projects: mockProjects });
@@ -193,6 +221,49 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
 
   setCurrentProject: (project) => set({ currentProject: project }),
+
+  toggleProjectPrivacy: async (projectId: string, isPublic: boolean) => {
+    const userId = useAuthStore.getState().session?.user?.id;
+    
+    // Dev mode: Update mock projects
+    if (!userId && __DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      set((state) => ({
+        projects: state.projects.map((p) =>
+          p.id === projectId ? { ...p, is_public: isPublic } : p
+        ),
+        currentProject:
+          state.currentProject?.id === projectId
+            ? { ...state.currentProject, is_public: isPublic }
+            : state.currentProject,
+      }));
+      return;
+    }
+
+    if (!userId) return;
+
+    // Update in database
+    const { error } = await (supabase
+      .from("projects") as any)
+      .update({ is_public: isPublic })
+      .eq("id", projectId)
+      .eq("user_id", userId);
+
+    if (error) {
+      console.error("Failed to update project privacy:", error);
+      return;
+    }
+
+    // Update local state
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId ? { ...p, is_public: isPublic } : p
+      ),
+      currentProject:
+        state.currentProject?.id === projectId
+          ? { ...state.currentProject, is_public: isPublic }
+          : state.currentProject,
+    }));
+  },
 
   uploadAndAnalyze: async (imageUri: string) => {
     const userId = useAuthStore.getState().session?.user?.id;

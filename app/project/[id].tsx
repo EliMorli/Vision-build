@@ -7,10 +7,12 @@ import {
   Image,
   Pressable,
   SafeAreaView,
+  Alert,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
+import { useProjectStore } from "@/lib/store";
 
 // Placeholder timeline data
 const TIMELINE_EVENTS = [
@@ -61,6 +63,35 @@ export default function ProjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"designs" | "timeline" | "quotes">("designs");
+  
+  const projects = useProjectStore((s) => s.projects);
+  const toggleProjectPrivacy = useProjectStore((s) => s.toggleProjectPrivacy);
+  const project = projects.find((p) => p.id === id);
+  const [isPublic, setIsPublic] = useState(project?.is_public ?? false);
+
+  const handleTogglePrivacy = () => {
+    if (!project) return;
+
+    if (!isPublic) {
+      Alert.alert(
+        "Make Project Public?",
+        "Your design will be visible in the Explore tab for others to see and get inspired by. You can change this anytime.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Make Public",
+            onPress: async () => {
+              setIsPublic(true);
+              await toggleProjectPrivacy(project.id, true);
+            },
+          },
+        ]
+      );
+    } else {
+      setIsPublic(false);
+      toggleProjectPrivacy(project.id, false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -76,12 +107,45 @@ export default function ProjectDetailScreen() {
       </View>
 
       <ScrollView>
+        {/* Privacy Control */}
+        <View style={styles.privacySection}>
+          <View style={styles.privacyInfo}>
+            <View style={styles.privacyIconCircle}>
+              <Ionicons
+                name={isPublic ? "globe-outline" : "lock-closed"}
+                size={18}
+                color={isPublic ? colors.primary : colors.textSecondary}
+              />
+            </View>
+            <View style={styles.privacyText}>
+              <Text style={styles.privacyLabel}>
+                {isPublic ? "Public" : "Private"}
+              </Text>
+              <Text style={styles.privacyDescription}>
+                {isPublic
+                  ? "Visible in Explore"
+                  : "Only visible to you"}
+              </Text>
+            </View>
+          </View>
+          <Pressable
+            style={[styles.privacySwitch, isPublic && styles.privacySwitchOn]}
+            onPress={handleTogglePrivacy}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: isPublic }}
+            accessibilityLabel={`Make project ${isPublic ? "private" : "public"}`}
+          >
+            <View style={[styles.privacySwitchThumb, isPublic && styles.privacySwitchThumbOn]} />
+          </Pressable>
+        </View>
+
         {/* Original photo */}
         <View style={styles.originalSection}>
           <Text style={styles.sectionTitle}>Original Photo</Text>
           <Image
             source={{ uri: "https://placehold.co/800x500/E0E0E0/808080?text=Original+Kitchen" }}
             style={styles.originalImage}
+            accessibilityLabel="Original kitchen photo before renovation"
           />
           <View style={styles.analysisChips}>
             <View style={styles.chip}>
@@ -271,6 +335,66 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   headerTitle: { ...fonts.title, fontSize: 18 },
+  privacySection: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: spacing.lg,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  privacyInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    flex: 1,
+  },
+  privacyIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary + "12",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  privacyText: {
+    flex: 1,
+  },
+  privacyLabel: {
+    ...fonts.body,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  privacyDescription: {
+    ...fonts.regular,
+    fontSize: 13,
+  },
+  privacySwitch: {
+    width: 48,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.border,
+    padding: 2,
+    justifyContent: "center",
+  },
+  privacySwitchOn: {
+    backgroundColor: colors.primary,
+  },
+  privacySwitchThumb: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  privacySwitchThumbOn: {
+    transform: [{ translateX: 20 }],
+  },
   originalSection: {
     padding: spacing.lg,
   },
