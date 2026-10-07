@@ -36,11 +36,11 @@ export default function DashboardScreen() {
 
   useEffect(() => {
     fetchProjects();
-  }, []);
+  }, [fetchProjects]);
 
   const onRefresh = useCallback(() => {
     fetchProjects();
-  }, []);
+  }, [fetchProjects]);
 
   const openProject = (project: Project) => {
     useProjectStore.getState().setCurrentProject(project);

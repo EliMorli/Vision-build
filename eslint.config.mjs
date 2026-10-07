@@ -20,6 +20,15 @@ export default [
       // (e.g. "Cannot access refs during render" for useRef in components,
       // "Cannot access variable before it is declared" for hooks)
       "react-compiler/react-compiler": "off",
+      
+      // Downgrade react-hooks/refs and react-hooks/immutability to warnings
+      // These rules flag valid patterns like accessing .current in FlatList props
+      "react-hooks/refs": "warn",
+      "react-hooks/immutability": "warn",
+      
+      // Disable import/no-unresolved for react-native-url-polyfill
+      // (valid dependency that ESLint can't resolve in Expo)
+      "import/no-unresolved": ["error", { ignore: ["^react-native-url-polyfill"] }],
     },
   },
 ];

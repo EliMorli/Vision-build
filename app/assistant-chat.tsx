@@ -18,17 +18,17 @@ import { mockAssistantProvider } from "@/lib/providers/MockAssistantProvider";
 import { AssistantMessage } from "@/lib/providers/AssistantProvider";
 import { Button, ReportModal } from "@/components";
 
+const WELCOME_MESSAGE: AssistantMessage = {
+  id: "welcome",
+  role: "assistant",
+  content:
+    "Hi! I'm Vi, your design assistant. I'm here to help you bring your renovation ideas to life. Tell me about the space you're working on!",
+  timestamp: 0,
+};
+
 export default function AssistantChatScreen() {
   const router = useRouter();
-  const [messages, setMessages] = useState<AssistantMessage[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content:
-        "Hi! I'm Vi, your design assistant. I'm here to help you bring your renovation ideas to life. Tell me about the space you're working on!",
-      timestamp: Date.now(),
-    },
-  ]);
+  const [messages, setMessages] = useState<AssistantMessage[]>([WELCOME_MESSAGE]);
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [reportModalVisible, setReportModalVisible] = useState(false);

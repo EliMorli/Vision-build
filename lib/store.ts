@@ -388,7 +388,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     try {
       set({ progress: 0.3 });
 
-      const { data, error } = await supabase.functions.invoke("generate-design", {
+      const { error } = await supabase.functions.invoke("generate-design", {
         body: {
           projectId,
           stylePrompt,

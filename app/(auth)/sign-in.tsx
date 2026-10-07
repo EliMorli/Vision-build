@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -7,12 +7,12 @@ import {
   FlatList,
   ViewToken,
   SafeAreaView,
-  Pressable,
   Linking,
+  Pressable,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, spacing, radius, fonts } from "@/lib/theme";
+import { colors, spacing, fonts } from "@/lib/theme";
 import { useAuthStore } from "@/lib/store";
 import { Button } from "@/components";
 
@@ -39,26 +39,24 @@ const PAGES = [
 export default function SignInScreen() {
   const [currentPage, setCurrentPage] = useState(0);
   const [ageConfirmed, setAgeConfirmed] = useState(false);
-  const { signInWithOAuth, loading, error, session } = useAuthStore();
+  const { signInWithOAuth, loading, session } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
     if (session) router.replace("/(tabs)");
-  }, [session]);
+  }, [session, router]);
 
   const openLink = (url: string) => {
     Linking.openURL(url);
   };
 
-  const onViewableItemsChanged = useRef(
-    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
-      if (viewableItems[0]?.index != null) {
-        setCurrentPage(viewableItems[0].index);
-      }
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+    if (viewableItems[0]?.index != null) {
+      setCurrentPage(viewableItems[0].index);
     }
-  ).current;
+  });
 
-  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
+  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 });
 
   return (
     <SafeAreaView style={styles.container}>
@@ -74,8 +72,8 @@ export default function SignInScreen() {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
+        onViewableItemsChanged={onViewableItemsChanged.current}
+        viewabilityConfig={viewabilityConfig.current}
         keyExtractor={(_, i) => String(i)}
         renderItem={({ item }) => (
           <View style={styles.page}>

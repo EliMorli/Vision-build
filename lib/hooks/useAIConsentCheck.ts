@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AI_CONSENT_VERSION } from "@/lib/config";
@@ -15,13 +15,7 @@ export function useAIConsentCheck() {
   const router = useRouter();
   const session = useAuthStore((s) => s.session);
 
-  useEffect(() => {
-    if (!session) return;
-
-    checkConsentVersion();
-  }, [session]);
-
-  async function checkConsentVersion() {
+  const checkConsentVersion = useCallback(async () => {
     try {
       const [consented, storedVersion] = await Promise.all([
         AsyncStorage.getItem(AI_CONSENT_KEY),
@@ -35,5 +29,11 @@ export function useAIConsentCheck() {
     } catch (error) {
       console.error("Failed to check AI consent version:", error);
     }
-  }
+  }, [router]);
+
+  useEffect(() => {
+    if (!session) return;
+
+    checkConsentVersion();
+  }, [session, checkConsentVersion]);
 }
