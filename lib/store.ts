@@ -325,24 +325,21 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
       if (uploadError) throw uploadError;
 
-      // 3. Generate signed URL (valid for 1 year)
-      const { data: signedData, error: signedError } = await supabase.storage
-        .from("room-photos")
-        .createSignedUrl(fileName, 365 * 24 * 60 * 60);
-
-      if (signedError || !signedData) throw signedError || new Error("Failed to create signed URL");
+      // 3. Generate signed URL (1 hour expiry)
+      const signedUrl = await getSignedUrl("room-photos", fileName);
+      if (!signedUrl) throw new Error("Failed to create signed URL");
 
       // 4. Call analyze-room Edge Function
       set({ progress: 0.5, progressMessage: "Analyzing your room..." });
 
       const { data: analysisData, error: fnError } = await supabase.functions.invoke(
         "analyze-room",
-        { body: { imageUrl: signedData.signedUrl } }
+        { body: { imageUrl: signedUrl } }
       );
 
       if (fnError) throw fnError;
 
-      // 5. Create project row
+      // 5. Create project row (store path, not signed URL)
       set({ progress: 0.8, progressMessage: "Creating project..." });
 
       const roomType = analysisData?.analysis?.roomType ?? "room";
@@ -351,7 +348,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         .insert([{
           user_id: userId,
           title: `${roomType.charAt(0).toUpperCase() + roomType.slice(1)} Renovation`,
-          original_image_url: signedData.signedUrl,
+          original_image_url: fileName, // Store path instead of signed URL
           room_analysis: analysisData?.analysis ?? null,
           status: "analyzed" as const,
           generated_image_urls: [],
@@ -424,6 +421,32 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         set({ currentProject: { ...current, selected_generation_url: url } });
       }
     }
+  },
+
+  refreshProjectUrls: async (project: Project): Promise<Project> => {
+    // Re-sign all URLs in a project
+    const refreshed = { ...project };
+
+    if (refreshed.original_image_url) {
+      const signedUrl = await getSignedUrl("room-photos", refreshed.original_image_url);
+      if (signedUrl) refreshed.original_image_url = signedUrl;
+    }
+
+    if (refreshed.generated_image_urls && refreshed.generated_image_urls.length > 0) {
+      refreshed.generated_image_urls = await Promise.all(
+        refreshed.generated_image_urls.map(async (path) => {
+          const signedUrl = await getSignedUrl("room-photos", path);
+          return signedUrl || path;
+        })
+      );
+    }
+
+    if (refreshed.selected_generation_url) {
+      const signedUrl = await getSignedUrl("room-photos", refreshed.selected_generation_url);
+      if (signedUrl) refreshed.selected_generation_url = signedUrl;
+    }
+
+    return refreshed;
   },
 }));
 
