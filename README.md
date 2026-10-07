@@ -149,15 +149,30 @@ interface AssistantProvider {
 
 ## Compliance & Privacy
 
+### Client-Side
 - ✅ 13+ age gate with confirmation
-- ✅ Terms of Service and Privacy Policy links
+- ✅ Terms of Service and Privacy Policy links on sign-in
 - ✅ Permission primers before system prompts
-- ✅ AI consent with OpenAI/Replicate disclosure
+- ✅ AI consent with OpenAI/Replicate disclosure (versioned)
 - ✅ "AI visualization, not a plan or quote" disclaimer
 - ✅ Granular privacy toggles for contractor data sharing
 - ✅ Report/Block on all user-generated content
 - ✅ Public/Private project controls
 - ✅ Settings: notifications, marketing, reduce motion, Your Privacy Choices, delete account
+- ✅ EXIF/GPS stripping on client before upload (ImageManipulator re-encoding)
+
+### Server-Side
+- ✅ Private storage with RLS (users can only access their own files)
+- ✅ Signed URLs (1 year validity) instead of public URLs
+- ✅ JWT verification on all edge functions
+- ✅ Per-user rate limiting (10 analyze, 5 generate, 3 dispatch per day)
+- ✅ Project ownership verification before processing
+- ✅ CAN-SPAM compliance: business address + unsubscribe link in emails
+- ✅ Contractor opt-out table and filtering
+- ✅ Outreach audit log (fields shared, timestamps, message IDs)
+- ✅ Account deletion: storage cleanup + database cascade + auth user deletion
+- ✅ Apple Sign-In token revocation (when credentials configured)
+- ⚠️ **Note:** Server should also strip EXIF from uploaded images (future enhancement)
 
 ## Accessibility
 

@@ -273,10 +273,18 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     set({ loading: true, progress: 0, progressMessage: "Uploading photo...", error: null });
 
     try {
-      // 1. Read file and upload to Supabase Storage
-      set({ progress: 0.15 });
+      // 1. Strip EXIF/GPS data by re-encoding (client-side privacy)
+      set({ progress: 0.1, progressMessage: "Processing image..." });
+      const manipResult = await ImageManipulator.manipulateAsync(
+        imageUri,
+        [{ resize: { width: 2048 } }], // Resize if needed, strips EXIF
+        { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG }
+      );
+
+      // 2. Upload to Supabase Storage
+      set({ progress: 0.15, progressMessage: "Uploading photo..." });
       const fileName = `${userId}/${Date.now()}.jpg`;
-      const fileResponse = await fetch(imageUri);
+      const fileResponse = await fetch(manipResult.uri);
       const arrayBuffer = await fileResponse.arrayBuffer();
 
       const { error: uploadError } = await supabase.storage
@@ -285,21 +293,24 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage
+      // 3. Generate signed URL (valid for 1 year)
+      const { data: signedData, error: signedError } = await supabase.storage
         .from("room-photos")
-        .getPublicUrl(fileName);
+        .createSignedUrl(fileName, 365 * 24 * 60 * 60);
 
-      // 2. Call analyze-room Edge Function
+      if (signedError || !signedData) throw signedError || new Error("Failed to create signed URL");
+
+      // 4. Call analyze-room Edge Function
       set({ progress: 0.5, progressMessage: "Analyzing your room..." });
 
       const { data: analysisData, error: fnError } = await supabase.functions.invoke(
         "analyze-room",
-        { body: { imageUrl: urlData.publicUrl } }
+        { body: { imageUrl: signedData.signedUrl } }
       );
 
       if (fnError) throw fnError;
 
-      // 3. Create project row
+      // 5. Create project row
       set({ progress: 0.8, progressMessage: "Creating project..." });
 
       const roomType = analysisData?.analysis?.roomType ?? "room";
@@ -308,7 +319,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         .insert([{
           user_id: userId,
           title: `${roomType.charAt(0).toUpperCase() + roomType.slice(1)} Renovation`,
-          original_image_url: urlData.publicUrl,
+          original_image_url: signedData.signedUrl,
           room_analysis: analysisData?.analysis ?? null,
           status: "analyzed" as const,
           generated_image_urls: [],
