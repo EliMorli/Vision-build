@@ -54,9 +54,41 @@ export function Button({
 }
 
 const VARIANT_STYLES: Record<Variant, { container: ViewStyle; textColor: string }> = {
-  primary: { container: { backgroundColor: colors.primary }, textColor: "#fff" },
-  secondary: { container: { backgroundColor: colors.secondary }, textColor: "#fff" },
-  outline: { container: { backgroundColor: "transparent", borderWidth: 1.5, borderColor: colors.border }, textColor: colors.textPrimary },
+  primary: { 
+    container: { 
+      backgroundColor: colors.primary,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 0,
+      elevation: 4,
+    }, 
+    textColor: "#fff" 
+  },
+  secondary: { 
+    container: { 
+      backgroundColor: colors.secondary,
+      shadowColor: colors.secondary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 0,
+      elevation: 4,
+    }, 
+    textColor: "#fff" 
+  },
+  outline: { 
+    container: { 
+      backgroundColor: "#fff", 
+      borderWidth: 3, 
+      borderColor: colors.textPrimary,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.15,
+      shadowRadius: 0,
+      elevation: 3,
+    }, 
+    textColor: colors.textPrimary 
+  },
   ghost: { container: { backgroundColor: "transparent" }, textColor: colors.primary },
 };
 
@@ -65,14 +97,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 15,
+    paddingVertical: 16,
     paddingHorizontal: spacing.lg,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     gap: 8,
-    minHeight: 52,
+    minHeight: 56,
   },
   fullWidth: { width: "100%" },
   disabled: { opacity: 0.4 },
-  pressed: { opacity: 0.85, transform: [{ scale: 0.985 }] },
-  label: { fontSize: 16, fontWeight: "600" },
+  pressed: { 
+    opacity: 1, 
+    transform: [{ scale: 0.98 }, { translateY: 2 }],
+    shadowOffset: { width: 0, height: 2 },
+  },
+  label: { fontSize: 17, fontWeight: "700", letterSpacing: 0.3 },
 });

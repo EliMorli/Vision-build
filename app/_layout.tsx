@@ -38,8 +38,14 @@ export default function RootLayout() {
           headerShadowVisible: false,
         }}
       >
+        <Stack.Screen name="splash" options={{ headerShown: false }} />
+        <Stack.Screen name="intro" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="create-choice" options={{ headerShown: false }} />
+        <Stack.Screen name="space-type" options={{ headerShown: false }} />
+        <Stack.Screen name="assistant-chat" options={{ headerShown: false }} />
+        <Stack.Screen name="project/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="editor/[id]" options={{ title: "Choose Style" }} />
         <Stack.Screen name="result/[id]" options={{ title: "Your Designs" }} />
         <Stack.Screen name="handoff/[id]" options={{ title: "Get Estimates" }} />

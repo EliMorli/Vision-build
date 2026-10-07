@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Modal,
   ViewToken,
   SafeAreaView,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,13 +24,15 @@ const CARD_WIDTH = width * 0.82;
 export default function ResultScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { currentProject, selectDesign } = useProjectStore();
+  const { currentProject, selectDesign, loading } = useProjectStore();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
   const [showCompare, setShowCompare] = useState(false);
   const [compareUrl, setCompareUrl] = useState("");
 
   const images = currentProject?.generated_image_urls ?? [];
+  const totalSlots = 4; // Always show 4 slots
+  const allSlots = Array.from({ length: totalSlots }, (_, i) => images[i] || null);
 
   const onViewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
@@ -65,7 +68,7 @@ export default function ResultScreen() {
 
       {/* Carousel */}
       <FlatList
-        data={images}
+        data={allSlots}
         horizontal
         showsHorizontalScrollIndicator={false}
         snapToInterval={CARD_WIDTH + spacing.md}
@@ -76,24 +79,43 @@ export default function ResultScreen() {
         keyExtractor={(_, i) => String(i)}
         renderItem={({ item: url, index }) => {
           const isSelected = selectedUrl === url;
+          const isGenerating = !url && index < images.length + 1 && loading;
+          const isPlaceholder = !url && !isGenerating;
+          
           return (
             <Pressable
               style={[styles.card, isSelected && styles.cardSelected]}
-              onPress={() => handleSelect(url)}
+              onPress={() => url && handleSelect(url)}
               onLongPress={() => {
-                setCompareUrl(url);
-                setShowCompare(true);
+                if (url) {
+                  setCompareUrl(url);
+                  setShowCompare(true);
+                }
               }}
+              disabled={!url}
             >
-              <Image source={{ uri: url }} style={styles.cardImage} />
-              {isSelected && (
-                <View style={styles.checkBadge}>
-                  <Ionicons name="checkmark" size={18} color="#fff" />
+              {url ? (
+                <>
+                  <Image source={{ uri: url }} style={styles.cardImage} />
+                  {isSelected && (
+                    <View style={styles.checkBadge}>
+                      <Ionicons name="checkmark" size={18} color="#fff" />
+                    </View>
+                  )}
+                  <View style={styles.optionLabel}>
+                    <Text style={styles.optionText}>Option {index + 1}</Text>
+                  </View>
+                </>
+              ) : isGenerating ? (
+                <View style={styles.generatingCard}>
+                  <ActivityIndicator size="large" color={colors.primary} />
+                  <Text style={styles.generatingText}>Generating...</Text>
+                </View>
+              ) : (
+                <View style={styles.placeholderCard}>
+                  <Ionicons name="image-outline" size={48} color={colors.textSecondary + "60"} />
                 </View>
               )}
-              <View style={styles.optionLabel}>
-                <Text style={styles.optionText}>Option {index + 1}</Text>
-              </View>
             </Pressable>
           );
         }}
@@ -101,7 +123,7 @@ export default function ResultScreen() {
 
       {/* Dots */}
       <View style={styles.dots}>
-        {images.map((_, i) => (
+        {allSlots.map((_, i) => (
           <View
             key={i}
             style={[styles.dot, currentIndex === i ? styles.dotActive : styles.dotInactive]}
@@ -238,4 +260,23 @@ const styles = StyleSheet.create({
   },
   compareLabel: { ...fonts.regular, fontSize: 12 },
   tapHint: { ...fonts.regular, fontSize: 12, marginTop: spacing.md },
+  generatingCard: {
+    width: "100%",
+    height: "100%",
+    backgroundColor: colors.surface,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  generatingText: {
+    ...fonts.body,
+    color: colors.textSecondary,
+  },
+  placeholderCard: {
+    width: "100%",
+    height: "100%",
+    backgroundColor: colors.surface,
+    justifyContent: "center",
+    alignItems: "center",
+  },
 });

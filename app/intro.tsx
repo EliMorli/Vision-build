@@ -1,0 +1,296 @@
+import { useState, useRef } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  FlatList,
+  ViewToken,
+  Image,
+  SafeAreaView,
+  Animated,
+  PanResponder,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { colors, spacing, radius, fonts } from "@/lib/theme";
+import { Button } from "@/components";
+import { useAuthStore } from "@/lib/store";
+
+const INTRO_SEEN_KEY = "@visionbuild:intro_seen";
+
+const { width } = Dimensions.get("window");
+
+const PAGES = [
+  {
+    id: "slider",
+    type: "slider" as const,
+  },
+  {
+    id: "ai",
+    icon: "color-wand-outline" as const,
+    title: "AI Redesigns It",
+    subtitle: "Pick a style and our AI generates 4 photorealistic designs — keeping your walls, windows, and layout intact.",
+  },
+  {
+    id: "estimates",
+    icon: "people-outline" as const,
+    title: "Get Real Estimates",
+    subtitle: "We create a professional project brief and connect you with vetted local contractors in 24 hours.",
+  },
+];
+
+// Before/After Slider Component
+function BeforeAfterSlider() {
+  const sliderPosition = useRef(new Animated.Value(0.5)).current;
+  const [dividerX, setDividerX] = useState(width * 0.4 * 0.5); // center of the image width
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderMove: (_, gesture) => {
+        const imageWidth = width * 0.8;
+        const offset = (width - imageWidth) / 2;
+        const relativeX = gesture.moveX - offset;
+        const clampedX = Math.max(0, Math.min(imageWidth, relativeX));
+        const newPosition = clampedX / imageWidth;
+        sliderPosition.setValue(newPosition);
+        setDividerX(clampedX);
+      },
+    })
+  ).current;
+
+  return (
+    <View style={sliderStyles.container}>
+      <View style={sliderStyles.iconCircle}>
+        <Ionicons name="home-outline" size={44} color={colors.primary} />
+      </View>
+      <Text style={sliderStyles.title}>See the Transformation</Text>
+      <Text style={sliderStyles.subtitle}>Drag the slider to reveal the power of AI redesign</Text>
+
+      <View style={sliderStyles.sliderContainer} {...panResponder.panHandlers}>
+        {/* Before image - full width */}
+        <Image
+          source={{ uri: "https://placehold.co/600x400/E0E0E0/808080?text=Before" }}
+          style={sliderStyles.image}
+        />
+
+        {/* After image - clipped based on slider */}
+        <View style={[sliderStyles.afterContainer, { width: dividerX }]}>
+          <Image
+            source={{ uri: "https://placehold.co/600x400/1A73E8/FFFFFF?text=After" }}
+            style={sliderStyles.image}
+          />
+        </View>
+
+        {/* Divider line */}
+        <View style={[sliderStyles.divider, { left: dividerX }]}>
+          <View style={sliderStyles.dividerHandle}>
+            <Ionicons name="chevron-back" size={12} color="#fff" />
+            <Ionicons name="chevron-forward" size={12} color="#fff" />
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+export default function IntroScreen() {
+  const [currentPage, setCurrentPage] = useState(0);
+  const router = useRouter();
+  const session = useAuthStore((s) => s.session);
+
+  const onViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      if (viewableItems[0]?.index != null) {
+        setCurrentPage(viewableItems[0].index);
+      }
+    }
+  ).current;
+
+  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
+
+  const handleGetStarted = async () => {
+    await AsyncStorage.setItem(INTRO_SEEN_KEY, "true");
+    if (session) {
+      router.replace("/(tabs)");
+    } else {
+      router.replace("/(auth)/sign-in");
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {/* Logo */}
+      <View style={styles.logoRow}>
+        <Ionicons name="construct" size={22} color={colors.primary} />
+        <Text style={styles.logoText}>VisionBuild</Text>
+      </View>
+
+      {/* Carousel */}
+      <FlatList
+        data={PAGES}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => {
+          if (item.type === "slider") {
+            return <BeforeAfterSlider />;
+          }
+          return (
+            <View style={styles.page}>
+              <View style={styles.iconCircle}>
+                <Ionicons name={item.icon!} size={44} color={colors.primary} />
+              </View>
+              <Text style={styles.pageTitle}>{item.title}</Text>
+              <Text style={styles.pageSubtitle}>{item.subtitle}</Text>
+            </View>
+          );
+        }}
+      />
+
+      {/* Page dots */}
+      <View style={styles.dots}>
+        {PAGES.map((_, i) => (
+          <View
+            key={i}
+            style={[styles.dot, currentPage === i ? styles.dotActive : styles.dotInactive]}
+          />
+        ))}
+      </View>
+
+      {/* CTA button */}
+      <View style={styles.buttons}>
+        <Button
+          label="Get Started"
+          icon="arrow-forward"
+          onPress={handleGetStarted}
+          variant="primary"
+        />
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#fff" },
+  logoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingTop: spacing.lg,
+  },
+  logoText: { fontSize: 20, fontWeight: "700", color: colors.textPrimary },
+  page: {
+    width,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: spacing.xl,
+  },
+  iconCircle: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: colors.primary + "12",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 32,
+  },
+  pageTitle: {
+    ...fonts.heading,
+    textAlign: "center",
+    marginBottom: spacing.sm,
+  },
+  pageSubtitle: {
+    ...fonts.body,
+    color: colors.textSecondary,
+    textAlign: "center",
+    lineHeight: 24,
+    paddingHorizontal: spacing.md,
+  },
+  dots: { flexDirection: "row", justifyContent: "center", marginBottom: 32 },
+  dot: { height: 8, borderRadius: 4, marginHorizontal: 4 },
+  dotActive: { width: 24, backgroundColor: colors.primary },
+  dotInactive: { width: 8, backgroundColor: colors.primary + "30" },
+  buttons: { paddingHorizontal: spacing.xl, gap: spacing.sm, paddingBottom: spacing.xl },
+});
+
+const sliderStyles = StyleSheet.create({
+  container: {
+    width,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: spacing.xl,
+  },
+  iconCircle: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: colors.primary + "12",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  title: {
+    ...fonts.heading,
+    textAlign: "center",
+    marginBottom: spacing.sm,
+  },
+  subtitle: {
+    ...fonts.body,
+    color: colors.textSecondary,
+    textAlign: "center",
+    lineHeight: 24,
+    paddingHorizontal: spacing.md,
+    marginBottom: 24,
+  },
+  sliderContainer: {
+    width: width * 0.8,
+    height: 260,
+    borderRadius: radius.lg,
+    overflow: "hidden",
+    position: "relative",
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
+  afterContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    height: "100%",
+    overflow: "hidden",
+  },
+  divider: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    width: 4,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  dividerHandle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
+    gap: -4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+});

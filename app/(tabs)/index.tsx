@@ -40,11 +40,8 @@ export default function DashboardScreen() {
 
   const openProject = (project: Project) => {
     useProjectStore.getState().setCurrentProject(project);
-    if (project.status === "generated" || project.status === "connected") {
-      router.push(`/result/${project.id}`);
-    } else if (project.status === "analyzed") {
-      router.push(`/editor/${project.id}`);
-    }
+    // Navigate to project detail page
+    router.push(`/project/${project.id}`);
   };
 
   // ─── Empty state ──────────────────────────────────────────
@@ -100,6 +97,7 @@ export default function DashboardScreen() {
         }
         renderItem={({ item }) => {
           const status = STATUS_MAP[item.status];
+          const designCount = item.generated_image_urls?.length || 0;
           return (
             <Pressable style={styles.card} onPress={() => openProject(item)}>
               <Image
@@ -110,6 +108,12 @@ export default function DashboardScreen() {
                 <Ionicons name={status.icon} size={12} color="#fff" />
                 <Text style={styles.statusText}>{status.label}</Text>
               </View>
+              {designCount > 0 && (
+                <View style={styles.designCountBadge}>
+                  <Ionicons name="images" size={12} color={colors.primary} />
+                  <Text style={styles.designCountText}>{designCount}</Text>
+                </View>
+              )}
               <View style={styles.cardBody}>
                 <Text style={styles.cardTitle} numberOfLines={1}>
                   {item.title}
@@ -162,6 +166,28 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
   },
   statusText: { color: "#fff", fontSize: 11, fontWeight: "600" },
+  designCountBadge: {
+    position: "absolute",
+    top: 10,
+    left: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#fff",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radius.full,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  designCountText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.primary,
+  },
   cardBody: { padding: spacing.md, gap: 4 },
   cardTitle: { ...fonts.title, fontSize: 17 },
   cardSub: { ...fonts.regular, lineHeight: 20 },

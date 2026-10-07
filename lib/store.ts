@@ -176,13 +176,14 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       const roomType = analysisData?.analysis?.roomType ?? "room";
       const { data: project, error: insertError } = await supabase
         .from("projects")
-        .insert({
+        .insert([{
           user_id: userId,
           title: `${roomType.charAt(0).toUpperCase() + roomType.slice(1)} Renovation`,
           original_image_url: urlData.publicUrl,
           room_analysis: analysisData?.analysis ?? null,
           status: "analyzed" as const,
-        })
+          generated_image_urls: [],
+        }] as any)
         .select()
         .single();
 
@@ -240,8 +241,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
 
   selectDesign: async (projectId: string, url: string) => {
-    const { error } = await supabase
-      .from("projects")
+    const { error } = await (supabase
+      .from("projects") as any)
       .update({ selected_generation_url: url })
       .eq("id", projectId);
 
