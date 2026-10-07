@@ -6,6 +6,8 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
+import { verifyAuth } from "../_shared/auth.ts";
+import { checkRateLimit, recordUsage } from "../_shared/rate-limit.ts";
 
 serve(async (req: Request) => {
   // Handle CORS preflight
@@ -14,6 +16,19 @@ serve(async (req: Request) => {
   }
 
   try {
+    // Verify authentication
+    const authResult = await verifyAuth(req);
+    if (authResult instanceof Response) {
+      return authResult;
+    }
+    const { userId, anonClient } = authResult;
+
+    // Check rate limit
+    const rateLimitResult = await checkRateLimit(anonClient, userId, "analyze-room");
+    if (rateLimitResult) {
+      return rateLimitResult;
+    }
+
     const { imageUrl } = await req.json();
 
     if (!imageUrl) {
@@ -78,6 +93,9 @@ Be specific about materials, finishes, and notable features. Estimate square foo
         rawAnalysis: text,
       };
     }
+
+    // Record usage
+    await recordUsage(anonClient, userId, "analyze-room");
 
     return new Response(
       JSON.stringify({ success: true, analysis }),

@@ -6,8 +6,9 @@
 //   SUPABASE_SERVICE_ROLE_KEY (auto-available)
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
+import { verifyAuth, verifyProjectOwnership, getServiceRoleClient } from "../_shared/auth.ts";
+import { checkRateLimit, recordUsage } from "../_shared/rate-limit.ts";
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -15,6 +16,13 @@ serve(async (req: Request) => {
   }
 
   try {
+    // Verify authentication
+    const authResult = await verifyAuth(req);
+    if (authResult instanceof Response) {
+      return authResult;
+    }
+    const { userId, anonClient } = authResult;
+
     const { projectId, stylePrompt, roomAnalysis } = await req.json();
 
     if (!projectId || !stylePrompt) {
@@ -24,25 +32,23 @@ serve(async (req: Request) => {
       );
     }
 
-    const REPLICATE_API_TOKEN = Deno.env.get("REPLICATE_API_TOKEN")!;
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-    // Get the project to find the original image
-    const { data: project } = await supabase
-      .from("projects")
-      .select("original_image_url, user_id")
-      .eq("id", projectId)
-      .single();
-
-    if (!project) {
-      return new Response(
-        JSON.stringify({ error: "Project not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // Verify project ownership
+    const ownershipResult = await verifyProjectOwnership(anonClient, userId, projectId);
+    if (ownershipResult instanceof Response) {
+      return ownershipResult;
     }
+    const { project } = ownershipResult;
+
+    // Check rate limit
+    const rateLimitResult = await checkRateLimit(anonClient, userId, "generate-design");
+    if (rateLimitResult) {
+      return rateLimitResult;
+    }
+
+    // Now use service role client for operations
+    const supabase = getServiceRoleClient();
+
+    const REPLICATE_API_TOKEN = Deno.env.get("REPLICATE_API_TOKEN")!;
 
     const prompt = `Redesign this room with a ${stylePrompt}.
 Current room analysis: ${roomAnalysis || "a residential room"}.
