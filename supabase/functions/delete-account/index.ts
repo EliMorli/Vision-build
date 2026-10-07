@@ -2,6 +2,7 @@
 // Permanently deletes a user's account and all associated data
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { SignJWT } from "https://deno.land/x/jose@v5.2.0/index.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { verifyAuth, getServiceRoleClient } from "../_shared/auth.ts";
 
