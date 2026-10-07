@@ -39,7 +39,7 @@ const PAGES = [
 export default function SignInScreen() {
   const [currentPage, setCurrentPage] = useState(0);
   const [ageConfirmed, setAgeConfirmed] = useState(false);
-  const { signInWithOAuth, loading, session } = useAuthStore();
+  const { signInWithOAuth, loading, error, session } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
