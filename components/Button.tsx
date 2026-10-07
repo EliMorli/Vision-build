@@ -1,6 +1,7 @@
 import { Pressable, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius } from "@/lib/theme";
+import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 
 type Variant = "primary" | "secondary" | "outline" | "ghost";
 
@@ -27,6 +28,7 @@ export function Button({
 }: ButtonProps) {
   const isDisabled = disabled || loading;
   const bg = VARIANT_STYLES[variant];
+  const reduceMotion = useReducedMotion();
 
   return (
     <Pressable
@@ -37,7 +39,7 @@ export function Button({
         bg.container,
         fullWidth && styles.fullWidth,
         isDisabled && styles.disabled,
-        pressed && !isDisabled && { borderBottomWidth: 2, marginTop: 3 },
+        pressed && !isDisabled && !reduceMotion && { borderBottomWidth: 2, marginTop: 3 },
         style,
       ]}
       accessibilityRole="button"

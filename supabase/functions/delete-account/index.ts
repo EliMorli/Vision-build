@@ -77,40 +77,70 @@ serve(async (req: Request) => {
     if (isAppleUser) {
       if (!APPLE_TEAM_ID || !APPLE_KEY_ID || !APPLE_PRIVATE_KEY || !APPLE_CLIENT_ID) {
         console.warn(
-          "User signed in with Apple but Apple credentials not configured. Skipping token revocation."
+          "User signed in with Apple but Apple credentials not configured. Skipping token revocation. " +
+          "Set APPLE_TEAM_ID, APPLE_KEY_ID, APPLE_PRIVATE_KEY, and APPLE_CLIENT_ID to enable."
         );
       } else {
         try {
-          // Generate client secret (Apple requires JWT signed with private key)
-          const header = btoa(JSON.stringify({ alg: "ES256", kid: APPLE_KEY_ID }));
+          // Generate client secret JWT (ES256) as required by Apple
           const now = Math.floor(Date.now() / 1000);
-          const payload = btoa(
-            JSON.stringify({
-              iss: APPLE_TEAM_ID,
-              iat: now,
-              exp: now + 3600,
-              aud: "https://appleid.apple.com",
-              sub: APPLE_CLIENT_ID,
-            })
+          
+          // Import Apple private key
+          const pemKey = APPLE_PRIVATE_KEY
+            .replace(/\\n/g, "\n")
+            .replace(/-----BEGIN PRIVATE KEY-----/, "")
+            .replace(/-----END PRIVATE KEY-----/, "")
+            .trim();
+          
+          const binaryKey = Uint8Array.from(atob(pemKey), c => c.charCodeAt(0));
+          
+          const privateKey = await crypto.subtle.importKey(
+            "pkcs8",
+            binaryKey,
+            { name: "ECDSA", namedCurve: "P-256" },
+            false,
+            ["sign"]
           );
 
-          // Note: This is a simplified example. In production, use a proper JWT library
-          // or pre-generated client secret from your server infrastructure
-          const clientSecret = `${header}.${payload}.(signature-placeholder)`;
+          // Build client secret JWT
+          const clientSecret = await new SignJWT({
+            iss: APPLE_TEAM_ID,
+            iat: now,
+            exp: now + 3600,
+            aud: "https://appleid.apple.com",
+            sub: APPLE_CLIENT_ID,
+          })
+            .setProtectedHeader({ alg: "ES256", kid: APPLE_KEY_ID })
+            .sign(privateKey);
 
-          console.warn("Apple token revocation requires proper JWT signing. Skipping for now.");
-          // await fetch("https://appleid.apple.com/auth/revoke", {
-          //   method: "POST",
-          //   headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          //   body: new URLSearchParams({
-          //     client_id: APPLE_CLIENT_ID,
-          //     client_secret: clientSecret,
-          //     token: user.identities?.[0]?.refresh_token ?? "",
-          //     token_type_hint: "refresh_token",
-          //   }),
-          // });
+          // Get refresh token from user metadata or identities
+          const refreshToken = user?.identities?.[0]?.refresh_token || 
+                             user?.user_metadata?.provider_refresh_token;
+
+          if (!refreshToken) {
+            console.warn("No Apple refresh token found for user. Token revocation skipped.");
+          } else {
+            // Revoke the token
+            const revokeRes = await fetch("https://appleid.apple.com/auth/revoke", {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: new URLSearchParams({
+                client_id: APPLE_CLIENT_ID,
+                client_secret: clientSecret,
+                token: refreshToken,
+                token_type_hint: "refresh_token",
+              }),
+            });
+
+            if (!revokeRes.ok) {
+              const errorText = await revokeRes.text();
+              console.error("Apple token revocation failed:", revokeRes.status, errorText);
+            } else {
+              console.log("Apple token revoked successfully");
+            }
+          }
         } catch (appleErr: any) {
-          console.error("Apple token revocation failed:", appleErr.message);
+          console.error("Apple token revocation error:", appleErr.message);
         }
       }
     }
