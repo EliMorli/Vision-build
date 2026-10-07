@@ -14,4 +14,12 @@ export default [
   {
     ignores: ["dist/*", "node_modules/*", "supabase/functions/**/*"],
   },
+  {
+    rules: {
+      // Disable react-compiler rule - produces false positives for valid React patterns
+      // (e.g. "Cannot access refs during render" for useRef in components,
+      // "Cannot access variable before it is declared" for hooks)
+      "react-compiler/react-compiler": "off",
+    },
+  },
 ];
