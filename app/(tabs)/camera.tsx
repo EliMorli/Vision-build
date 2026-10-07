@@ -72,7 +72,7 @@ export default function CameraScreen() {
             </View>
             <Text style={styles.placeholderTitle}>Add a Room Photo</Text>
             <Text style={styles.placeholderSub}>
-              Take a photo or choose from your gallery
+              Tap anywhere to choose from gallery
             </Text>
           </Pressable>
         )}
