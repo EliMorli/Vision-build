@@ -47,10 +47,11 @@ export default function CameraScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header hint */}
-      <Text style={styles.hint}>
-        Take a photo or pick one from your gallery to get started.
-      </Text>
+      {!imageUri && (
+        <Text style={styles.hint}>
+          Take a photo or pick one from your gallery to get started.
+        </Text>
+      )}
 
       {/* Image preview area */}
       <View style={styles.previewArea}>
