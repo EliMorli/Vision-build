@@ -13,8 +13,9 @@ serve(async (req: Request) => {
   try {
     const url = new URL(req.url);
     const email = url.searchParams.get("email");
+    const token = url.searchParams.get("token");
 
-    if (!email) {
+    if (!email || !token) {
       return new Response(
         `<!DOCTYPE html>
 <html>
@@ -29,10 +30,52 @@ serve(async (req: Request) => {
 </head>
 <body>
   <h1>Invalid Request</h1>
-  <p>No email address provided. Please use the unsubscribe link from the email.</p>
+  <p>Missing email or token. Please use the unsubscribe link from the email.</p>
 </body>
 </html>`,
         { status: 400, headers: { "Content-Type": "text/html" } }
+      );
+    }
+
+    // Verify HMAC token
+    const UNSUBSCRIBE_SECRET = Deno.env.get("UNSUBSCRIBE_SECRET") || "default-secret-change-me";
+    const message = email.toLowerCase();
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(UNSUBSCRIBE_SECRET);
+    const messageData = encoder.encode(message);
+    
+    const cryptoKey = await crypto.subtle.importKey(
+      "raw",
+      keyData,
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    
+    const signature = await crypto.subtle.sign("HMAC", cryptoKey, messageData);
+    const expectedToken = Array.from(new Uint8Array(signature))
+      .map(b => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    if (token !== expectedToken) {
+      return new Response(
+        `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Invalid Link</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+    h1 { color: #ea4335; }
+    p { line-height: 1.6; color: #5f6368; }
+  </style>
+</head>
+<body>
+  <h1>Invalid or Expired Link</h1>
+  <p>This unsubscribe link is invalid or has been tampered with. Please use the original link from the email or contact support.</p>
+</body>
+</html>`,
+        { status: 403, headers: { "Content-Type": "text/html" } }
       );
     }
 
