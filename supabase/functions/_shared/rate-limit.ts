@@ -1,4 +1,5 @@
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { getServiceRoleClient } from "./auth.ts";
 
 interface RateLimitConfig {
   action: string;
@@ -14,10 +15,11 @@ const DEFAULT_LIMITS: Record<string, RateLimitConfig> = {
 
 /**
  * Check and enforce per-user rate limits.
+ * Uses service-role client to bypass RLS (filters by verified userId).
  * Returns 429 response if rate limit exceeded, null if OK.
  */
 export async function checkRateLimit(
-  supabase: SupabaseClient,
+  _userClient: SupabaseClient,
   userId: string,
   action: string
 ): Promise<Response | null> {
@@ -29,10 +31,11 @@ export async function checkRateLimit(
     config.limit = parseInt(envLimit, 10);
   }
 
-  // Count recent usage events
+  // Count recent usage events (use service-role to bypass RLS, filter by userId)
   const windowStart = new Date(Date.now() - config.windowMs).toISOString();
+  const adminClient = getServiceRoleClient();
   
-  const { data: events, error } = await supabase
+  const { data: events, error } = await adminClient
     .from("usage_events")
     .select("id")
     .eq("user_id", userId)
@@ -66,14 +69,22 @@ export async function checkRateLimit(
 
 /**
  * Record a usage event after successful action.
+ * Uses service-role client to bypass RLS (users are read-only on usage_events).
  */
 export async function recordUsage(
-  supabase: SupabaseClient,
+  _userClient: SupabaseClient,
   userId: string,
   action: string
 ): Promise<void> {
-  await supabase.from("usage_events").insert({
+  const adminClient = getServiceRoleClient();
+  
+  const { error } = await adminClient.from("usage_events").insert({
     user_id: userId,
     action,
   });
+
+  if (error) {
+    console.error("Failed to record usage event:", error);
+    // Don't throw - usage recording failure shouldn't block the user's action
+  }
 }

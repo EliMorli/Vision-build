@@ -274,15 +274,25 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
     if (!userId) return;
 
-    // Update in database
-    const { error } = await (supabase
-      .from("projects") as any)
-      .update({ is_public: isPublic })
-      .eq("id", projectId)
-      .eq("user_id", userId);
+    // Call edge function to update visibility and handle file copies
+    const { data: session } = await supabase.auth.getSession();
+    if (!session?.session) return;
 
-    if (error) {
-      console.error("Failed to update project privacy:", error);
+    const response = await fetch(
+      `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/set-project-visibility`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.session.access_token}`,
+        },
+        body: JSON.stringify({ projectId, isPublic }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error("Failed to update project visibility:", errorData);
       return;
     }
 
