@@ -16,7 +16,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore } from "@/lib/store";
-import { Button } from "@/components";
+import { Button, ReportModal } from "@/components";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.82;
@@ -29,6 +29,8 @@ export default function ResultScreen() {
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
   const [showCompare, setShowCompare] = useState(false);
   const [compareUrl, setCompareUrl] = useState("");
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportingImageId, setReportingImageId] = useState<string>("");
 
   const images = currentProject?.generated_image_urls ?? [];
   const totalSlots = 4; // Always show 4 slots

@@ -41,6 +41,7 @@ export interface Profile {
 export type ProjectStatus =
   | "draft"
   | "analyzed"
+  | "rendering"
   | "generated"
   | "connected"
   | "completed";

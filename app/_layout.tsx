@@ -47,8 +47,11 @@ export default function RootLayout() {
         <Stack.Screen name="assistant-chat" options={{ headerShown: false }} />
         <Stack.Screen name="permission-primer" options={{ headerShown: false }} />
         <Stack.Screen name="ai-consent" options={{ headerShown: false }} />
+        <Stack.Screen name="handoff-location" options={{ headerShown: false }} />
         <Stack.Screen name="handoff-confirm" options={{ headerShown: false }} />
         <Stack.Screen name="profile-settings" options={{ headerShown: false }} />
+        <Stack.Screen name="help-contact" options={{ headerShown: false }} />
+        <Stack.Screen name="result-error" options={{ headerShown: false }} />
         <Stack.Screen name="project/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="editor/[id]" options={{ title: "Choose Style" }} />
         <Stack.Screen name="result/[id]" options={{ title: "Your Designs" }} />

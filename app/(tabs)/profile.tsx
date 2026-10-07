@@ -23,7 +23,7 @@ export default function ProfileScreen() {
     { icon: "card-outline" as const, label: "Payment Methods", badge: null, route: null },
     { icon: "home-outline" as const, label: "My Properties", badge: "3", route: null },
     { icon: "heart-outline" as const, label: "Saved Designs", badge: "12", route: null },
-    { icon: "help-circle-outline" as const, label: "Help & Support", badge: null, route: null },
+    { icon: "help-circle-outline" as const, label: "Help & Contact", badge: null, route: "/help-contact" },
   ];
 
   return (

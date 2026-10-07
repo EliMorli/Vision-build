@@ -19,6 +19,7 @@ import { Button, EmptyState } from "@/components";
 const STATUS_MAP: Record<ProjectStatus, { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }> = {
   draft: { label: "Draft", color: colors.textSecondary, icon: "document-outline" },
   analyzed: { label: "Analyzed", color: colors.accent, icon: "search-outline" },
+  rendering: { label: "Rendering...", color: colors.accent, icon: "hourglass-outline" },
   generated: { label: "Designs Ready", color: colors.primary, icon: "color-palette-outline" },
   connected: { label: "Contractors Matched", color: colors.secondary, icon: "people-outline" },
   completed: { label: "Completed", color: colors.secondary, icon: "checkmark-circle-outline" },
