@@ -32,6 +32,8 @@ export default function DashboardScreen() {
   const signOut = useAuthStore((s) => s.signOut);
   const profile = useAuthStore((s) => s.profile);
 
+  useAIConsentCheck();
+
   useEffect(() => {
     fetchProjects();
   }, []);
