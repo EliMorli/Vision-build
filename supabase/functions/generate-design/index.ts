@@ -99,7 +99,7 @@ Professional interior design rendering, photorealistic, well-lit, high detail.`;
         // Download the image and upload to Supabase Storage
         const imageRes = await fetch(result.output[0]);
         const imageBlob = await imageRes.blob();
-        const imagePath = `${project.user_id}/generations/${projectId}/gen_${i}.png`;
+        const imagePath = `${userId}/generations/${projectId}/gen_${i}.png`;
 
         await supabase.storage
           .from("room-photos")
@@ -108,11 +108,14 @@ Professional interior design rendering, photorealistic, well-lit, high detail.`;
             upsert: true,
           });
 
-        const { data: urlData } = supabase.storage
+        // Generate a signed URL (valid for 1 year)
+        const { data: signedData } = await supabase.storage
           .from("room-photos")
-          .getPublicUrl(imagePath);
+          .createSignedUrl(imagePath, 365 * 24 * 60 * 60);
 
-        generatedUrls.push(urlData.publicUrl);
+        if (signedData) {
+          generatedUrls.push(signedData.signedUrl);
+        }
       }
     }
 
@@ -125,6 +128,9 @@ Professional interior design rendering, photorealistic, well-lit, high detail.`;
         status: "generated",
       })
       .eq("id", projectId);
+
+    // Record usage
+    await recordUsage(anonClient, userId, "generate-design");
 
     return new Response(
       JSON.stringify({ success: true, generatedUrls }),

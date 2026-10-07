@@ -5,11 +5,13 @@
 // Required secrets:
 //   OPENAI_API_KEY
 //   RESEND_API_KEY
+//   BUSINESS_MAILING_ADDRESS (required for CAN-SPAM compliance)
 //   SUPABASE_SERVICE_ROLE_KEY (auto-available)
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
+import { verifyAuth, verifyProjectOwnership, getServiceRoleClient } from "../_shared/auth.ts";
+import { checkRateLimit, recordUsage } from "../_shared/rate-limit.ts";
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -17,6 +19,13 @@ serve(async (req: Request) => {
   }
 
   try {
+    // Verify authentication
+    const authResult = await verifyAuth(req);
+    if (authResult instanceof Response) {
+      return authResult;
+    }
+    const { userId, anonClient } = authResult;
+
     const {
       projectId,
       originalImageUrl,
@@ -25,6 +34,7 @@ serve(async (req: Request) => {
       budgetRange,
       userName,
       roomType,
+      fieldsToShare, // { name, email, phone, address, timeline }
       preview, // if true, only generate the email + find contractors (no send)
     } = await req.json();
 
@@ -35,14 +45,47 @@ serve(async (req: Request) => {
       );
     }
 
-    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
-    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    // Verify project ownership
+    const ownershipResult = await verifyProjectOwnership(anonClient, userId, projectId);
+    if (ownershipResult instanceof Response) {
+      return ownershipResult;
+    }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    // Check rate limit (skip for preview mode)
+    if (!preview) {
+      const rateLimitResult = await checkRateLimit(anonClient, userId, "dispatch-lead");
+      if (rateLimitResult) {
+        return rateLimitResult;
+      }
+    }
+
+    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
+    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+    const BUSINESS_MAILING_ADDRESS = Deno.env.get("BUSINESS_MAILING_ADDRESS");
+
+    // Require business address for actual sends
+    if (!preview && !BUSINESS_MAILING_ADDRESS) {
+      return new Response(
+        JSON.stringify({
+          error: "Configuration error: BUSINESS_MAILING_ADDRESS not set. Cannot send emails without CAN-SPAM compliance.",
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabase = getServiceRoleClient();
 
     // ─── Generate email with GPT-4o ────────────────────────
+
+    // Build contact info based on what user chose to share
+    const sharedInfo: string[] = [];
+    if (fieldsToShare?.name) sharedInfo.push(`Name: ${userName}`);
+    if (fieldsToShare?.email) sharedInfo.push(`Email: ${fieldsToShare.email}`);
+    if (fieldsToShare?.phone) sharedInfo.push(`Phone: ${fieldsToShare.phone}`);
+    if (fieldsToShare?.address) sharedInfo.push(`Address: ${fieldsToShare.address}`);
+    if (fieldsToShare?.timeline) sharedInfo.push(`Timeline: ${fieldsToShare.timeline}`);
+    
+    const contactBlock = sharedInfo.length > 0 ? `\n\nContact Information:\n${sharedInfo.join("\n")}` : "";
 
     const emailPrompt = `You are an expert construction project manager. You will receive two images:
 "Current State" (Image A) and "Goal State" (Image B).
@@ -59,7 +102,7 @@ Return ONLY valid JSON (no markdown):
   "body": "Full professional email body as a string."
 }
 
-Client: ${userName}, Zip: ${zipCode}, Budget: ${budgetRange}, Room: ${roomType}, Timeline: Flexible`;
+Client: Zip: ${zipCode}, Budget: ${budgetRange}, Room: ${roomType}, Timeline: Flexible${contactBlock}`;
 
     const messages: any[] = [
       {
@@ -115,12 +158,24 @@ Client: ${userName}, Zip: ${zipCode}, Budget: ${budgetRange}, Room: ${roomType},
 
     // ─── Find contractors ──────────────────────────────────
 
+    // First, get opted-out emails
+    const { data: optouts } = await supabase
+      .from("contractor_optouts")
+      .select("email");
+    
+    const optoutEmails = new Set((optouts ?? []).map((o: any) => o.email.toLowerCase()));
+
     const { data: contractors } = await supabase
       .from("contractors")
       .select("*")
       .eq("is_active", true)
       .eq("zip_code", zipCode)
-      .limit(5);
+      .limit(10);
+
+    // Filter out opted-out contractors
+    const eligibleContractors = (contractors ?? []).filter(
+      (c: any) => !optoutEmails.has(c.email.toLowerCase())
+    ).slice(0, 5);
 
     // If preview mode, return the email + contractors without sending
     if (preview) {
@@ -128,7 +183,7 @@ Client: ${userName}, Zip: ${zipCode}, Budget: ${budgetRange}, Room: ${roomType},
         JSON.stringify({
           success: true,
           email: emailData,
-          contractors: contractors ?? [],
+          contractors: eligibleContractors,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -137,26 +192,29 @@ Client: ${userName}, Zip: ${zipCode}, Budget: ${budgetRange}, Room: ${roomType},
     // ─── Dispatch leads ────────────────────────────────────
 
     const leadIds: string[] = [];
+    const unsubscribeBaseUrl = Deno.env.get("SUPABASE_URL")!.replace("/rest/v1", "") + "/functions/v1/unsubscribe";
 
-    // Fetch project owner once
-    const { data: projectRow } = await supabase
-      .from("projects")
-      .select("user_id")
-      .eq("id", projectId)
-      .single();
+    for (const contractor of eligibleContractors) {
+      // Append footer with business address and unsubscribe link
+      const footer = `
 
-    const projectUserId = projectRow?.user_id;
+---
 
-    for (const contractor of contractors ?? []) {
+${BUSINESS_MAILING_ADDRESS}
+
+To unsubscribe from future project leads, click here: ${unsubscribeBaseUrl}?email=${encodeURIComponent(contractor.email)}`;
+
+      const fullEmailBody = emailData.body + footer;
+
       // Create lead row
       const { data: lead } = await supabase
         .from("leads")
         .insert({
           project_id: projectId,
-          user_id: projectUserId,
+          user_id: userId,
           contractor_id: contractor.id,
           email_subject: emailData.subject,
-          email_body: emailData.body,
+          email_body: fullEmailBody,
           original_image_url: originalImageUrl ?? "",
           generated_image_url: generatedImageUrl ?? "",
           budget_range: budgetRange,
@@ -172,7 +230,7 @@ Client: ${userName}, Zip: ${zipCode}, Budget: ${budgetRange}, Room: ${roomType},
       // Send email via Resend
       if (RESEND_API_KEY && contractor.email) {
         try {
-          await fetch("https://api.resend.com/emails", {
+          const sendRes = await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: {
               Authorization: `Bearer ${RESEND_API_KEY}`,
@@ -182,13 +240,24 @@ Client: ${userName}, Zip: ${zipCode}, Budget: ${budgetRange}, Room: ${roomType},
               from: "VisionBuild <leads@visionbuild.app>",
               to: [contractor.email],
               subject: emailData.subject,
-              html: emailData.body
+              html: fullEmailBody
                 .replace(/\n/g, "<br>")
                 .replace(
                   /\[Contractor Name\]/g,
                   contractor.contact_name || contractor.business_name
                 ),
             }),
+          });
+
+          const sendData = await sendRes.json();
+
+          // Log the outreach
+          await supabase.from("outreach_log").insert({
+            project_id: projectId,
+            contractor_id: contractor.id,
+            contractor_email: contractor.email,
+            fields_shared: fieldsToShare || {},
+            provider_message_id: sendData.id || null,
           });
         } catch (emailErr: any) {
           console.error(`Failed to email ${contractor.email}:`, emailErr.message);
@@ -205,11 +274,14 @@ Client: ${userName}, Zip: ${zipCode}, Budget: ${budgetRange}, Room: ${roomType},
           budgetRange,
           zipCode,
           projectBrief: emailData.body,
-          matchedContractorIds: (contractors ?? []).map((c: any) => c.id),
+          matchedContractorIds: eligibleContractors.map((c: any) => c.id),
           submittedAt: new Date().toISOString(),
         },
       })
       .eq("id", projectId);
+
+    // Record usage
+    await recordUsage(anonClient, userId, "dispatch-lead");
 
     return new Response(
       JSON.stringify({ success: true, leadsCreated: leadIds.length, leadIds }),
