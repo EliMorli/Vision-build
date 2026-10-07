@@ -30,9 +30,9 @@ export default function ExploreScreen() {
       "Report Design",
       "Why are you reporting this design?",
       [
-        { text: "Inappropriate content", onPress: () => console.log("Report: inappropriate") },
-        { text: "Spam or misleading", onPress: () => console.log("Report: spam") },
-        { text: "Copyright violation", onPress: () => console.log("Report: copyright") },
+        { text: "Inappropriate content", onPress: () => {} },
+        { text: "Spam or misleading", onPress: () => {} },
+        { text: "Copyright violation", onPress: () => {} },
         { text: "Cancel", style: "cancel" },
       ]
     );

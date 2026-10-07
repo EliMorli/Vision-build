@@ -67,9 +67,9 @@ export default function ProfileSettingsScreen() {
       "Your Privacy Choices",
       "Manage your privacy preferences including data sharing, targeted advertising, and data deletion rights.",
       [
-        { text: "Do Not Sell My Info", onPress: () => console.log("CCPA opt-out") },
-        { text: "Manage Cookies", onPress: () => console.log("Cookie preferences") },
-        { text: "Download My Data", onPress: () => console.log("Data export") },
+        { text: "Do Not Sell My Info", onPress: () => {} },
+        { text: "Manage Cookies", onPress: () => {} },
+        { text: "Download My Data", onPress: () => {} },
         { text: "Close", style: "cancel" },
       ]
     );

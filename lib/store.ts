@@ -125,8 +125,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   fetchProjects: async () => {
     const userId = useAuthStore.getState().session?.user?.id;
     
-    // Dev mode: Use mock projects if no session
-    if (!userId && process.env.EXPO_PUBLIC_DEV_SKIP_AUTH === "true") {
+    // Dev mode: Use mock projects if explicitly enabled
+    if (!userId && __DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
       const mockProjects: Project[] = [
         {
           id: "mock-1",

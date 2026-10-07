@@ -6,7 +6,9 @@ import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const INTRO_SEEN_KEY = "@visionbuild:intro_seen";
-const DEV_SKIP_AUTH = process.env.EXPO_PUBLIC_DEV_SKIP_AUTH === "true";
+
+const DEV_MOCK_ENABLED = 
+  __DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true";
 
 export default function Index() {
   const session = useAuthStore((s) => s.session);
@@ -40,7 +42,7 @@ export default function Index() {
   }
 
   // Returning users go straight to auth or tabs
-  if (session || DEV_SKIP_AUTH) {
+  if (session || DEV_MOCK_ENABLED) {
     return <Redirect href="/(tabs)" />;
   }
 
