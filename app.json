@@ -33,8 +33,11 @@
     },
     "plugins": [
       "expo-router",
-      "expo-asset",
-      "expo-font"
+      "expo-camera",
+      "expo-image-picker",
+      "expo-secure-store",
+      "expo-web-browser",
+      "expo-crypto"
     ]
   }
 }
