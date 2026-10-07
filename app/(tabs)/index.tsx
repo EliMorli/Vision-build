@@ -15,6 +15,7 @@ import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore, useAuthStore } from "@/lib/store";
 import { Project, ProjectStatus } from "@/lib/types";
 import { Button, EmptyState } from "@/components";
+import { useAIConsentCheck } from "@/lib/hooks/useAIConsentCheck";
 
 const STATUS_MAP: Record<ProjectStatus, { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }> = {
   draft: { label: "Draft", color: colors.textSecondary, icon: "document-outline" },
