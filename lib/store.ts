@@ -99,6 +99,37 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
 // ─── Project Slice ─────────────────────────────────────────
 
+// Cache for signed URLs (path -> { url, expiresAt })
+const signedUrlCache = new Map<string, { url: string; expiresAt: number }>();
+
+async function getSignedUrl(bucket: string, path: string): Promise<string | null> {
+  const cacheKey = `${bucket}:${path}`;
+  const cached = signedUrlCache.get(cacheKey);
+  
+  // Re-use if cache is fresh (expires in > 5 minutes)
+  if (cached && cached.expiresAt > Date.now() + 5 * 60 * 1000) {
+    return cached.url;
+  }
+
+  // Generate new signed URL (1 hour expiry)
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .createSignedUrl(path, 60 * 60); // 1 hour
+
+  if (error || !data) {
+    console.error("Failed to create signed URL:", error);
+    return null;
+  }
+
+  // Cache it
+  signedUrlCache.set(cacheKey, {
+    url: data.signedUrl,
+    expiresAt: Date.now() + 60 * 60 * 1000,
+  });
+
+  return data.signedUrl;
+}
+
 interface ProjectState {
   projects: Project[];
   currentProject: Project | null;
@@ -114,6 +145,7 @@ interface ProjectState {
   uploadAndAnalyze: (imageUri: string) => Promise<Project | null>;
   generateDesigns: (projectId: string, stylePrompt: string) => Promise<Project | null>;
   selectDesign: (projectId: string, url: string) => Promise<void>;
+  refreshProjectUrls: (project: Project) => Promise<Project>;
 }
 
 export const useProjectStore = create<ProjectState>((set, get) => ({
