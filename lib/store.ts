@@ -482,7 +482,7 @@ export const useReportStore = create<ReportState>(() => ({
 
     if (!userId) return;
 
-    const { error } = await supabase.from("reports").insert([
+    const { error } = await (supabase.from("reports") as any).insert([
       {
         user_id: userId,
         target_type: targetType,
@@ -521,8 +521,8 @@ export const usePrivacyStore = create<PrivacyState>((set, get) => ({
 
     if (!userId) return;
 
-    const { data } = await supabase
-      .from("profiles")
+    const { data } = await (supabase
+      .from("profiles") as any)
       .select("privacy_opt_out")
       .eq("id", userId)
       .single();

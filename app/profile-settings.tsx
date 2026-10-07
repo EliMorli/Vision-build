@@ -65,8 +65,6 @@ export default function ProfileSettingsScreen() {
           text: "Delete My Account",
           style: "destructive",
           onPress: async () => {
-            const { supabase } = await import("@/lib/supabase");
-            
             if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
               Alert.alert("Account Deleted", "Your account has been scheduled for deletion.");
               signOut();
@@ -74,12 +72,13 @@ export default function ProfileSettingsScreen() {
             }
 
             try {
-              const { error } = await supabase.functions.invoke("delete-account");
+              const { supabase: supabaseClient } = await import("@/lib/supabase");
+              const { error } = await supabaseClient.functions.invoke("delete-account");
               
               if (error) throw error;
               
               await signOut();
-            } catch (error: any) {
+            } catch (err: any) {
               Alert.alert(
                 "Error",
                 "Failed to delete account. Please try again or contact support.",

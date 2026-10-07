@@ -59,7 +59,7 @@ export default function ResultErrorScreen() {
         message={content.message}
         icon={content.icon}
         onRetry={handleRetry}
-        retryLabel={content.retryLabel}
+        retryLabel={("retryLabel" in content ? content.retryLabel : undefined) as string | undefined}
       />
     </SafeAreaView>
   );

@@ -24,7 +24,7 @@ export default function AIConsentScreen() {
       await AsyncStorage.setItem(AI_CONSENT_VERSION_KEY, AI_CONSENT_VERSION);
 
       if (userId && !(__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true")) {
-        await supabase.from("consents").insert([
+        await (supabase.from("consents") as any).insert([
           {
             user_id: userId,
             kind: "ai_processing",
