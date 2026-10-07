@@ -1,7 +1,7 @@
 import { useEffect } from "react";
-import { View, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { colors } from "@/lib/theme";
 
 export default function SplashScreen() {
@@ -17,29 +17,40 @@ export default function SplashScreen() {
   }, []);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.iconCircle}>
-        <Ionicons name="construct" size={60} color={colors.primary} />
+    <LinearGradient
+      colors={["#0E1B3D", "#2F5BD8"]}
+      style={styles.container}
+    >
+      <View style={styles.wordmark}>
+        <Text style={styles.wordmarkVision}>Vision</Text>
+        <Text style={styles.wordmarkBuild}>Build</Text>
       </View>
-      <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
-    </View>
+      <ActivityIndicator size="large" color="#fff" style={styles.loader} />
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
     justifyContent: "center",
     alignItems: "center",
   },
-  iconCircle: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: colors.primary + "12",
-    justifyContent: "center",
+  wordmark: {
+    flexDirection: "row",
     alignItems: "center",
+  },
+  wordmarkVision: {
+    fontSize: 48,
+    fontWeight: "800",
+    color: "#fff",
+    letterSpacing: -1,
+  },
+  wordmarkBuild: {
+    fontSize: 48,
+    fontWeight: "800",
+    color: colors.accent,
+    letterSpacing: -1,
   },
   loader: {
     marginTop: 32,

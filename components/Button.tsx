@@ -37,7 +37,7 @@ export function Button({
         bg.container,
         fullWidth && styles.fullWidth,
         isDisabled && styles.disabled,
-        pressed && !isDisabled && styles.pressed,
+        pressed && !isDisabled && { borderBottomWidth: 2, marginTop: 3 },
         style,
       ]}
     >
@@ -53,43 +53,41 @@ export function Button({
   );
 }
 
-const VARIANT_STYLES: Record<Variant, { container: ViewStyle; textColor: string }> = {
+const VARIANT_STYLES: Record<Variant, { container: ViewStyle; textColor: string; bottomColor: string }> = {
   primary: { 
     container: { 
       backgroundColor: colors.primary,
-      shadowColor: colors.primary,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 0,
-      elevation: 4,
+      borderBottomWidth: 5,
+      borderBottomColor: "#0F4FB0",
     }, 
-    textColor: "#fff" 
+    textColor: "#fff",
+    bottomColor: "#0F4FB0",
   },
   secondary: { 
     container: { 
       backgroundColor: colors.secondary,
-      shadowColor: colors.secondary,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 0,
-      elevation: 4,
+      borderBottomWidth: 5,
+      borderBottomColor: "#23803D",
     }, 
-    textColor: "#fff" 
+    textColor: "#fff",
+    bottomColor: "#23803D",
   },
   outline: { 
     container: { 
       backgroundColor: "#fff", 
       borderWidth: 3, 
       borderColor: colors.textPrimary,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.15,
-      shadowRadius: 0,
-      elevation: 3,
+      borderBottomWidth: 5,
+      borderBottomColor: colors.textPrimary,
     }, 
-    textColor: colors.textPrimary 
+    textColor: colors.textPrimary,
+    bottomColor: colors.textPrimary,
   },
-  ghost: { container: { backgroundColor: "transparent" }, textColor: colors.primary },
+  ghost: { 
+    container: { backgroundColor: "transparent" }, 
+    textColor: colors.primary,
+    bottomColor: "transparent",
+  },
 };
 
 const styles = StyleSheet.create({
@@ -105,10 +103,5 @@ const styles = StyleSheet.create({
   },
   fullWidth: { width: "100%" },
   disabled: { opacity: 0.4 },
-  pressed: { 
-    opacity: 1, 
-    transform: [{ scale: 0.98 }, { translateY: 2 }],
-    shadowOffset: { width: 0, height: 2 },
-  },
   label: { fontSize: 17, fontWeight: "700", letterSpacing: 0.3 },
 });

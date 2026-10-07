@@ -44,8 +44,10 @@ export default function TabsLayout() {
           title: "Create",
           tabBarLabel: " ",
           tabBarIcon: ({ focused }) => (
-            <View style={styles.createButton}>
-              <Ionicons name="add" size={32} color="#fff" />
+            <View style={styles.createButtonContainer}>
+              <View style={styles.createButton}>
+                <Ionicons name="add" size={32} color="#fff" style={{ transform: [{ rotate: '6deg' }] }} />
+              </View>
             </View>
           ),
         }}
@@ -81,18 +83,18 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
+  createButtonContainer: {
+    marginTop: -20,
+  },
   createButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 58,
+    height: 58,
+    borderRadius: 22,
     backgroundColor: colors.primary,
+    borderBottomWidth: 5,
+    borderBottomColor: "#0F4FB0",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: -20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    transform: [{ rotate: '-6deg' }],
   },
 });

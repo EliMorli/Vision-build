@@ -124,6 +124,63 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   fetchProjects: async () => {
     const userId = useAuthStore.getState().session?.user?.id;
+    
+    // Dev mode: Use mock projects if no session
+    if (!userId && process.env.EXPO_PUBLIC_DEV_SKIP_AUTH === "true") {
+      const mockProjects: Project[] = [
+        {
+          id: "mock-1",
+          user_id: "mock-user",
+          title: "Kitchen Renovation",
+          original_image_url: "https://placehold.co/800x500/E0E0E0/808080?text=Kitchen+Before",
+          room_analysis: {
+            roomType: "kitchen",
+            currentStyle: "traditional",
+            estimatedSqFt: 150,
+            keyElements: ["oak cabinets", "tile flooring", "fluorescent lighting"],
+            rawAnalysis: "Mid-size kitchen with oak cabinetry and dated finishes",
+          },
+          selected_style: "modern",
+          generated_image_urls: [
+            "https://placehold.co/600x400/1A73E8/FFFFFF?text=Design+1",
+            "https://placehold.co/600x400/34A853/FFFFFF?text=Design+2",
+            "https://placehold.co/600x400/FBBC04/FFFFFF?text=Design+3",
+            "https://placehold.co/600x400/EA4335/FFFFFF?text=Design+4",
+          ],
+          selected_generation_url: "https://placehold.co/600x400/1A73E8/FFFFFF?text=Design+1",
+          status: "generated",
+          lead_info: null,
+          created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
+          updated_at: new Date(Date.now() - 86400000).toISOString(),
+        },
+        {
+          id: "mock-2",
+          user_id: "mock-user",
+          title: "Bathroom Remodel",
+          original_image_url: "https://placehold.co/800x500/D0D0D0/707070?text=Bathroom+Before",
+          room_analysis: {
+            roomType: "bathroom",
+            currentStyle: "dated",
+            estimatedSqFt: 80,
+            keyElements: ["small vanity", "old fixtures", "limited storage"],
+            rawAnalysis: "Compact bathroom needing modernization",
+          },
+          selected_style: "coastal",
+          generated_image_urls: [
+            "https://placehold.co/600x400/3498DB/FFFFFF?text=Bath+1",
+            "https://placehold.co/600x400/2ECC71/FFFFFF?text=Bath+2",
+          ],
+          selected_generation_url: null,
+          status: "generated",
+          lead_info: null,
+          created_at: new Date(Date.now() - 7 * 86400000).toISOString(),
+          updated_at: new Date(Date.now() - 2 * 86400000).toISOString(),
+        },
+      ];
+      set({ projects: mockProjects });
+      return;
+    }
+    
     if (!userId) return;
 
     const { data } = await supabase
