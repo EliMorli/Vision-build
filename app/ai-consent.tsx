@@ -58,26 +58,29 @@ export default function AIConsentScreen() {
           {/* Title */}
           <Text style={styles.title}>AI-Powered Designs</Text>
 
-          {/* Description - exact copy as provided */}
+          {/* Description - exact copy as required */}
           <Text style={styles.description}>
-            Your photos and chats are sent to our AI partners, OpenAI and Replicate, only to
-            create your designs. OpenAI doesn't train on them, and Replicate deletes them within
-            an hour. We keep your designs in your projects until you delete them.
+            Your photos and chats are sent through OpenRouter only to AI providers that don't keep
+            or train on your data, and only to create your designs.
+          </Text>
+          
+          <Text style={styles.description}>
+            Your designs stay in your projects until you delete them.
           </Text>
 
           {/* Additional info */}
           <View style={styles.infoBox}>
             <View style={styles.infoRow}>
               <Ionicons name="lock-closed" size={20} color={colors.primary} />
-              <Text style={styles.infoText}>Your data is encrypted in transit</Text>
+              <Text style={styles.infoText}>Data encrypted in transit</Text>
             </View>
             <View style={styles.infoRow}>
               <Ionicons name="shield-checkmark" size={20} color={colors.primary} />
-              <Text style={styles.infoText}>Used only for your designs</Text>
+              <Text style={styles.infoText}>Privacy-first AI providers only</Text>
             </View>
             <View style={styles.infoRow}>
-              <Ionicons name="time" size={20} color={colors.primary} />
-              <Text style={styles.infoText}>Deleted from AI partners quickly</Text>
+              <Ionicons name="trash" size={20} color={colors.primary} />
+              <Text style={styles.infoText}>No data retention or training</Text>
             </View>
           </View>
         </View>

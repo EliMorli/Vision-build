@@ -23,17 +23,29 @@ interface ChatCompletionResponse {
 
 /**
  * Get AI configuration from environment
+ * Enforces OpenRouter-only in production for data privacy compliance
  */
 function getAIConfig() {
+  const appEnv = Deno.env.get("APP_ENV") || "development";
   const baseUrl = Deno.env.get("AI_BASE_URL") || "https://openrouter.ai/api/v1";
   const apiKey = Deno.env.get("AI_API_KEY") || Deno.env.get("OPENAI_API_KEY") || "";
+  
+  const isProduction = appEnv === "production";
+  const isOpenRouter = baseUrl.includes("openrouter.ai");
+  
+  // In production, only OpenRouter is allowed (for data privacy compliance)
+  if (isProduction && !isOpenRouter) {
+    throw new Error(
+      "PRODUCTION ERROR: AI_BASE_URL must point to OpenRouter (https://openrouter.ai/api/v1). " +
+      "Direct OpenAI/Anthropic access is not allowed in production due to data retention policies. " +
+      "Set AI_BASE_URL=https://openrouter.ai/api/v1 or leave it unset to use the default."
+    );
+  }
   
   // Model defaults - OpenRouter model IDs
   const modelVision = Deno.env.get("AI_MODEL_VISION") || "openai/gpt-4o-2024-11-20";
   const modelText = Deno.env.get("AI_MODEL_TEXT") || "anthropic/claude-3.5-sonnet";
   const modelChat = Deno.env.get("AI_MODEL_CHAT") || "anthropic/claude-3.5-sonnet";
-  
-  const isOpenRouter = baseUrl.includes("openrouter.ai");
   
   return {
     baseUrl,
@@ -42,6 +54,7 @@ function getAIConfig() {
     modelText,
     modelChat,
     isOpenRouter,
+    isProduction,
   };
 }
 
@@ -67,6 +80,7 @@ function buildHeaders(apiKey: string, isOpenRouter: boolean): Record<string, str
 
 /**
  * Call the AI chat completion API
+ * Always enforces strict data privacy settings for OpenRouter
  */
 export async function chatCompletion(
   messages: ChatMessage[],
@@ -85,11 +99,16 @@ export async function chatCompletion(
     temperature: options.temperature,
   };
   
-  // Add OpenRouter-specific request parameters
+  // ALWAYS add OpenRouter-specific privacy parameters when using OpenRouter
+  // These are hardcoded to ensure compliance and cannot be overridden
   if (config.isOpenRouter) {
     body.provider = {
-      // Request providers that don't collect or train on data
+      // Only use providers that don't keep or train on data
       data_collection: "deny",
+      // Enable Zero Data Retention mode
+      zdr: true,
+      // Don't fall back to non-compliant providers
+      allow_fallbacks: false,
     };
   }
   
@@ -101,6 +120,15 @@ export async function chatCompletion(
   
   if (!response.ok) {
     const error = await response.text();
+    
+    // Check if this is a "no compliant provider available" error
+    if (config.isOpenRouter && response.status >= 400) {
+      throw new Error(
+        `No AI providers available that meet our strict privacy requirements (no data collection or training). ` +
+        `This request cannot be completed at this time. Please try again later. (${response.status})`
+      );
+    }
+    
     throw new Error(`AI API error (${response.status}): ${error}`);
   }
   

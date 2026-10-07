@@ -204,7 +204,8 @@ export default function ProfileSettingsScreen() {
           <View style={styles.privacyCard}>
             <Text style={styles.privacyDescription}>
               We don't sell your personal information or run targeted ads. Your photos and chats 
-              go to our AI partners (OpenAI and Replicate) only to create your designs.
+              are sent through OpenRouter only to AI providers that don't keep or train on your data, 
+              and only to create your designs.
             </Text>
             
             <Pressable
@@ -214,9 +215,9 @@ export default function ProfileSettingsScreen() {
               accessibilityState={{ checked: privacyOptOut }}
             >
               <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>Opt out of sharing</Text>
+                <Text style={styles.settingLabel}>Opt out of AI processing</Text>
                 <Text style={styles.settingDescription}>
-                  Disable sharing data with AI partners (design generation won't work)
+                  Disable AI processing (design generation and chat won't work)
                 </Text>
               </View>
               <View style={[

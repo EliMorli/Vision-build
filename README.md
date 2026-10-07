@@ -6,8 +6,8 @@ Home renovation visualization tool — from imagination to contractor execution.
 
 - **Frontend**: React Native + Expo Router + TypeScript
 - **Backend**: Supabase (PostgreSQL, Auth, Storage, Edge Functions)
-- **AI**: OpenRouter (default), OpenAI (optional) for analysis, chat, and brief generation
-- **Image Generation**: Replicate SDXL (default), OpenRouter (optional), Mock (for testing)
+- **AI**: OpenRouter (enforced in production for zero data retention)
+- **Image Generation**: OpenRouter or Mock (Replicate allowed in dev/staging only)
 - **Email**: Resend
 - **State**: Zustand
 
@@ -248,8 +248,11 @@ npx supabase secrets set APPLE_KEY_ID=YOUR_KEY_ID
 npx supabase secrets set APPLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----..."
 npx supabase secrets set APPLE_CLIENT_ID=com.yourapp.service
 
-# Backward compatibility (deprecated, use AI_API_KEY instead)
+# Backward compatibility (dev/staging only, use AI_API_KEY instead)
 npx supabase secrets set OPENAI_API_KEY=sk-...
+
+# IMPORTANT: Set APP_ENV for production deployment
+npx supabase secrets set APP_ENV=production
 ```
 
 ### Generate Types

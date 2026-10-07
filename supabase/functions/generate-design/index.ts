@@ -269,7 +269,22 @@ Only change surfaces, finishes, fixtures, furniture, and decor.
 Professional interior design rendering, photorealistic, well-lit, high detail.`;
 
     // Determine which provider to use
+    // In production, only OpenRouter or mock are allowed (Replicate retains data for 1 hour)
+    const appEnv = Deno.env.get("APP_ENV") || "development";
+    const isProduction = appEnv === "production";
     const renderProvider = (Deno.env.get("RENDER_PROVIDER") || "replicate").toLowerCase();
+    
+    // Enforce production restrictions
+    if (isProduction && renderProvider === "replicate") {
+      return new Response(
+        JSON.stringify({
+          error: "PRODUCTION ERROR: RENDER_PROVIDER=replicate is not allowed in production due to data retention policies. " +
+                 "Replicate stores images for up to 1 hour. Set RENDER_PROVIDER=openrouter or leave unset."
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
     let generatedUrls: string[] = [];
 
     switch (renderProvider) {

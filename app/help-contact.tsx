@@ -21,7 +21,7 @@ const FAQ_ITEMS = [
   {
     question: "Is my data secure?",
     answer:
-      "Yes! Your photos are encrypted and only used to generate your designs. We never share your personal information without your explicit permission.",
+      "Yes! Your photos and chats are sent through OpenRouter only to AI providers that don't keep or train on your data. We never share your personal information without your explicit permission.",
   },
   {
     question: "How do I contact a contractor?",
