@@ -195,16 +195,68 @@ npm run lint       # Run ESLint (requires setup)
 
 ## Supabase Setup
 
-Set Edge Function secrets:
+### Database Migrations
+
+Run migrations to set up tables and RLS:
+
+```bash
+npx supabase db push
+```
+
+Migrations include:
+- `00001_initial_schema.sql` - Core tables (profiles, projects, contractors, leads)
+- `00002_storage_buckets.sql` - Original storage setup
+- `00003_compliance_tables.sql` - Reports, consents, usage_events, outreach_log, contractor_optouts
+- `00004_storage_privacy.sql` - Private buckets + RLS
+
+### Edge Function Secrets
+
+Required secrets:
 
 ```bash
 npx supabase secrets set OPENAI_API_KEY=sk-...
 npx supabase secrets set REPLICATE_API_TOKEN=r8_...
 npx supabase secrets set RESEND_API_KEY=re_...
+npx supabase secrets set BUSINESS_MAILING_ADDRESS="YourCompany Inc., 123 Main St, City, ST 12345"
 ```
 
-Generate types:
+Optional secrets:
+
+```bash
+# Rate limits (defaults: 10, 5, 3)
+npx supabase secrets set RATE_LIMIT_ANALYZE_ROOM=10
+npx supabase secrets set RATE_LIMIT_GENERATE_DESIGN=5
+npx supabase secrets set RATE_LIMIT_DISPATCH_LEAD=3
+
+# Apple Sign-In token revocation
+npx supabase secrets set APPLE_TEAM_ID=YOUR_TEAM_ID
+npx supabase secrets set APPLE_KEY_ID=YOUR_KEY_ID
+npx supabase secrets set APPLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----..."
+npx supabase secrets set APPLE_CLIENT_ID=com.yourapp.service
+```
+
+### Generate Types
 
 ```bash
 npm run supabase:types
 ```
+
+## Environment Variables
+
+### Client (.env)
+
+```env
+# Supabase connection
+EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+
+# Support email (optional, hides button if not set)
+EXPO_PUBLIC_SUPPORT_EMAIL=support@yourdomain.com
+
+# Mock mode (dev only, ignored in production builds)
+EXPO_PUBLIC_DEV_MOCK_SESSION=true
+```
+
+### Server (Supabase Secrets)
+
+See Edge Function Secrets section above. All server secrets are set via `supabase secrets set` and never exposed to the client.

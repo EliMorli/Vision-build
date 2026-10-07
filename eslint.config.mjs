@@ -14,11 +14,4 @@ export default [
   {
     ignores: ["dist/*", "node_modules/*", "supabase/functions/**/*"],
   },
-  {
-    rules: {
-      "react-hooks/rules-of-hooks": "off",
-      "import/no-unresolved": ["error", { ignore: ["^react-native-url-polyfill"] }],
-      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
-    },
-  },
 ];
