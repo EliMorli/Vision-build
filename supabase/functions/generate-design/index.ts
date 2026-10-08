@@ -16,7 +16,7 @@ import { checkRateLimit, recordUsage } from "../_shared/rate-limit.ts";
 
 /**
  * Download an image from a URL and upload it to private Supabase storage
- * Returns the signed URL for the uploaded image
+ * Returns the storage path (NOT a signed URL)
  */
 async function downloadAndStoreImage(
   imageUrl: string,
@@ -34,12 +34,8 @@ async function downloadAndStoreImage(
         upsert: true,
       });
 
-    // Generate a signed URL (valid for 1 year)
-    const { data: signedData } = await supabase.storage
-      .from("room-photos")
-      .createSignedUrl(storagePath, 365 * 24 * 60 * 60);
-
-    return signedData?.signedUrl || null;
+    // Return the storage path, NOT a signed URL
+    return storagePath;
   } catch (error) {
     console.error("Error storing image:", error);
     return null;
@@ -98,10 +94,10 @@ async function generateWithReplicate(
 
     if (result.status === "succeeded" && result.output?.length > 0) {
       // Store the image in private storage
-      const storagePath = `${userId}/generations/${projectId}/gen_${i}.png`;
-      const signedUrl = await downloadAndStoreImage(result.output[0], storagePath, supabase);
-      if (signedUrl) {
-        generatedUrls.push(signedUrl);
+      const storagePath = `${userId}/${projectId}/design-${i}.png`;
+      const path = await downloadAndStoreImage(result.output[0], storagePath, supabase);
+      if (path) {
+        generatedUrls.push(path);
       }
     }
   }
@@ -186,10 +182,10 @@ async function generateWithOpenRouter(
       const placeholderUrl = `https://placehold.co/1024x1024/1A73E8/FFFFFF?text=Design+${i + 1}`;
       
       // Store the placeholder in private storage
-      const storagePath = `${userId}/generations/${projectId}/gen_${i}.png`;
-      const signedUrl = await downloadAndStoreImage(placeholderUrl, storagePath, supabase);
-      if (signedUrl) {
-        generatedUrls.push(signedUrl);
+      const storagePath = `${userId}/${projectId}/design-${i}.png`;
+      const path = await downloadAndStoreImage(placeholderUrl, storagePath, supabase);
+      if (path) {
+        generatedUrls.push(path);
       }
     } catch (error) {
       console.error(`OpenRouter generation ${i} failed:`, error);
@@ -219,10 +215,10 @@ async function generateWithMock(
     const mockUrl = `https://placehold.co/1024x1024/${color}/FFFFFF?text=Mock+Design+${i + 1}`;
     
     // Store the mock image in private storage
-    const storagePath = `${userId}/generations/${projectId}/mock_${i}.png`;
-    const signedUrl = await downloadAndStoreImage(mockUrl, storagePath, supabase);
-    if (signedUrl) {
-      generatedUrls.push(signedUrl);
+    const storagePath = `${userId}/${projectId}/design-${i}.png`;
+    const path = await downloadAndStoreImage(mockUrl, storagePath, supabase);
+    if (path) {
+      generatedUrls.push(path);
     }
   }
 
