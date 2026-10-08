@@ -14,20 +14,20 @@
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator: getByTestId('private-image-placeholder').first()
+Locator: locator('[data-testid="private-image-placeholder"]').first()
 Expected: visible
 Timeout: 5000ms
 Error: element(s) not found
 
 Call log:
-  - Expect "toBeVisible" getByTestId('private-image-placeholder').first() with timeout 5000ms
-  - waiting for getByTestId('private-image-placeholder').first()
+  - Expect "toBeVisible" locator('[data-testid="private-image-placeholder"]').first() with timeout 5000ms
+  - waiting for locator('[data-testid="private-image-placeholder"]').first()
 
 ```
 
 ```yaml
 - link "Choose Style, back":
-  - /url: /editor/mock-project-1791438054959?__EXPO_ROUTER_key=undefined-_V6YItTCVb9WsCqCXIgr_
+  - /url: /editor/mock-project-1791438261984?__EXPO_ROUTER_key=undefined-Msqfwf6-xJrLm0zEN6YD4
 - heading "Your Designs" [level=1]
 - text:  Room redesigned! Quest complete +50 XP  Swipe to browse. Tap to select your favorite.  AI visualization, not a plan or quote  Long-press any image to compare with original
 - img "Design option 1"
@@ -44,25 +44,6 @@ Call log:
 # Test source
 
 ```ts
-  211 | 
-  212 |     // Navigate back (decline consent)
-  213 |     await page.goBack();
-  214 | 
-  215 |     // Should be back on Home screen now
-  216 |     await expect(page.getByText("No projects yet")).toBeInViewport({ timeout: 5000 });
-  217 | 
-  218 |     // Try to start a project again
-  219 |     await page.getByRole("button", { name: /start your first project/i }).click();
-  220 | 
-  221 |     // Should be on camera screen
-  222 |     await expect(page.getByText(/take a photo or pick one/i)).toBeInViewport();
-  223 | 
-  224 |     // Upload test image using filechooser pattern
-  225 |     const [chooser] = await Promise.all([
-  226 |       page.waitForEvent("filechooser"),
-  227 |       page.getByRole("button", { name: /gallery/i }).click(),
-  228 |     ]);
-  229 |     await chooser.setFiles("e2e/fixtures/test-room.jpg");
   230 | 
   231 |     // Click Analyze - this should trigger consent check again
   232 |     await page.getByRole("button", { name: /analyze room/i }).click();
@@ -142,40 +123,56 @@ Call log:
   306 |     // The first requests return 403, then retries are held on promise
   307 |     await page.waitForTimeout(2500);
   308 |     
-  309 |     // Assert that the clay IsoRoom placeholder is visible (not blank)
-  310 |     const placeholder = page.getByTestId("private-image-placeholder").first();
-> 311 |     await expect(placeholder).toBeVisible({ timeout: 5000 });
-      |                               ^ Error: expect(locator).toBeVisible() failed
+  309 |     // Debug: check what's on the page
+  310 |     const pageContent = await page.content();
+  311 |     console.log(`[TEST] Page has ${(pageContent.match(/data-testid/g) || []).length} data-testid attributes`);
   312 |     
-  313 |     // Verify placeholder has non-zero bounding box
-  314 |     const boundingBox = await placeholder.boundingBox();
-  315 |     expect(boundingBox).not.toBeNull();
-  316 |     expect(boundingBox!.width).toBeGreaterThan(0);
-  317 |     expect(boundingBox!.height).toBeGreaterThan(0);
-  318 |     
-  319 |     // Take screenshot showing clay placeholder (should show IsoRoom, not blank)
-  320 |     await page.screenshot({ path: "e2e/screens/a5-image-expired-placeholder.png", fullPage: true });
-  321 |     
-  322 |     // Release the hold so retry requests can proceed
-  323 |     console.log('[TEST] Releasing hold, allowing retry requests through');
-  324 |     resolveHold();
-  325 |     
-  326 |     // Wait for images to load after retry succeeds
-  327 |     await page.waitForFunction(() => {
-  328 |       const images = Array.from(document.querySelectorAll('img'));
-  329 |       const designImages = images.filter((img: any) => {
-  330 |         const src = img.getAttribute('src');
-  331 |         return src && src.includes('__mock__/design_');
-  332 |       });
-  333 |       return designImages.length > 0 && designImages.some((img: any) => img.naturalWidth > 0);
-  334 |     }, { timeout: 10000 });
-  335 |     
-  336 |     await page.screenshot({ path: "e2e/screens/a5-image-retried.png", fullPage: true });
-  337 | 
-  338 |     // Verify that retries happened
-  339 |     console.log(`[TEST] Total requests: ${signedUrlRequests.length}`);
-  340 |     expect(signedUrlRequests.length).toBeGreaterThan(4);
-  341 |   });
-  342 | });
-  343 | 
+  313 |     // Check if images are showing or placeholders
+  314 |     const hasLoadedImage = await page.locator('[data-testid="private-image-loaded"]').first().isVisible().catch(() => false);
+  315 |     const hasPlaceholder = await page.locator('[data-testid="private-image-placeholder"]').first().isVisible().catch(() => false);
+  316 |     console.log(`[TEST] hasLoadedImage=${hasLoadedImage}, hasPlaceholder=${hasPlaceholder}`);
+  317 |     
+  318 |     // Take screenshot showing current state (images failed to load, should show placeholder)
+  319 |     await page.screenshot({ path: "e2e/screens/a5-image-expired-placeholder.png", fullPage: true });
+  320 |     
+  321 |     if (!hasPlaceholder) {
+  322 |       // If placeholder not visible, wait a bit more for the error handler to trigger
+  323 |       await page.waitForTimeout(2000);
+  324 |       const hasPlaceholder2 = await page.locator('[data-testid="private-image-placeholder"]').first().isVisible().catch(() => false);
+  325 |       console.log(`[TEST] After 2s wait: hasPlaceholder=${hasPlaceholder2}`);
+  326 |     }
+  327 |     
+  328 |     // Assert that the clay IsoRoom placeholder is visible (not blank)
+  329 |     const placeholder = page.locator('[data-testid="private-image-placeholder"]').first();
+> 330 |     await expect(placeholder).toBeVisible({ timeout: 5000 });
+      |                               ^ Error: expect(locator).toBeVisible() failed
+  331 |     
+  332 |     // Verify placeholder has non-zero bounding box
+  333 |     const boundingBox = await placeholder.boundingBox();
+  334 |     expect(boundingBox).not.toBeNull();
+  335 |     expect(boundingBox!.width).toBeGreaterThan(0);
+  336 |     expect(boundingBox!.height).toBeGreaterThan(0);
+  337 |     
+  338 |     // Release the hold so retry requests can proceed
+  339 |     console.log('[TEST] Releasing hold, allowing retry requests through');
+  340 |     resolveHold();
+  341 |     
+  342 |     // Wait for images to load after retry succeeds
+  343 |     await page.waitForFunction(() => {
+  344 |       const images = Array.from(document.querySelectorAll('img'));
+  345 |       const designImages = images.filter((img: any) => {
+  346 |         const src = img.getAttribute('src');
+  347 |         return src && src.includes('__mock__/design_');
+  348 |       });
+  349 |       return designImages.length > 0 && designImages.some((img: any) => img.naturalWidth > 0);
+  350 |     }, { timeout: 10000 });
+  351 |     
+  352 |     await page.screenshot({ path: "e2e/screens/a5-image-retried.png", fullPage: true });
+  353 | 
+  354 |     // Verify that retries happened
+  355 |     console.log(`[TEST] Total requests: ${signedUrlRequests.length}`);
+  356 |     expect(signedUrlRequests.length).toBeGreaterThan(4);
+  357 |   });
+  358 | });
+  359 | 
 ```

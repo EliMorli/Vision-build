@@ -94,6 +94,7 @@ export function PrivateImage({
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [showPlaceholder, setShowPlaceholder] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [imageLoaded, setImageLoaded] = useState(false); // Track if image successfully loaded
   const retryCountRef = useRef(0);
   const isMountedRef = useRef(true);
 
@@ -110,15 +111,18 @@ export function PrivateImage({
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setImageUrl(signedUrl);
       setShowPlaceholder(false);
+      setImageLoaded(false); // Reset loaded state when URL changes
       retryCountRef.current = 0;
     }
   }, [signedUrl]);
 
   const handleImageError = async () => {
+    console.log(`[PrivateImage] handleImageError called - path=${path}, mounted=${isMountedRef.current}, retryCount=${retryCountRef.current}`);
     if (!path || !isMountedRef.current) return;
 
     // If we've exhausted retries, show placeholder
     if (retryCountRef.current >= MAX_RETRIES) {
+      console.log(`[PrivateImage] Max retries reached, showing permanent placeholder`);
       setShowPlaceholder(true);
       setIsLoading(false);
       return;
@@ -129,10 +133,11 @@ export function PrivateImage({
     retryCountRef.current++;
 
     console.log(
-      `Image failed to load (retry ${retryCountRef.current}/${MAX_RETRIES}), retrying in ${retryDelay}ms...`
+      `[PrivateImage] Image failed to load (retry ${retryCountRef.current}/${MAX_RETRIES}), retrying in ${retryDelay}ms...`
     );
 
     // Immediately set retrying state to show placeholder
+    console.log(`[PrivateImage] Setting isLoading=true, imageUrl=null to show placeholder`);
     setIsLoading(true);
     setImageUrl(null);
 
@@ -145,12 +150,15 @@ export function PrivateImage({
     if (!isMountedRef.current) return;
 
     // Trigger a re-fetch by incrementing retryTrigger (changes hook dependency)
+    console.log(`[PrivateImage] Triggering retry with retryTrigger increment`);
     setRetryTrigger(prev => prev + 1);
   };
 
   const handleImageLoad = () => {
+    console.log(`[PrivateImage] handleImageLoad called, image successfully loaded`);
     setIsLoading(false);
     setShowPlaceholder(false);
+    setImageLoaded(true); // Mark image as successfully loaded
   };
 
   // Show placeholder if no path provided
@@ -178,43 +186,46 @@ export function PrivateImage({
     );
   }
 
-  // Show placeholder in these cases:
-  // 1. Permanently failed (showPlaceholder = true after MAX_RETRIES)
-  // 2. No imageUrl yet (initial loading)
-  // 3. Currently retrying (isLoading = true after error)
-  const shouldShowPlaceholder = showPlaceholder || !imageUrl || (isLoading && retryCountRef.current > 0);
+  // Show placeholder until image successfully loads
+  // This ensures we NEVER show a blank card
+  const shouldShowPlaceholder = showPlaceholder || !imageUrl || !imageLoaded;
 
-  if (shouldShowPlaceholder) {
-    console.log(`[PrivateImage] Showing placeholder - showPlaceholder=${showPlaceholder}, imageUrl=${imageUrl}, isLoading=${isLoading}, retryCount=${retryCountRef.current}`);
-    return (
-      <View
-        style={[styles.placeholderContainer, containerStyle]}
-        testID={testID}
-        accessible={true}
-        accessibilityLabel={accessibilityLabel || "Room placeholder"}
-      >
-        <IsoRoom
-          testID="private-image-placeholder"
-          palette={palette as any}
-          size={placeholderSize}
-          accessible={false}
-          importantForAccessibility="no-hide-descendants"
-        />
-      </View>
-    );
-  }
+  console.log(`[PrivateImage] shouldShowPlaceholder=${shouldShowPlaceholder}, showPlaceholder=${showPlaceholder}, imageUrl=${imageUrl}, imageLoaded=${imageLoaded}`);
 
-  // Show the image (imageUrl exists and not showing placeholder)
   return (
     <View style={containerStyle} testID={testID}>
-      <Image
-        testID="private-image-loaded"
-        source={{ uri: imageUrl }}
-        style={style}
-        onError={handleImageError}
-        onLoad={handleImageLoad}
-        accessibilityLabel={accessibilityLabel}
-      />
+      {shouldShowPlaceholder ? (
+        <View
+          style={[styles.placeholderContainer, containerStyle]}
+          accessible={true}
+          accessibilityLabel={accessibilityLabel || "Room placeholder"}
+        >
+          <IsoRoom
+            testID="private-image-placeholder"
+            palette={palette as any}
+            size={placeholderSize}
+            accessible={false}
+            importantForAccessibility="no-hide-descendants"
+          />
+        </View>
+      ) : (
+        <Image
+          testID="private-image-loaded"
+          source={{ uri: imageUrl }}
+          style={style}
+          onError={handleImageError}
+          onLoad={handleImageLoad}
+          accessibilityLabel={accessibilityLabel}
+        />
+      )}
+      {imageUrl && !imageLoaded && (
+        <Image
+          source={{ uri: imageUrl }}
+          style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }}
+          onError={handleImageError}
+          onLoad={handleImageLoad}
+        />
+      )}
       {isLoading && showLoadingSpinner && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="small" color={colors.primary} />
