@@ -2,12 +2,13 @@
 -- Only callable by service_role. Prevents listUsers() pagination bug where
 -- users past the first page return false negative.
 -- NOTE: In public schema because local Supabase migrations can't create functions in auth schema
+-- NOTE: Editing this migration in place is OK since no remote project exists yet (pre-production)
 
 CREATE OR REPLACE FUNCTION public.get_user_id_by_email(user_email text)
 RETURNS uuid
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = auth, public, pg_temp
+SET search_path = ''
 AS $$
 DECLARE
   found_id uuid;

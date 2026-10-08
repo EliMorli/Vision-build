@@ -28,6 +28,23 @@ async function runTest(): Promise<TestResult[]> {
   console.log("🔧 Connecting to Supabase local instance...");
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   
+  // Test that get_user_id_by_email is not callable via PostgREST with anon key
+  console.log("🔒 Testing get_user_id_by_email security with anon key...");
+  const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") || 
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0";
+  const anonClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  
+  const { error: rpcError } = await anonClient.rpc("get_user_id_by_email", {
+    user_email: "test@example.com"
+  });
+  
+  results.push({
+    passed: rpcError !== null,
+    message: rpcError
+      ? "PostgREST RPC with anon key properly blocked (insufficient_privilege)"
+      : "SECURITY FAILURE: Anon was able to call get_user_id_by_email via PostgREST",
+  });
+  
   // Create a test user
   const testUserId = `test-user-${Date.now()}`;
   const testEmail = `${testUserId}@test.local`;

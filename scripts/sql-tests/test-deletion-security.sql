@@ -104,5 +104,22 @@ $$;
 
 ROLLBACK;
 
+-- Test 7: Authenticated cannot call public.get_user_id_by_email
+BEGIN;
+SET LOCAL ROLE authenticated;
+
+DO $$
+BEGIN
+  PERFORM public.get_user_id_by_email('test@example.com');
+  
+  RAISE EXCEPTION 'FAIL: Authenticated was able to call get_user_id_by_email';
+EXCEPTION
+  WHEN insufficient_privilege THEN
+    RAISE NOTICE 'PASS: Authenticated call to get_user_id_by_email blocked';
+END;
+$$;
+
+ROLLBACK;
+
 \echo ''
 \echo 'All deletion security tests completed!'
