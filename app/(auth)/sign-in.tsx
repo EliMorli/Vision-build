@@ -231,8 +231,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#000",
   },
   appleButtonDisabled: {
-    backgroundColor: "#ccc",
-    opacity: 0.6,
+    backgroundColor: "#000",
+    opacity: 0.4,
   },
   errorText: {
     color: colors.error,

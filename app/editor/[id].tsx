@@ -38,12 +38,7 @@ export default function EditorScreen() {
   // Countdown timer and long-running detection
   useEffect(() => {
     if (!loading || !generatingStartTime) {
-      // Use setTimeout to avoid sync setState
-      const timeout = setTimeout(() => {
-        setCountdown(20);
-        setShowLongRunning(false);
-      }, 0);
-      return () => clearTimeout(timeout);
+      return; // Don't set state in effect body
     }
 
     const interval = setInterval(() => {

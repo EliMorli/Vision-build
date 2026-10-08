@@ -13,11 +13,34 @@ const DEV_MOCK_ENABLED =
 export default function Index() {
   const session = useAuthStore((s) => s.session);
   const loading = useAuthStore((s) => s.loading);
+  const setSession = useAuthStore((s) => s.setSession);
   const [introSeen, setIntroSeen] = useState<boolean | null>(null);
 
   useEffect(() => {
     checkIntroSeen();
   }, []);
+  
+  // Set mock session in dev mode
+  useEffect(() => {
+    if (DEV_MOCK_ENABLED && !session) {
+      const now = Date.now();
+      setSession({
+        user: {
+          id: "mock-user-id",
+          email: "demo@visionbuild.app",
+          app_metadata: {},
+          user_metadata: {},
+          aud: "authenticated",
+          created_at: new Date().toISOString(),
+        },
+        access_token: "mock-token",
+        refresh_token: "mock-refresh",
+        expires_in: 3600,
+        expires_at: now / 1000 + 3600,
+        token_type: "bearer",
+      } as any);
+    }
+  }, [session, setSession]);
 
   const checkIntroSeen = async () => {
     try {

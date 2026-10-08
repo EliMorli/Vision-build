@@ -33,6 +33,29 @@ export default function GeneratingScreen() {
   } = useProjectStore();
 
   const selectedStyle = currentProject?.selected_style || "modern";
+  
+  // Calculate ready count based on progress
+  const readyCount = Math.floor((progress || 0) * 4);
+  
+  // Calculate progress bar fill based on elapsed time vs estimate (20 seconds)
+  const [elapsedProgress, setElapsedProgress] = useState(0);
+  
+  useEffect(() => {
+    if (!generatingStartTime) {
+      return; // Don't set state in effect body
+    }
+    
+    const updateElapsed = () => {
+      const elapsed = (Date.now() - generatingStartTime) / 20000;
+      setElapsedProgress(Math.min(1, elapsed));
+    };
+    
+    updateElapsed();
+    const interval = setInterval(updateElapsed, 100);
+    return () => clearInterval(interval);
+  }, [generatingStartTime]);
+  
+  const displayProgress = Math.max(progress || 0, elapsedProgress);
 
   // Navigate to results when generation is complete
   useEffect(() => {
@@ -44,15 +67,9 @@ export default function GeneratingScreen() {
   // Countdown timer and long-running detection
   useEffect(() => {
     if (!loading || !generatingStartTime) {
-      // Use setTimeout to avoid sync setState in effect body
-      const timeout = setTimeout(() => {
-        setCountdown(20);
-        setShowLongRunning(false);
-      }, 0);
-      return () => clearTimeout(timeout);
+      return; // Don't set state, let it naturally reset
     }
 
-    // Update on interval only to avoid sync setState
     const interval = setInterval(() => {
       const elapsed = Date.now() - generatingStartTime;
       const remaining = Math.max(0, Math.ceil((20000 - elapsed) / 1000));
@@ -61,7 +78,7 @@ export default function GeneratingScreen() {
       if (elapsed > LONG_RUNNING_THRESHOLD_MS) {
         setShowLongRunning(true);
       }
-    }, 100); // Start immediately with 100ms
+    }, 100);
 
     return () => clearInterval(interval);
   }, [loading, generatingStartTime]);
@@ -106,7 +123,7 @@ export default function GeneratingScreen() {
         <Text style={styles.title}>Building your{"\n"}{selectedStyle} room</Text>
 
         {/* Room being "built" */}
-        <Animated.View style={[styles.roomWrapper, { opacity: reduceMotion ? 1 : layerOpacity }]}>
+        <Animated.View style={[styles.roomWrapper, reduceMotion ? {} : { opacity: layerOpacity, transform: [{ scale: layerOpacity.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }] }]}>
           <IsoRoom
             palette={selectedStyle}
             size={250}
@@ -119,15 +136,15 @@ export default function GeneratingScreen() {
         {/* Slot thumbnails */}
         <View style={styles.slots}>
           {Array.from({ length: 4 }, (_, i) => (
-            <View key={i} style={styles.slot}>
-              {i < Math.floor(progress * 4) ? (
+            <View key={i} style={[styles.slot, i >= readyCount && styles.slotWaiting]}>
+              {i < readyCount ? (
                 <IsoRoom
                   palette={selectedStyle}
-                  size={74}
+                  size={64}
                   accessible={false}
                   importantForAccessibility="no-hide-descendants"
                 />
-              ) : i === Math.floor(progress * 4) ? (
+              ) : i === readyCount ? (
                 <View style={styles.slotActive}>
                   <Text style={styles.slotText}>…</Text>
                 </View>
@@ -141,11 +158,11 @@ export default function GeneratingScreen() {
         {/* Progress bar */}
         <View style={styles.progressSection}>
           <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+            <View style={[styles.progressFill, { width: `${displayProgress * 100}%` }]} />
           </View>
           <View style={styles.progressLabels}>
             <Text style={styles.progressText}>
-              {progressMessage || `Design ${Math.floor(progress * 4) + 1} of 4`}
+              {progressMessage || `Design ${readyCount + 1} of 4`}
             </Text>
             {!showLongRunning && countdown > 0 && (
               <Text style={styles.progressText}>About {countdown} sec left</Text>
@@ -176,14 +193,13 @@ export default function GeneratingScreen() {
               variant="secondary"
             />
           </View>
-        ) : (
+        ) : readyCount > 0 ? (
           <Button
-            label="Peek at the 2 that are ready"
+            label={`Peek at the ${readyCount} that ${readyCount === 1 ? "is" : "are"} ready`}
             onPress={() => router.push(`/result/${id}`)}
             variant="outline"
-            disabled={progress < 0.5}
           />
-        )}
+        ) : null}
         </View>
       </SafeAreaView>
     </LinearGradient>
@@ -238,6 +254,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
+  },
+  slotWaiting: {
+    borderWidth: 2,
+    borderColor: "#fff",
+    borderStyle: "dashed",
+    backgroundColor: "transparent",
   },
   slotActive: {
     flex: 1,
