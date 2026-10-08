@@ -12,12 +12,12 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { IsoRoom, Button, ReportModal, ConfirmationSheet, MenuSheet } from "@/components";
-import { useProjectStore, useReportStore } from "@/lib/store";
+import { useExploreStore, useReportStore } from "@/lib/store";
 
 export default function ExploreScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const { projects, fetchProjects } = useProjectStore();
+  const { publicDesigns, fetchPublicDesigns } = useExploreStore();
   const blockUser = useReportStore((s) => s.blockUser);
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [reportingProjectId, setReportingProjectId] = useState<string>("");
@@ -33,25 +33,18 @@ export default function ExploreScreen() {
     userId: string;
   }>({ visible: false, type: null, projectId: "", userId: "" });
   const [successMessage, setSuccessMessage] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string>("");
   
-  // Fetch projects on mount
+  // Fetch public designs on mount
   useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
+    fetchPublicDesigns();
+  }, [fetchPublicDesigns]);
   
-  // Initialize blocked users from localStorage (for mock mode)
-  const getInitialBlockedUsers = (): Set<string> => {
-    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
-      const blocks = JSON.parse(localStorage.getItem("@visionbuild:blocks") || "[]");
-      return new Set<string>(blocks.map((b: any) => b.blocked_id));
-    }
-    return new Set<string>();
-  };
-  
-  const [blockedUsers, setBlockedUsers] = useState<Set<string>>(getInitialBlockedUsers());
-  
-  // Get only public projects from non-blocked users
-  const publicDesigns = projects.filter(p => p.is_public && !blockedUsers.has(p.user_id || ""));
+  // Filter by search query  
+  const filteredDesigns = publicDesigns.filter(p =>
+    p.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.selected_style?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleReportMenu = (projectId: string, userId: string) => {
     setMenuSheet({ visible: true, projectId, userId });
@@ -83,20 +76,26 @@ export default function ExploreScreen() {
 
   const handleConfirmBlock = async () => {
     const { userId } = confirmSheet;
+    if (!userId) {
+      setErrorMessage("Cannot block: user not found");
+      setTimeout(() => setErrorMessage(""), 3000);
+      return;
+    }
+    
     try {
       await blockUser(userId);
-      // Add to local blocked list
-      setBlockedUsers(prev => new Set([...prev, userId]));
+      // Reload public designs to reflect the block
+      await fetchPublicDesigns();
       setSuccessMessage("User blocked. Their designs won't appear in Explore anymore.");
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (error) {
-      setSuccessMessage("Failed to block user. Please try again.");
-      setTimeout(() => setSuccessMessage(""), 3000);
+      setErrorMessage("Failed to block user. Please try again.");
+      setTimeout(() => setErrorMessage(""), 3000);
     }
   };
 
   // Empty state when no public designs
-  if (publicDesigns.length === 0) {
+  if (filteredDesigns.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
         {/* Search bar */}
@@ -138,6 +137,8 @@ export default function ExploreScreen() {
         onClose={() => {
           setReportModalVisible(false);
           setReportingProjectId("");
+        }}
+        onSuccess={() => {
           setSuccessMessage("Thank you for reporting. We'll review this design.");
           setTimeout(() => setSuccessMessage(""), 3000);
         }}

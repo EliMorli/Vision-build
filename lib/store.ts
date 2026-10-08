@@ -962,6 +962,73 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 }));
 
+// ─── Explore Store ─────────────────────────────────────────
+
+interface ExploreState {
+  publicDesigns: Project[];
+  loading: boolean;
+  fetchPublicDesigns: () => Promise<void>;
+}
+
+export const useExploreStore = create<ExploreState>((set, get) => ({
+  publicDesigns: [],
+  loading: false,
+
+  fetchPublicDesigns: async () => {
+    const userId = useAuthStore.getState().session?.user?.id;
+    
+    // Dev mode: Check for seeded mock projects first (for E2E testing)
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      try {
+        const seedJson = await AsyncStorage.getItem("@visionbuild:mock_seed_projects");
+        if (seedJson) {
+          const seedProjects = JSON.parse(seedJson);
+          // Filter to only public projects from other users
+          const publicOnly = seedProjects.filter((p: Project) => 
+            p.is_public && p.user_id !== userId
+          );
+          
+          // Check blocks
+          const blocksJson = await AsyncStorage.getItem("@visionbuild:blocks");
+          const blocks: string[] = blocksJson ? JSON.parse(blocksJson) : [];
+          
+          // Filter out blocked users
+          const filtered = publicOnly.filter((p: Project) => 
+            !blocks.includes(p.user_id || "")
+          );
+          
+          set({ publicDesigns: filtered });
+          return;
+        }
+      } catch (e) {
+        console.warn("Failed to load mock seed projects:", e);
+      }
+      
+      // Default: no public designs in mock mode without seeds
+      set({ publicDesigns: [] });
+      return;
+    }
+    
+    if (!userId) {
+      set({ publicDesigns: [] });
+      return;
+    }
+
+    set({ loading: true });
+    
+    // Use RPC function that excludes blocked users
+    const { data, error} = await (supabase.rpc("fetch_public_designs") as any);
+
+    if (error) {
+      console.error("Failed to fetch public designs:", error);
+      set({ publicDesigns: [], loading: false });
+      return;
+    }
+
+    set({ publicDesigns: data || [], loading: false });
+  },
+}));
+
 // ─── Privacy Slice ─────────────────────────────────────────
 
 interface PrivacyState {

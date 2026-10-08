@@ -18,6 +18,7 @@ import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 interface ReportModalProps {
   visible: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
   type: "design" | "message" | "contractor";
   itemId: string;
 }
@@ -47,7 +48,7 @@ const REPORT_REASONS = {
   ],
 };
 
-export function ReportModal({ visible, onClose, type, itemId }: ReportModalProps) {
+export function ReportModal({ visible, onClose, onSuccess, type, itemId }: ReportModalProps) {
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitReport = useReportStore((s) => s.submitReport);
@@ -68,22 +69,17 @@ export function ReportModal({ visible, onClose, type, itemId }: ReportModalProps
       });
 
       setIsSubmitting(false);
-      onClose();
-
-      Alert.alert(
-        "Thank You",
-        "Your report has been submitted. Our team will review it and take appropriate action.",
-        [{ text: "OK" }]
-      );
-
       setSelectedReason(null);
+      onClose();
+      
+      // Call onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
       setIsSubmitting(false);
-      Alert.alert(
-        "Error",
-        "Failed to submit report. Please try again.",
-        [{ text: "OK" }]
-      );
+      // TODO: Show inline error message instead of Alert.alert
+      console.error("Failed to submit report:", error);
     }
   };
 
