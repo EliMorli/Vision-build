@@ -13,7 +13,8 @@ test.describe("Account Deletion Retry Flow", () => {
     let postCallCount = 0;
 
     // Intercept confirm-account-deletion function calls
-    await page.route("**/functions/v1/confirm-account-deletion*", async (route) => {
+    // Match both with and without query params
+    await page.route(/.*\/functions\/v1\/confirm-account-deletion.*/, async (route) => {
       const request = route.request();
       const method = request.method();
 
@@ -60,8 +61,11 @@ test.describe("Account Deletion Retry Flow", () => {
     await page.goto(`${BASE_URL}/delete-account/confirm?token=${testToken}`);
     await page.waitForLoadState("networkidle");
 
-    // Click confirm button to trigger deletion
+    // Wait for the page to load and show the confirm button (validates that our mock GET worked)
     const confirmButton = page.getByRole("button", { name: /confirm deletion/i });
+    await expect(confirmButton).toBeVisible({ timeout: 10000 });
+    
+    // Click confirm button to trigger deletion
     await confirmButton.click();
 
     // Wait for error state to appear
