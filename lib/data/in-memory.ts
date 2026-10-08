@@ -1,4 +1,4 @@
-import { DataLayer } from "./index";
+import { DataLayer, UserSettings } from "./index";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AI_CONSENT_VERSION } from "../config";
 
@@ -14,6 +14,9 @@ const signedUrlRequestCounts = new Map<string, number>();
 
 // Key for simulated consent version in localStorage (for mock mode)
 const MOCK_CONSENT_VERSION_KEY = "@visionbuild:mock_consent_version";
+
+// Key for user settings in localStorage (for mock mode)
+const SETTINGS_STORAGE_KEY = "@visionbuild:user_settings:";
 
 interface ConsentError extends Error {
   isConsentError: true;
@@ -180,5 +183,36 @@ export class InMemoryDataLayer implements DataLayer {
       `mock/${projectId}/design_2.png`,
       `mock/${projectId}/design_3.png`,
     ];
+  }
+
+  async getUserSettings(userId: string): Promise<UserSettings | null> {
+    try {
+      const stored = await AsyncStorage.getItem(SETTINGS_STORAGE_KEY + userId);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+      // Return defaults if not found
+      return {
+        pushNotifications: true,
+        marketingEmails: false,
+        publicProjectsDefault: false,
+        reduceMotion: false,
+      };
+    } catch (error) {
+      console.error("Error loading settings from AsyncStorage:", error);
+      return null;
+    }
+  }
+
+  async saveUserSettings(userId: string, settings: UserSettings): Promise<void> {
+    try {
+      await AsyncStorage.setItem(
+        SETTINGS_STORAGE_KEY + userId,
+        JSON.stringify(settings)
+      );
+    } catch (error) {
+      console.error("Error saving settings to AsyncStorage:", error);
+      throw error;
+    }
   }
 }

@@ -34,7 +34,7 @@ export default function ProfileScreen() {
     const designUrls = p.generated_image_urls || [];
     return sum + designUrls.length + (p.selected_generation_url ? 1 : 0);
   }, 0);
-  const quotesCount = 0; // TODO: Will come from contractor_threads in Pass B
+  const quotesCount = 0; // Coming soon: contractor quotes
 
   // Calculate XP and level
   const xp = profile?.xp ?? 120;
@@ -44,7 +44,7 @@ export default function ProfileScreen() {
   const earnedBadges = ALL_BADGES.filter((b) => b.earned);
 
   const menuItems = [
-    { icon: "person-outline" as const, label: "Edit Profile", badge: null, route: null },
+    { icon: "person-outline" as const, label: "Edit Profile", badge: null, route: "/edit-profile" },
     { icon: "settings-outline" as const, label: "Settings & Privacy", badge: null, route: "/profile-settings" },
     { icon: "home-outline" as const, label: "My Properties", badge: roomsCount > 0 ? String(roomsCount) : null, route: null },
     { icon: "heart-outline" as const, label: "Saved Designs", badge: null, route: null }, // Will wire in Pass B
@@ -139,6 +139,7 @@ export default function ProfileScreen() {
                 index === menuItems.length - 1 && styles.lastMenuItem,
               ]}
               onPress={() => item.route && router.push(item.route as any)}
+              testID={item.label === "Settings & Privacy" ? "profile-settings-button" : undefined}
             >
               <View style={styles.menuItemLeft}>
                 <Ionicons name={item.icon} size={22} color={colors.textPrimary} />

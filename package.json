@@ -8,6 +8,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "eslint .",
+    "doctor": "tsx scripts/doctor.ts",
+    "check:hardcoded": "node scripts/check-hardcoded-values.js",
     "supabase:types": "npx supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > lib/database.types.ts",
     "check:models": "node scripts/check-zdr-models.mjs && node scripts/validate-ai-models.mjs",
     "check:dev-button": "bash scripts/check-dev-button.sh",

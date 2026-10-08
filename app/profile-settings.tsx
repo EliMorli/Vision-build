@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,52 +8,143 @@ import {
   SafeAreaView,
   Alert,
   Linking,
+  Switch,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
-import { useAuthStore, usePrivacyStore } from "@/lib/store";
+import { useAuthStore, usePrivacyStore, useSettingsStore } from "@/lib/store";
 import { SUPPORT_EMAIL } from "@/lib/config";
 import { supabase } from "@/lib/supabase";
-
-interface Setting {
-  id: string;
-  label: string;
-  type: "toggle" | "link" | "action";
-  enabled?: boolean;
-  icon?: keyof typeof Ionicons.glyphMap;
-  url?: string;
-  destructive?: boolean;
-}
 
 export default function ProfileSettingsScreen() {
   const router = useRouter();
   const signOut = useAuthStore((s) => s.signOut);
-  const { privacyOptOut, reduceMotion, loadPrivacySettings, setPrivacyOptOut, setReduceMotion } = usePrivacyStore();
+  const { privacyOptOut, loadPrivacySettings, setPrivacyOptOut } = usePrivacyStore();
+  const {
+    pushNotifications,
+    marketingEmails,
+    publicProjectsDefault,
+    reduceMotion,
+    loadSettings,
+    updateSetting,
+  } = useSettingsStore();
 
-  const [settings, setSettings] = useState({
-    notifications: true,
-    marketing: false,
-    publicDefault: false,
-  });
+  const [prosWaitlist, setProsWaitlist] = useState(false);
+  const [checkingWaitlist, setCheckingWaitlist] = useState(true);
+
+  const checkProsWaitlist = useCallback(async () => {
+    const userId = useAuthStore.getState().session?.user?.id;
+    
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      const stored = localStorage.getItem("@visionbuild:waitlist:general");
+      setProsWaitlist(stored === "true");
+      setCheckingWaitlist(false);
+      return;
+    }
+
+    if (!userId) {
+      setCheckingWaitlist(false);
+      return;
+    }
+
+    try {
+      const { data } = await (supabase
+        .from("pro_waitlist") as any)
+        .select("id")
+        .eq("user_id", userId)
+        .is("project_id", null)
+        .single();
+
+      setProsWaitlist(!!data);
+    } catch (_err) {
+      console.error("Error checking pros waitlist:", _err);
+    } finally {
+      setCheckingWaitlist(false);
+    }
+  }, []);
 
   useEffect(() => {
     const load = async () => {
       await loadPrivacySettings();
+      await loadSettings();
+      await checkProsWaitlist();
     };
     load();
-  }, [loadPrivacySettings]);
+  }, [loadPrivacySettings, loadSettings, checkProsWaitlist]);
 
-  const toggleSetting = (key: keyof typeof settings) => {
-    setSettings(prev => ({ ...prev, [key]: !prev[key] }));
+  const handleProsWaitlist = async (enabled: boolean) => {
+    const userId = useAuthStore.getState().session?.user?.id;
+    const userProfile = useAuthStore.getState().profile;
+    const email = userProfile?.email || "";
+
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      if (enabled) {
+        localStorage.setItem("@visionbuild:waitlist:general", "true");
+      } else {
+        // Delete all waitlist entries in mock mode
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+          if (key.startsWith("@visionbuild:waitlist:")) {
+            localStorage.removeItem(key);
+          }
+        });
+      }
+      setProsWaitlist(enabled);
+      return;
+    }
+
+    if (!userId) return;
+
+    try {
+      if (enabled) {
+        // Join general waitlist
+        const { error } = await (supabase
+          .from("pro_waitlist") as any)
+          .insert({
+            user_id: userId,
+            project_id: null,
+            email,
+          });
+
+        if (!error) {
+          setProsWaitlist(true);
+        }
+      } else {
+        // Delete ALL user's waitlist entries
+        const { error } = await (supabase
+          .from("pro_waitlist") as any)
+          .delete()
+          .eq("user_id", userId);
+
+        if (!error) {
+          setProsWaitlist(false);
+        }
+      }
+    } catch (_err) {
+      console.error("Error updating pros waitlist:", _err);
+    }
   };
 
   const handlePrivacyOptOut = async (optOut: boolean) => {
+    if (optOut) {
+      // Revoke AI consent on the server
+      try {
+        if (!(__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true")) {
+          const { error } = await supabase.functions.invoke("revoke-ai-consent");
+          if (error) {
+            console.error("Error revoking AI consent:", error);
+            Alert.alert("Error", "Could not revoke AI consent. Please try again.");
+            return;
+          }
+        }
+      } catch (_err) {
+        console.error("Error calling revoke-ai-consent:", _err);
+        Alert.alert("Error", "Could not revoke AI consent. Please try again.");
+        return;
+      }
+    }
     await setPrivacyOptOut(optOut);
-  };
-
-  const handleReduceMotion = async (reduce: boolean) => {
-    await setReduceMotion(reduce);
   };
 
   const handleDeleteAccount = () => {
@@ -122,53 +213,23 @@ export default function ProfileSettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Notifications</Text>
           <View style={styles.settingCard}>
-            <Pressable
-              style={styles.settingRow}
-              onPress={() => toggleSetting("notifications")}
-              accessibilityRole="switch"
-              accessibilityState={{ checked: settings.notifications }}
-            >
+            <View style={styles.settingRow}>
               <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>Push Notifications</Text>
+                <Text style={styles.settingLabel}>Pros Waitlist</Text>
                 <Text style={styles.settingDescription}>
-                  Get updates about quotes and messages
+                  Get notified when local pros can quote your projects
                 </Text>
               </View>
-              <View style={[
-                styles.switch,
-                settings.notifications && styles.switchOn,
-              ]}>
-                <View style={[
-                  styles.switchThumb,
-                  settings.notifications && styles.switchThumbOn,
-                ]} />
-              </View>
-            </Pressable>
-
-            <View style={styles.separator} />
-
-            <Pressable
-              style={styles.settingRow}
-              onPress={() => toggleSetting("marketing")}
-              accessibilityRole="switch"
-              accessibilityState={{ checked: settings.marketing }}
-            >
-              <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>Marketing Emails</Text>
-                <Text style={styles.settingDescription}>
-                  Design tips, trends, and special offers
-                </Text>
-              </View>
-              <View style={[
-                styles.switch,
-                settings.marketing && styles.switchOn,
-              ]}>
-                <View style={[
-                  styles.switchThumb,
-                  settings.marketing && styles.switchThumbOn,
-                ]} />
-              </View>
-            </Pressable>
+              <Switch
+                value={prosWaitlist}
+                onValueChange={handleProsWaitlist}
+                disabled={checkingWaitlist}
+                testID="settings-pros-waitlist-toggle"
+                accessibilityLabel="Pros Waitlist"
+                trackColor={{ false: colors.border, true: colors.success }}
+                thumbColor="#fff"
+              />
+            </View>
           </View>
         </View>
 
@@ -178,9 +239,10 @@ export default function ProfileSettingsScreen() {
           <View style={styles.settingCard}>
             <Pressable
               style={styles.settingRow}
-              onPress={() => toggleSetting("publicDefault")}
+              onPress={() => updateSetting("publicProjectsDefault", !publicProjectsDefault)}
               accessibilityRole="switch"
-              accessibilityState={{ checked: settings.publicDefault }}
+              accessibilityState={{ checked: publicProjectsDefault }}
+              accessibilityLabel={`Public Projects by Default, ${publicProjectsDefault ? "on" : "off"}. New projects visible in Explore.`}
             >
               <View style={styles.settingInfo}>
                 <Text style={styles.settingLabel}>Public Projects by Default</Text>
@@ -190,11 +252,11 @@ export default function ProfileSettingsScreen() {
               </View>
               <View style={[
                 styles.switch,
-                settings.publicDefault && styles.switchOn,
+                publicProjectsDefault && styles.switchOn,
               ]}>
                 <View style={[
                   styles.switchThumb,
-                  settings.publicDefault && styles.switchThumbOn,
+                  publicProjectsDefault && styles.switchThumbOn,
                 ]} />
               </View>
             </Pressable>
@@ -216,6 +278,7 @@ export default function ProfileSettingsScreen() {
               onPress={() => handlePrivacyOptOut(!privacyOptOut)}
               accessibilityRole="switch"
               accessibilityState={{ checked: privacyOptOut }}
+              accessibilityLabel={`Opt out of AI processing, ${privacyOptOut ? "on" : "off"}. When on, design generation and chat won't work.`}
             >
               <View style={styles.settingInfo}>
                 <Text style={styles.settingLabel}>Opt out of AI processing</Text>
@@ -239,6 +302,8 @@ export default function ProfileSettingsScreen() {
             <Pressable
               style={styles.settingRow}
               onPress={handleRequestData}
+              accessibilityRole="button"
+              accessibilityLabel="Request my data or deletion"
             >
               <Text style={styles.settingLabel}>Request my data or deletion</Text>
               <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
@@ -252,9 +317,10 @@ export default function ProfileSettingsScreen() {
           <View style={styles.settingCard}>
             <Pressable
               style={styles.settingRow}
-              onPress={() => handleReduceMotion(!reduceMotion)}
+              onPress={() => updateSetting("reduceMotion", !reduceMotion)}
               accessibilityRole="switch"
               accessibilityState={{ checked: reduceMotion }}
+              accessibilityLabel={`Reduce Motion, ${reduceMotion ? "on" : "off"}. Minimize animations and transitions.`}
             >
               <View style={styles.settingInfo}>
                 <Text style={styles.settingLabel}>Reduce Motion</Text>
@@ -282,6 +348,8 @@ export default function ProfileSettingsScreen() {
             <Pressable
               style={styles.settingRow}
               onPress={() => openLink("https://visionbuild.app/terms")}
+              accessibilityRole="button"
+              accessibilityLabel="Terms of Service, opens in browser"
             >
               <Text style={styles.settingLabel}>Terms of Service</Text>
               <Ionicons name="open-outline" size={20} color={colors.textSecondary} />
@@ -292,6 +360,8 @@ export default function ProfileSettingsScreen() {
             <Pressable
               style={styles.settingRow}
               onPress={() => openLink("https://visionbuild.app/privacy")}
+              accessibilityRole="button"
+              accessibilityLabel="Privacy Policy, opens in browser"
             >
               <Text style={styles.settingLabel}>Privacy Policy</Text>
               <Ionicons name="open-outline" size={20} color={colors.textSecondary} />
@@ -309,6 +379,8 @@ export default function ProfileSettingsScreen() {
                 router.back();
                 useAuthStore.getState().signOut();
               }}
+              accessibilityRole="button"
+              accessibilityLabel="Sign out of your account"
             >
               <Text style={styles.settingLabel}>Sign out</Text>
               <Ionicons name="log-out-outline" size={20} color={colors.textSecondary} />
@@ -319,6 +391,8 @@ export default function ProfileSettingsScreen() {
             <Pressable
               style={styles.settingRow}
               onPress={handleDeleteAccount}
+              accessibilityRole="button"
+              accessibilityLabel="Delete Account. Permanently delete your account and all data."
             >
               <View style={styles.settingInfo}>
                 <Text style={[styles.settingLabel, styles.dangerLabel]}>

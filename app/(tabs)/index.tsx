@@ -9,11 +9,12 @@ import {
   SafeAreaView,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore, useAuthStore } from "@/lib/store";
 import { Project, ProjectStatus } from "@/lib/types";
-import { Button, EmptyState, IsoRoom, PrivateImage } from "@/components";
+import { Button, EmptyState, IsoRoom, PrivateImage, ProsTeaserCard } from "@/components";
 
 // Long-running threshold for showing "Rendering..." card in Home
 const LONG_RUNNING_THRESHOLD_MS = 45000; // 45 seconds
@@ -35,6 +36,7 @@ export default function DashboardScreen() {
   const { projects, fetchProjects, generatingStartTime } = useProjectStore();
   const profile = useAuthStore((s) => s.profile);
   const [showRenderingCard, setShowRenderingCard] = useState(false);
+  const [prosCardKey, setProsCardKey] = useState(0);
 
   // NOTE: AI consent is now enforced server-side in analyze-room, generate-design, and assistant-chat
   // Removed client-side useAIConsentCheck() - consent errors trigger re-consent flow with resume capability
@@ -47,6 +49,12 @@ export default function DashboardScreen() {
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
+
+  useFocusEffect(
+    useCallback(() => {
+      setProsCardKey(k => k + 1);
+    }, [])
+  );
 
   // Only show "Rendering..." card if generation has been running > 45 seconds
   useEffect(() => {
@@ -113,25 +121,42 @@ export default function DashboardScreen() {
             )}
           </View>
         </View>
-        <View style={styles.emptyContainer}>
-          <View style={styles.emptyIllustration}>
-            <IsoRoom palette="modern" size={220} spark />
+        <View style={styles.emptyContent}>
+          <ProsTeaserCard key={prosCardKey} />
+          
+          <View style={styles.emptyContainer}>
+            <View style={styles.emptyIllustration}>
+              <IsoRoom palette="modern" size={220} spark />
+            </View>
+            <Text style={styles.emptyTitle}>No projects yet</Text>
+            <Text style={styles.emptySubtitle}>
+              Take a photo of any room to start visualizing your renovation.
+            </Text>
+            <Button
+              label="Start Your First Project"
+              onPress={() => router.push("/(tabs)/camera")}
+              icon="add-circle-outline"
+            />
           </View>
-          <Text style={styles.emptyTitle}>No projects yet</Text>
-          <Text style={styles.emptySubtitle}>
-            Take a photo of any room to start visualizing your renovation.
-          </Text>
-          <Button
-            label="Start Your First Project"
-            onPress={() => router.push("/(tabs)/camera")}
-            icon="add-circle-outline"
-          />
         </View>
       </SafeAreaView>
     );
   }
 
   // ─── Project list ─────────────────────────────────────────
+
+  const renderHeader = () => (
+    <View style={styles.headerSection}>
+      <Button
+        label="Start a new room"
+        icon="add-circle-outline"
+        onPress={() => router.push("/(tabs)/camera")}
+        fullWidth
+      />
+      
+      <ProsTeaserCard key={prosCardKey} />
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -163,6 +188,7 @@ export default function DashboardScreen() {
       <FlatList
         data={projects}
         keyExtractor={(p) => p.id}
+        ListHeaderComponent={renderHeader}
         contentContainerStyle={styles.list}
         refreshControl={
           <RefreshControl refreshing={false} onRefresh={onRefresh} tintColor={colors.primary} />
@@ -282,6 +308,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  headerSection: {
+    gap: spacing.md,
+    paddingTop: spacing.md,
+  },
   list: { padding: spacing.md, paddingTop: 0 },
   card: {
     backgroundColor: "#fff",
@@ -366,5 +396,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: spacing.xl,
     lineHeight: 22,
+  },
+  emptyContent: {
+    flex: 1,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
   },
 });

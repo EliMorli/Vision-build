@@ -68,8 +68,8 @@ export default function AssistantChatScreen() {
         userMessage.content
       );
       setMessages((prev) => [...prev, response]);
-    } catch (error) {
-      console.error("Chat error:", error);
+    } catch (_error) {
+      console.error("Chat error:", _error);
     } finally {
       setIsLoading(false);
     }
@@ -86,8 +86,8 @@ export default function AssistantChatScreen() {
         "Generate design based on our conversation"
       );
       setMessages((prev) => [...prev, response]);
-    } catch (error) {
-      console.error("Generation error:", error);
+    } catch (_error) {
+      console.error("Generation error:", _error);
     } finally {
       setIsLoading(false);
     }
@@ -210,7 +210,15 @@ export default function AssistantChatScreen() {
             <Button
               label="Find Me a Pro"
               icon="people-outline"
-              onPress={() => router.push("/handoff/placeholder")}
+              onPress={() => {
+                const projects = require("@/lib/store").useProjectStore.getState().projects;
+                const latestProject = projects[0];
+                if (latestProject) {
+                  router.push(`/pros-coming-soon?projectId=${latestProject.id}` as any);
+                } else {
+                  router.push("/pros-coming-soon" as any);
+                }
+              }}
               variant="secondary"
             />
           </View>

@@ -6,7 +6,6 @@ import {
   Dimensions,
   FlatList,
   ViewToken,
-  Image,
   SafeAreaView,
   Animated,
   PanResponder,
@@ -29,16 +28,22 @@ const PAGES = [
     type: "slider" as const,
   },
   {
-    id: "ai",
-    icon: "color-wand-outline" as const,
-    title: "AI Redesigns It",
-    subtitle: "Pick a style and our AI generates 4 photorealistic designs — keeping your walls, windows, and layout intact.",
+    id: "snap",
+    icon: "camera-outline" as const,
+    title: "Snap any room",
+    subtitle: "Take a photo of a kitchen, bathroom or backyard.",
   },
   {
-    id: "estimates",
-    icon: "people-outline" as const,
-    title: "Get Real Estimates",
-    subtitle: "We create a professional project brief and connect you with vetted local contractors in 24 hours.",
+    id: "redesign",
+    icon: "color-wand-outline" as const,
+    title: "See it redesigned",
+    subtitle: "Pick a style and get four AI designs in seconds.",
+  },
+  {
+    id: "save",
+    icon: "bookmark-outline" as const,
+    title: "Keep every idea",
+    subtitle: "Save favorites to your projects, with local pros coming soon.",
   },
 ];
 
@@ -61,7 +66,10 @@ function BeforeAfterSlider() {
         setDividerX(clampedX);
       },
     })
-  ).current;
+  );
+  
+  // Extract stable reference for spread operator
+  const panHandlers = panResponder.current.panHandlers;
 
   const handleButtonSlide = (direction: "left" | "right") => {
     const newX = direction === "left"
@@ -80,8 +88,7 @@ function BeforeAfterSlider() {
       <Text style={sliderStyles.title}>See the Transformation</Text>
       <Text style={sliderStyles.subtitle}>Drag the slider to reveal the power of AI redesign</Text>
 
-      <View style={sliderStyles.sliderContainer} {...panResponder.panHandlers}>
-        {/* Before image - full width, neutral/unstyled room */}
+      <View style={sliderStyles.sliderContainer} {...panHandlers}>
         <View style={sliderStyles.beforeImage}>
           <IsoRoom palette="modern" size={imageWidth * 0.9} />
           <Text style={sliderStyles.beforeLabel}>Before</Text>
@@ -140,9 +147,13 @@ export default function IntroScreen() {
         setCurrentPage(viewableItems[0].index);
       }
     }
-  ).current;
+  );
 
-  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
+  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 });
+  
+  // Extract stable references for FlatList props
+  const onViewableItemsChangedRef = onViewableItemsChanged.current;
+  const viewabilityConfigValue = viewabilityConfig.current;
 
   const handleGetStarted = async () => {
     await AsyncStorage.setItem(INTRO_SEEN_KEY, "true");
@@ -167,8 +178,8 @@ export default function IntroScreen() {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
+        onViewableItemsChanged={onViewableItemsChangedRef}
+        viewabilityConfig={viewabilityConfigValue}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => {
           if (item.type === "slider") {

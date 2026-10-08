@@ -31,8 +31,8 @@ const PAGES = [
   },
   {
     icon: "people-outline" as const,
-    title: "Get Real Estimates",
-    subtitle: "We create a professional project brief and connect you with local contractors in 24 hours.",
+    title: "Build Your Vision",
+    subtitle: "Save your favorite designs and track your renovation journey. Local pro connections coming soon.",
   },
 ];
 
@@ -67,6 +67,10 @@ export default function SignInScreen() {
   });
 
   const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 });
+  
+  // Extract stable references for FlatList props
+  const onViewableItemsChangedRef = onViewableItemsChanged.current;
+  const viewabilityConfigValue = viewabilityConfig.current;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -83,8 +87,8 @@ export default function SignInScreen() {
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
-          onViewableItemsChanged={onViewableItemsChanged.current}
-          viewabilityConfig={viewabilityConfig.current}
+          onViewableItemsChanged={onViewableItemsChangedRef}
+          viewabilityConfig={viewabilityConfigValue}
           keyExtractor={(_, i) => String(i)}
           style={{ height: 320 }}
           renderItem={({ item }) => (
