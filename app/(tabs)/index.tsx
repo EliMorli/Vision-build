@@ -27,6 +27,9 @@ const STATUS_MAP: Record<ProjectStatus, { label: string; color: string; icon: ke
   completed: { label: "Completed", color: colors.secondary, icon: "checkmark-circle-outline" },
 };
 
+const SHOW_DEV_BUTTON = 
+  typeof __DEV__ !== 'undefined' && __DEV__ && process.env.EXPO_PUBLIC_SHOW_DEV_TOOLS === 'true';
+
 export default function DashboardScreen() {
   const router = useRouter();
   const { projects, fetchProjects, generatingStartTime } = useProjectStore();
@@ -82,16 +85,28 @@ export default function DashboardScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <View>
+          <View style={styles.headerLeft}>
             <Text style={styles.greeting}>Hey {profile?.display_name?.split(" ")[0] || "there"}</Text>
             <Text style={fonts.heading}>Ready to redesign?</Text>
           </View>
-          <Pressable onPress={() => router.push("/profile-settings")} hitSlop={12}>
-            <View style={styles.xpChip}>
-              <Ionicons name="star" size={14} color={colors.accent} />
-              <Text style={styles.xpText}>{xp} XP</Text>
-            </View>
-          </Pressable>
+          <View style={styles.headerRight}>
+            <Pressable onPress={() => router.push("/profile-settings")} hitSlop={12}>
+              <View style={styles.xpChip}>
+                <Ionicons name="star" size={14} color={colors.accent} />
+                <Text style={styles.xpText}>{xp} XP</Text>
+              </View>
+            </Pressable>
+            {SHOW_DEV_BUTTON && (
+              <Pressable 
+                onPress={() => router.push("/profile-settings")} 
+                hitSlop={12}
+                style={styles.devButton}
+                accessibilityLabel="Developer tools"
+              >
+                <Ionicons name="flash" size={18} color={colors.accent} />
+              </Pressable>
+            )}
+          </View>
         </View>
         <EmptyState
           icon="home-outline"
@@ -113,16 +128,28 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerLeft}>
           <Text style={styles.greeting}>Hey {profile?.display_name?.split(" ")[0] || "there"}</Text>
           <Text style={fonts.heading}>Ready to redesign?</Text>
         </View>
-        <Pressable onPress={() => router.push("/profile-settings")} hitSlop={12}>
-          <View style={styles.xpChip}>
-            <Ionicons name="star" size={14} color={colors.accent} />
-            <Text style={styles.xpText}>{xp} XP</Text>
-          </View>
-        </Pressable>
+        <View style={styles.headerRight}>
+          <Pressable onPress={() => router.push("/profile-settings")} hitSlop={12}>
+            <View style={styles.xpChip}>
+              <Ionicons name="star" size={14} color={colors.accent} />
+              <Text style={styles.xpText}>{xp} XP</Text>
+            </View>
+          </Pressable>
+          {SHOW_DEV_BUTTON && (
+            <Pressable 
+              onPress={() => router.push("/profile-settings")} 
+              hitSlop={12}
+              style={styles.devButton}
+              accessibilityLabel="Developer tools"
+            >
+              <Ionicons name="flash" size={18} color={colors.accent} />
+            </Pressable>
+          )}
+        </View>
       </View>
 
       <FlatList
@@ -193,10 +220,18 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
   greeting: { 
     ...fonts.regular, 
@@ -224,6 +259,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "800",
     color: colors.textPrimary,
+  },
+  devButton: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.full,
+    backgroundColor: colors.accent + "15",
+    justifyContent: "center",
+    alignItems: "center",
   },
   list: { padding: spacing.md, paddingTop: 0 },
   card: {

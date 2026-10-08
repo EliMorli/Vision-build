@@ -14,6 +14,8 @@ interface ButtonProps {
   disabled?: boolean;
   fullWidth?: boolean;
   style?: ViewStyle;
+  textColor?: string;
+  iconColor?: string;
 }
 
 export function Button({
@@ -25,10 +27,14 @@ export function Button({
   disabled = false,
   fullWidth = true,
   style,
+  textColor,
+  iconColor,
 }: ButtonProps) {
   const isDisabled = disabled || loading;
   const bg = VARIANT_STYLES[variant];
   const reduceMotion = useReducedMotion();
+  const finalTextColor = textColor || bg.textColor;
+  const finalIconColor = iconColor || textColor || bg.textColor;
 
   return (
     <Pressable
@@ -47,11 +53,11 @@ export function Button({
       accessibilityState={{ disabled: isDisabled, busy: loading }}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={bg.textColor} />
+        <ActivityIndicator size="small" color={finalTextColor} />
       ) : (
         <>
-          {icon && <Ionicons name={icon} size={18} color={bg.textColor} accessibilityElementsHidden />}
-          <Text style={[styles.label, { color: bg.textColor }]}>{label}</Text>
+          {icon && <Ionicons name={icon} size={18} color={finalIconColor} accessibilityElementsHidden />}
+          <Text style={[styles.label, { color: finalTextColor }]}>{label}</Text>
         </>
       )}
     </Pressable>
