@@ -211,6 +211,6 @@ test.describe("VisionBuild Explore Report and Block", () => {
     });
     
     expect(blocks.length).toBeGreaterThan(0);
-    expect(blocks[0]).toBe("other-user-1");
+    expect(blocks[0].blocked_id).toBe("other-user-1");
   });
 });
