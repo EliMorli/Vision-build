@@ -168,6 +168,17 @@ async function getSignedUrl(bucket: string, path: string): Promise<string | null
   return data.signedUrl;
 }
 
+interface PendingConsentRequest {
+  reason: "never" | "outdated";
+  resume: {
+    type: "analyze" | "generate";
+    projectId?: string;
+    imageUri?: string;
+    stylePrompt?: string;
+    roomAnalysis?: string;
+  };
+}
+
 interface ProjectState {
   projects: Project[];
   currentProject: Project | null;
@@ -176,6 +187,7 @@ interface ProjectState {
   progressMessage: string;
   error: string | null;
   generatingStartTime: number | null; // Timestamp when generation started
+  pendingConsent: PendingConsentRequest | null;
 
   fetchProjects: () => Promise<void>;
   setCurrentProject: (project: Project) => void;
@@ -185,6 +197,8 @@ interface ProjectState {
   generateDesigns: (projectId: string, stylePrompt: string) => Promise<Project | null>;
   selectDesign: (projectId: string, url: string) => Promise<void>;
   refreshProjectUrls: (project: Project) => Promise<Project>;
+  setPendingConsent: (request: PendingConsentRequest) => void;
+  clearPendingConsent: () => void;
 }
 
 export const useProjectStore = create<ProjectState>((set, get) => ({
@@ -195,6 +209,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   progressMessage: "",
   error: null,
   generatingStartTime: null,
+  pendingConsent: null,
 
   fetchProjects: async () => {
     const userId = useAuthStore.getState().session?.user?.id;
@@ -471,20 +486,19 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     } catch (e: any) {
       // Check if this is a consent error
       if (e.isConsentError) {
-        set({ loading: false });
-        // Navigate to consent screen with resume data
-        const { router } = require("expo-router");
-        const resumeData = {
-          type: "analyze",
-          imageUri,
-        };
-        router.push({
-          pathname: "/ai-consent",
-          params: {
+        set({ 
+          loading: false,
+          pendingConsent: {
             reason: e.reason,
-            resumeData: JSON.stringify(resumeData),
+            resume: {
+              type: "analyze",
+              imageUri,
+            },
           },
         });
+        // Navigate to consent screen
+        const { router } = require("expo-router");
+        router.push("/ai-consent");
         return null;
       }
       
@@ -565,23 +579,23 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     } catch (e: any) {
       // Check if this is a consent error
       if (e.isConsentError) {
-        set({ loading: false, generatingStartTime: null });
-        // Navigate to consent screen with resume data
-        const { router } = require("expo-router");
         const roomAnalysis = get().currentProject?.room_analysis?.rawAnalysis ?? "";
-        const resumeData = {
-          type: "generate",
-          projectId,
-          stylePrompt,
-          roomAnalysis,
-        };
-        router.push({
-          pathname: "/ai-consent",
-          params: {
+        set({ 
+          loading: false, 
+          generatingStartTime: null,
+          pendingConsent: {
             reason: e.reason,
-            resumeData: JSON.stringify(resumeData),
+            resume: {
+              type: "generate",
+              projectId,
+              stylePrompt,
+              roomAnalysis,
+            },
           },
         });
+        // Navigate to consent screen
+        const { router } = require("expo-router");
+        router.push("/ai-consent");
         return null;
       }
       
@@ -654,6 +668,14 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }
 
     return refreshed;
+  },
+
+  setPendingConsent: (request) => {
+    set({ pendingConsent: request });
+  },
+
+  clearPendingConsent: () => {
+    set({ pendingConsent: null });
   },
 }));
 

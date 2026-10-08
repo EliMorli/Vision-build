@@ -78,7 +78,15 @@ export default function CameraScreen() {
     // Check AI consent before proceeding
     const hasConsent = await checkAIConsent();
     if (!hasConsent) {
-      // Navigate to consent screen, then return here
+      // Set up pending consent state for "never" case (first time)
+      useProjectStore.getState().setPendingConsent({
+        reason: "never",
+        resume: {
+          type: "analyze",
+          imageUri,
+        },
+      });
+      // Navigate to consent screen
       router.push("/ai-consent");
       return;
     }

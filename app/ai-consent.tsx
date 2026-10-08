@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { View, Text, StyleSheet, SafeAreaView, ScrollView } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
@@ -14,24 +14,18 @@ const AI_CONSENT_VERSION_KEY = "@visionbuild:ai_consent_version";
 
 export default function AIConsentScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const userId = useAuthStore((s) => s.session?.user?.id);
+  const pendingConsent = useProjectStore((s) => s.pendingConsent);
+  const clearPendingConsent = useProjectStore((s) => s.clearPendingConsent);
   
-  // Parse re-consent mode parameters
-  // expo-router params can be string | string[] | undefined
-  const reasonParam = params.reason;
-  const reason = Array.isArray(reasonParam) ? reasonParam[0] : reasonParam;
+  // Read consent info from store
+  const reason = pendingConsent?.reason;
   const isOutdated = reason === "outdated";
   const isNever = reason === "never";
   const isReconsent = isOutdated || isNever;
   
-  console.log("[AIConsentScreen] params:", params, "reason:", reason, "isReconsent:", isReconsent, "isOutdated:", isOutdated);
-  
-  // Parse resume data (encoded as JSON string)
-  const resumeDataParam = params.resumeData;
-  const resumeData = Array.isArray(resumeDataParam) ? resumeDataParam[0] : resumeDataParam;
-  const parsedResumeData = resumeData ? JSON.parse(resumeData) : null;
+  console.log("[AIConsentScreen] pendingConsent:", pendingConsent, "reason:", reason, "isReconsent:", isReconsent, "isOutdated:", isOutdated);
 
   const handleAccept = async () => {
     setIsLoading(true);
@@ -57,8 +51,11 @@ export default function AIConsentScreen() {
       }
 
       // If we have resume data, retry the original operation
-      if (parsedResumeData) {
-        const { type, projectId, stylePrompt, roomAnalysis, imageUri } = parsedResumeData;
+      if (pendingConsent?.resume) {
+        const { type, projectId, stylePrompt, imageUri } = pendingConsent.resume;
+        
+        // Clear pending consent before resuming
+        clearPendingConsent();
         
         if (type === "analyze" && imageUri) {
           // Resume upload and analyze
@@ -85,7 +82,8 @@ export default function AIConsentScreen() {
           }
         }
       } else {
-        // Normal flow - just go back or to home
+        // Normal flow - clear consent and go back or to home
+        clearPendingConsent();
         if (router.canGoBack()) {
           router.back();
         } else {
@@ -100,9 +98,12 @@ export default function AIConsentScreen() {
   };
 
   const handleDecline = () => {
+    // Clear pending consent
+    clearPendingConsent();
+    
     // If we have resume data with a project, return to that project
-    if (parsedResumeData?.projectId) {
-      router.replace(`/project/${parsedResumeData.projectId}`);
+    if (pendingConsent?.resume?.projectId) {
+      router.replace(`/project/${pendingConsent.resume.projectId}`);
     } else if (router.canGoBack()) {
       router.back();
     } else {
@@ -121,13 +122,6 @@ export default function AIConsentScreen() {
 
           {/* Title */}
           <Text style={styles.title}>AI-Powered Designs</Text>
-          
-          {/* DEBUG: Show params */}
-          {__DEV__ && (
-            <Text style={{ fontSize: 10, color: 'red', marginVertical: 10 }}>
-              DEBUG: reason={JSON.stringify(reason)}, isOutdated={JSON.stringify(isOutdated)}, isReconsent={JSON.stringify(isReconsent)}
-            </Text>
-          )}
 
           {/* Re-consent message (if applicable) */}
           {isReconsent && isOutdated && (
