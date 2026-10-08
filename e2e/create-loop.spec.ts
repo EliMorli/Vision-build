@@ -54,22 +54,7 @@ test.describe("VisionBuild Create Loop", () => {
       localStorage.setItem("@visionbuild:ai_consent_version", "2026-10-07b");
     });
 
-    // Intercept mock design image URLs and serve green images
-    // Match both relative and absolute URLs
-    let imageRequestCount = 0;
-    await page.route(/\/__mock__\/design_\d+\.png/, async (route) => {
-      imageRequestCount++;
-      console.log(`[TEST] Intercepted mock image request #${imageRequestCount}: ${route.request().url()}`);
-      await route.fulfill({
-        status: 200,
-        contentType: "image/svg+xml",
-        body: GREEN_IMAGE,
-        headers: {
-          'Content-Type': 'image/svg+xml',
-          'Cache-Control': 'no-cache'
-        }
-      });
-    });
+    // NO route interception - the app serves real files from public/__mock__/
 
     await page.goto(BASE_URL);
     await page.waitForLoadState("networkidle");
@@ -269,26 +254,34 @@ test.describe("VisionBuild Create Loop", () => {
 
     // Track all signed URL requests to verify retries
     const signedUrlRequests: string[] = [];
-    let failureCount = 0;
-    const MAX_FAILURES = 8; // Fail first 8 requests to ensure retries happen
+    let requestCount = 0;
+    let resolveHold: (() => void) | null = null;
+    const holdPromise = new Promise<void>((resolve) => { resolveHold = resolve; });
     
     // Intercept mock design image URLs
-    // Fail first several requests, then succeed
+    // First request: return 403 to trigger error
+    // Retry requests: hold on a promise so we can capture the placeholder state
+    // After release: let requests through to succeed
     await page.route(/\/__mock__\/design_\d+\.png/, async (route) => {
       const url = route.request().url();
+      requestCount++;
+      const reqNum = requestCount;
       signedUrlRequests.push(url);
-      failureCount++;
       
-      if (failureCount <= MAX_FAILURES) {
-        console.log(`[TEST] Aborting request #${failureCount}: ${url}`);
-        await route.abort('failed');
+      if (reqNum <= 4) {
+        // First batch: return 403 to trigger handleImageError
+        console.log(`[TEST] Request #${reqNum}: returning 403`);
+        await route.fulfill({ status: 403, body: 'Forbidden' });
+      } else if (reqNum <= 8) {
+        // Retry batch: hold on promise so placeholder shows
+        console.log(`[TEST] Request #${reqNum}: holding on promise`);
+        await holdPromise;
+        console.log(`[TEST] Request #${reqNum}: released, continuing to real file`);
+        await route.continue();
       } else {
-        console.log(`[TEST] Allowing request #${failureCount}: ${url}`);
-        await route.fulfill({
-          status: 200,
-          contentType: "image/svg+xml",
-          body: GREEN_IMAGE
-        });
+        // Final retries after placeholder captured: let through
+        console.log(`[TEST] Request #${reqNum}: passing through`);
+        await route.continue();
       }
     });
 
@@ -309,9 +302,21 @@ test.describe("VisionBuild Create Loop", () => {
     await page.waitForTimeout(4000);
     await expect(page.getByText(/swipe to browse/i)).toBeInViewport({ timeout: 30000 });
 
-    // Wait for retries and eventual success
-    // After several failures, PrivateImage will retry with fresh signed URLs
-    // Eventually they will succeed when failureCount > MAX_FAILURES
+    // Wait for initial 403s to trigger, then wait for retries to be held
+    // PrivateImage retries after 500ms (first retry) + 1500ms (second retry)
+    // After 2 retries (MAX_RETRIES), it should show placeholder
+    await page.waitForTimeout(3000);
+    
+    // Now the retry requests should be held, and placeholder should be visible
+    await expect(page.getByTestId("private-image-placeholder")).toBeVisible({ timeout: 5000 });
+    
+    await page.screenshot({ path: "e2e/screens/a5-image-expired-placeholder.png", fullPage: true });
+    
+    // Release the hold so retry requests can proceed
+    console.log('[TEST] Releasing hold, allowing retry requests through');
+    if (resolveHold) resolveHold();
+    
+    // Wait for images to load after retry succeeds
     await page.waitForFunction(() => {
       const images = Array.from(document.querySelectorAll('img'));
       const designImages = images.filter((img: any) => {
@@ -319,25 +324,12 @@ test.describe("VisionBuild Create Loop", () => {
         return src && src.includes('__mock__/design_');
       });
       return designImages.length > 0 && designImages.some((img: any) => img.naturalWidth > 0);
-    }, { timeout: 15000 });
+    }, { timeout: 10000 });
     
-    // Take screenshot showing recovered state
     await page.screenshot({ path: "e2e/screens/a5-image-retried.png", fullPage: true });
 
-    // Verify that retries happened (more requests than initial 4)
+    // Verify that retries happened
     console.log(`[TEST] Total requests: ${signedUrlRequests.length}`);
     expect(signedUrlRequests.length).toBeGreaterThan(4);
-    
-    // For the placeholder screenshot, we need to create a separate scenario
-    // Since this test now succeeds, let's take a placeholder screenshot manually
-    // by creating a temporary IsoRoom in the page
-    await page.evaluate(() => {
-      // This creates a mock placeholder for the screenshot
-      const container = document.querySelector('[data-testid="private-image-placeholder"]');
-      if (!container) {
-        console.log('No placeholder container found');
-      }
-    });
-    await page.screenshot({ path: "e2e/screens/a5-image-expired-placeholder.png", fullPage: true });
   });
 });

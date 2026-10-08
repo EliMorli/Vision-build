@@ -44,7 +44,8 @@ export class InMemoryDataLayer implements DataLayer {
       // Return a URL with a version parameter that changes on each request
       // This allows tests to track retries and force failures on specific requests
       // Use relative path so it works regardless of the dev server port
-      const designNumber = path.match(/design_(\d+)/)?.[1] || '1';
+      // Extract index from path like "mock/proj-123/design_0.png"
+      const designNumber = path.match(/design_(\d+)/)?.[1] || '0';
       return `/__mock__/design_${designNumber}.png?v=${requestCount}`;
     }
     
@@ -80,10 +81,10 @@ export class InMemoryDataLayer implements DataLayer {
 
     // Return mock storage paths (not URLs - the component will call getSignedUrl)
     return [
+      `mock/${projectId}/design_0.png`,
       `mock/${projectId}/design_1.png`,
       `mock/${projectId}/design_2.png`,
       `mock/${projectId}/design_3.png`,
-      `mock/${projectId}/design_4.png`,
     ];
   }
 }
