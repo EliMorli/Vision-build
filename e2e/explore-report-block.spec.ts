@@ -4,15 +4,6 @@ const BASE_URL = process.env.BASE_URL || "http://localhost:19006";
 
 test.describe("VisionBuild Explore Report and Block", () => {
   test("report a design - mock call recorded", async ({ page }: { page: Page }) => {
-    // Track reports submitted via mock layer
-    const reports: any[] = [];
-    await page.route("**/functions/v1/submit-report", async (route) => {
-      const request = route.request();
-      const postData = request.postDataJSON();
-      reports.push(postData);
-      await route.fulfill({ status: 200, body: JSON.stringify({ success: true }) });
-    });
-
     // Seed test data
     await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:intro_seen", "true");
@@ -42,6 +33,7 @@ test.describe("VisionBuild Explore Report and Block", () => {
       ];
       localStorage.setItem("@visionbuild:mock_seed_projects", JSON.stringify(projects));
       localStorage.setItem("@visionbuild:blocks", JSON.stringify([]));
+      localStorage.setItem("@visionbuild:reports", JSON.stringify([]));
     });
 
     await page.goto(`${BASE_URL}/(tabs)/explore`);
@@ -71,8 +63,12 @@ test.describe("VisionBuild Explore Report and Block", () => {
     // Verify success message
     await expect(page.getByTestId("success-message")).toBeVisible({ timeout: 5000 });
 
-    // Verify report was recorded in mock layer
-    await page.waitForTimeout(500);
+    // Verify report was recorded in localStorage
+    const reports = await page.evaluate(() => {
+      const stored = localStorage.getItem("@visionbuild:reports");
+      return stored ? JSON.parse(stored) : [];
+    });
+    
     expect(reports.length).toBeGreaterThan(0);
     expect(reports[0]).toMatchObject({
       targetType: "design",
@@ -130,22 +126,6 @@ test.describe("VisionBuild Explore Report and Block", () => {
   });
 
   test("block user persists after reload", async ({ page }: { page: Page }) => {
-    // Track blocks submitted
-    const blocks: any[] = [];
-    await page.route("**/rest/v1/blocks", async (route) => {
-      const request = route.request();
-      if (request.method() === "POST") {
-        const postData = request.postDataJSON();
-        blocks.push(postData);
-        await route.fulfill({ 
-          status: 201, 
-          body: JSON.stringify({ id: "block-123", ...postData }) 
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
     await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:intro_seen", "true");
       localStorage.setItem("@visionbuild:mock_seed_profile", JSON.stringify({
@@ -224,9 +204,13 @@ test.describe("VisionBuild Explore Report and Block", () => {
     await expect(page.getByText("Farmhouse Kitchen")).toBeVisible();
     await expect(page.getByText("Modern Living Room")).not.toBeVisible();
 
-    // Verify block was recorded
-    await page.waitForTimeout(500);
+    // Verify block was recorded in localStorage
+    const blocks = await page.evaluate(() => {
+      const stored = localStorage.getItem("@visionbuild:blocks");
+      return stored ? JSON.parse(stored) : [];
+    });
+    
     expect(blocks.length).toBeGreaterThan(0);
-    expect(blocks[0].blocked_id).toBe("other-user-1");
+    expect(blocks[0]).toBe("other-user-1");
   });
 });

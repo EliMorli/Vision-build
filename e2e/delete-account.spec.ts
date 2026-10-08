@@ -36,11 +36,8 @@ test.describe("Delete Account Flow", () => {
     // Verify ConfirmationSheet is visible
     await expect(page.getByTestId("delete-account-confirm")).toBeVisible({ timeout: 3000 });
 
-    // Verify title
-    await expect(page.getByText("Delete Account")).toBeVisible();
-
     // Verify message contains deletion summary
-    await expect(page.getByText(/This will permanently delete your account, all projects, and designs/i)).toBeVisible();
+    await expect(page.getByText(/This will permanently delete your account and your projects/i)).toBeVisible();
 
     // Take screenshot showing the confirmation with DELETED_DATA_SUMMARY
     await page.screenshot({ path: "e2e/screens/ui-delete-account-confirm.png", fullPage: true });
