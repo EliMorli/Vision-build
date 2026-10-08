@@ -49,6 +49,10 @@ function getAIConfig() {
   // Fail closed: only explicit "development" or "staging" unlock non-prod behavior
   const isProduction = appEnv !== "development" && appEnv !== "staging";
   
+  // Check for mock mode (development/staging only with AI_MOCK=true)
+  const aiMockRaw = Deno.env.get("AI_MOCK") || "";
+  const isMockMode = !isProduction && aiMockRaw.toLowerCase() === "true";
+  
   const baseUrl = Deno.env.get("AI_BASE_URL") || "https://openrouter.ai/api/v1";
   const apiKey = Deno.env.get("AI_API_KEY") || Deno.env.get("OPENAI_API_KEY") || "";
   
@@ -85,6 +89,7 @@ function getAIConfig() {
     modelRenderFinal,
     isOpenRouter,
     isProduction,
+    isMockMode,
   };
 }
 
@@ -121,6 +126,28 @@ export async function chatCompletion(
   } = {}
 ): Promise<string> {
   const config = getAIConfig();
+  
+  // MOCK MODE: Return fake responses when AI_MOCK=true in development
+  if (config.isMockMode) {
+    console.log("[AI MOCK MODE] Returning fake response for model:", model);
+    const lastMessage = messages[messages.length - 1];
+    const userContent = typeof lastMessage.content === "string" 
+      ? lastMessage.content 
+      : JSON.stringify(lastMessage.content);
+    
+    // Return appropriate mock based on content
+    if (userContent.toLowerCase().includes("room") || userContent.toLowerCase().includes("image")) {
+      return JSON.stringify({
+        roomType: "kitchen",
+        currentStyle: "traditional",
+        squareFeet: 180,
+        keyElements: ["oak cabinets", "tile floor", "1 window", "pendant lights"],
+        rawAnalysis: "Cozy traditional kitchen with oak cabinets, white tile countertops, and warm lighting. Approximately 180 sq ft."
+      });
+    }
+    
+    return "This is a mock AI response for local development. Set APP_ENV=development and AI_MOCK=true to enable this mode.";
+  }
   
   const body: any = {
     model,
