@@ -1,2 +1,3 @@
 # Deno scripts
 scripts/test-image-privacy-integration.ts
+scripts/integration-tests/*.ts
