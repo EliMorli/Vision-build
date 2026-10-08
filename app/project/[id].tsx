@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
   },
   privacyLabel: {
     ...fonts.body,
-    fontWeight: "600",
+    fontFamily: "Nunito_700Bold",
     marginBottom: 2,
   },
   privacyDescription: {
@@ -489,7 +489,7 @@ const styles = StyleSheet.create({
   },
   tabTextActive: {
     color: colors.primary,
-    fontWeight: "600",
+    fontFamily: "Nunito_700Bold",
   },
   designsGrid: {
     flexDirection: "row",
@@ -540,7 +540,7 @@ const styles = StyleSheet.create({
   sourceText: {
     fontSize: 10,
     color: "#fff",
-    fontWeight: "600",
+    fontFamily: "Nunito_700Bold",
   },
   timelineContainer: {
     padding: spacing.lg,
@@ -571,7 +571,7 @@ const styles = StyleSheet.create({
   },
   timelineLabel: {
     ...fonts.body,
-    fontWeight: "600",
+    fontFamily: "Nunito_700Bold",
   },
   timelineDate: {
     ...fonts.regular,
@@ -608,7 +608,7 @@ const styles = StyleSheet.create({
   },
   quoteName: {
     ...fonts.body,
-    fontWeight: "600",
+    fontFamily: "Nunito_700Bold",
   },
   ratingRow: {
     flexDirection: "row",
@@ -646,7 +646,7 @@ const styles = StyleSheet.create({
   viewAllLink: {
     fontSize: 14,
     color: colors.primary,
-    fontWeight: "600",
+    fontFamily: "Nunito_700Bold",
   },
   chatPreview: {
     flexDirection: "row",
@@ -702,7 +702,7 @@ const styles = StyleSheet.create({
   briefButtonText: {
     fontSize: 14,
     color: colors.primary,
-    fontWeight: "600",
+    fontFamily: "Nunito_700Bold",
   },
   emptyState: {
     flex: 1,
@@ -728,7 +728,7 @@ const styles = StyleSheet.create({
   createButtonText: {
     color: "#fff",
     fontSize: 16,
-    fontWeight: "700",
+    fontFamily: "Nunito_700Bold",
   },
   emptySubtext: {
     ...fonts.body,

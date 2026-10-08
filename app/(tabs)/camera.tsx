@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   },
   tipsTitle: {
     fontSize: 14,
-    fontWeight: "800",
+    fontFamily: "Nunito_900Black",
     color: colors.textPrimary,
     marginBottom: spacing.sm,
   },
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   },
   cameraButtonText: {
     fontSize: 15,
-    fontWeight: "700",
+    fontFamily: "Nunito_700Bold",
     color: colors.textPrimary,
   },
   galleryButton: {
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
   },
   galleryButtonText: {
     fontSize: 15,
-    fontWeight: "700",
+    fontFamily: "Nunito_700Bold",
     color: colors.textPrimary,
   },
   buttonSpacer: {

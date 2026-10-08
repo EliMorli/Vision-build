@@ -28,9 +28,11 @@ export const radius = {
 } as const;
 
 export const fonts = {
-  regular: { fontSize: 14, color: colors.textSecondary },
-  body: { fontSize: 16, color: colors.textPrimary },
-  title: { fontSize: 20, fontWeight: "600" as const, color: colors.textPrimary },
-  heading: { fontSize: 24, fontWeight: "600" as const, color: colors.textPrimary },
-  hero: { fontSize: 32, fontWeight: "700" as const, color: colors.textPrimary },
+  regular: { fontSize: 14, fontFamily: "Nunito_600SemiBold", color: colors.textSecondary },
+  body: { fontSize: 16, fontFamily: "Nunito_600SemiBold", color: colors.textPrimary },
+  label: { fontSize: 14, fontFamily: "Nunito_700Bold", color: colors.textPrimary },
+  title: { fontSize: 20, fontFamily: "Nunito_800ExtraBold", color: colors.textPrimary },
+  heading: { fontSize: 24, fontFamily: "Nunito_900Black", color: colors.textPrimary },
+  hero: { fontSize: 32, fontFamily: "Nunito_900Black", color: colors.textPrimary },
+  button: { fontSize: 16, fontFamily: "Nunito_900Black", color: colors.textPrimary },
 } as const;

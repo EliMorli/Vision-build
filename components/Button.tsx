@@ -1,6 +1,6 @@
 import { Pressable, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, spacing, radius } from "@/lib/theme";
+import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 
 type Variant = "primary" | "secondary" | "outline" | "ghost";
@@ -119,5 +119,5 @@ const styles = StyleSheet.create({
   },
   fullWidth: { width: "100%" },
   disabled: { opacity: 0.4 },
-  label: { fontSize: 17, fontWeight: "700", letterSpacing: 0.3 },
+  label: { fontSize: 17, fontFamily: "Nunito_900Black", letterSpacing: 0.3 },
 });

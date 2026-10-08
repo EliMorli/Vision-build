@@ -298,17 +298,17 @@ const styles = StyleSheet.create({
   },
   xpTitle: {
     fontSize: 14,
-    fontWeight: "900",
+    fontFamily: "Nunito_900Black",
     color: colors.textPrimary,
   },
   xpSubtitle: {
     fontSize: 12,
-    fontWeight: "700",
+    fontFamily: "Nunito_700Bold",
     color: "#8A6A00",
   },
   xpAmount: {
     fontSize: 18,
-    fontWeight: "900",
+    fontFamily: "Nunito_900Black",
     color: "#B37A00",
   },
   xpSpacer: {
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: radius.full,
   },
-  optionText: { color: "#fff", fontSize: 12, fontWeight: "500" },
+  optionText: { color: "#fff", fontSize: 12, fontFamily: "Nunito_600SemiBold" },
   dots: {
     flexDirection: "row",
     justifyContent: "center",

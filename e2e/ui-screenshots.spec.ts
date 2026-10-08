@@ -8,6 +8,67 @@ test.use({
 });
 
 test.describe("UI Screenshots", () => {
+  test("verifies Nunito font loading", async ({ page }: { page: Page }) => {
+    // Set up authenticated state
+    await page.addInitScript(() => {
+      localStorage.setItem("@visionbuild:intro_seen", "true");
+      localStorage.setItem("@visionbuild:mock_session", "true");
+      localStorage.setItem("@visionbuild:ai_consent", "true");
+      localStorage.setItem("@visionbuild:ai_consent_version", "2026-10-07b");
+    });
+
+    // Test font loading on Home screen
+    await page.goto(BASE_URL);
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByText(/ready to redesign/i)).toBeVisible();
+
+    // Wait for fonts to be ready
+    await page.waitForFunction(() => document.fonts.ready);
+
+    // Check that Nunito fonts are loaded by inspecting document.fonts
+    const nunitoFontsLoaded = await page.evaluate(() => {
+      const loadedFonts = Array.from(document.fonts);
+      return loadedFonts.some(font => 
+        font.family.includes('Nunito') || 
+        font.family.includes('nunito')
+      );
+    });
+    expect(nunitoFontsLoaded).toBe(true);
+
+    // Verify computed font family includes Nunito on heading elements
+    const headingFontFamily = await page.evaluate(() => {
+      const heading = document.evaluate(
+        "//*[contains(text(), 'Ready to redesign')]",
+        document,
+        null,
+        XPathResult.FIRST_ORDERED_NODE_TYPE,
+        null
+      ).singleNodeValue as HTMLElement;
+      if (heading) {
+        return window.getComputedStyle(heading).fontFamily;
+      }
+      return '';
+    });
+    expect(headingFontFamily.toLowerCase()).toContain('nunito');
+
+    // Test font loading on consent screen (without editing its layout)
+    await page.goto(`${BASE_URL}/ai-consent`);
+    await page.waitForLoadState("networkidle");
+    
+    // Wait for fonts to be ready again
+    await page.waitForFunction(() => document.fonts.ready);
+    
+    // Verify Nunito fonts are still loaded on consent screen
+    const consentNunitoLoaded = await page.evaluate(() => {
+      const loadedFonts = Array.from(document.fonts);
+      return loadedFonts.some(font => 
+        font.family.includes('Nunito') || 
+        font.family.includes('nunito')
+      );
+    });
+    expect(consentNunitoLoaded).toBe(true);
+  });
+
   test("captures all screens at 390x844", async ({ page }: { page: Page }) => {
     // Verify viewport
     const viewport = page.viewportSize();

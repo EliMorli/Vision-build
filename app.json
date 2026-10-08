@@ -35,7 +35,8 @@
       "expo-router",
       "expo-camera",
       "expo-image-picker",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-font"
     ]
   }
 }

@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingTop: spacing.lg,
   },
-  logoText: { fontSize: 20, fontWeight: "700", color: colors.textPrimary },
+  logoText: { fontSize: 20, fontFamily: "Nunito_700Bold", color: colors.textPrimary },
   page: {
     width,
     justifyContent: "center",
@@ -307,7 +307,7 @@ const sliderStyles = StyleSheet.create({
     position: "absolute",
     bottom: 16,
     fontSize: 16,
-    fontWeight: "800",
+    fontFamily: "Nunito_900Black",
     color: colors.textPrimary,
     textTransform: "uppercase",
     letterSpacing: 1,
@@ -368,7 +368,7 @@ const sliderStyles = StyleSheet.create({
   controlText: {
     ...fonts.body,
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: "Nunito_700Bold",
     color: colors.primary,
   },
 });

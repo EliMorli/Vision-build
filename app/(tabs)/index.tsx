@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
   },
   xpText: {
     fontSize: 12,
-    fontWeight: "800",
+    fontFamily: "Nunito_900Black",
     color: colors.textPrimary,
   },
   devButton: {
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: radius.full,
   },
-  statusText: { color: "#fff", fontSize: 11, fontWeight: "600" },
+  statusText: { color: "#fff", fontSize: 11, fontFamily: "Nunito_700Bold" },
   designCountBadge: {
     position: "absolute",
     top: 10,
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   },
   designCountText: {
     fontSize: 11,
-    fontWeight: "600",
+    fontFamily: "Nunito_700Bold",
     color: colors.primary,
   },
   cardBody: { padding: spacing.md, gap: 4 },
