@@ -19,6 +19,7 @@ import { useProjectStore, useAuthStore } from "@/lib/store";
 import { Button, IsoRoom, PrivateImage } from "@/components";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 import { supabase } from "@/lib/supabase";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.82;
