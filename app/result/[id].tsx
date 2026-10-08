@@ -74,8 +74,8 @@ export default function ResultScreen() {
     try {
       await selectDesign(id, selectedUrl);
       router.push(`/project/${id}`);
-    } catch (error) {
-      console.error("Error saving design:", error);
+    } catch (_error) {
+      console.error("Error saving design:", _error);
     } finally {
       setIsSaving(false);
     }

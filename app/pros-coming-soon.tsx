@@ -60,8 +60,8 @@ export default function ProsComingSoonScreen() {
         .single();
 
       setIsOnWaitlist(!!data && !error);
-    } catch (err) {
-      console.error("Error checking waitlist status:", err);
+    } catch (_err) {
+      console.error("Error checking waitlist status:", _err);
     } finally {
       setChecking(false);
     }
@@ -102,8 +102,8 @@ export default function ProsComingSoonScreen() {
       } else {
         console.error("Error adding to waitlist:", error);
       }
-    } catch (err) {
-      console.error("Error in handleNotifyMe:", err);
+    } catch (_err) {
+      console.error("Error in handleNotifyMe:", _err);
     } finally {
       setLoading(false);
     }
@@ -183,6 +183,7 @@ export default function ProsComingSoonScreen() {
                 label="Loading..."
                 variant="primary"
                 disabled
+                onPress={() => {}}
               />
             </View>
           ) : isOnWaitlist ? (

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -65,8 +65,8 @@ export default function ProfileSettingsScreen() {
         .single();
 
       setProsWaitlist(!!data);
-    } catch (err) {
-      console.error("Error checking pros waitlist:", err);
+    } catch (_err) {
+      console.error("Error checking pros waitlist:", _err);
     } finally {
       setCheckingWaitlist(false);
     }
@@ -74,7 +74,8 @@ export default function ProfileSettingsScreen() {
 
   const handleProsWaitlist = async (enabled: boolean) => {
     const userId = useAuthStore.getState().session?.user?.id;
-    const email = profile?.email || "";
+    const userProfile = useAuthStore.getState().profile;
+    const email = userProfile?.email || "";
 
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
       if (enabled) {
@@ -120,8 +121,8 @@ export default function ProfileSettingsScreen() {
           setProsWaitlist(false);
         }
       }
-    } catch (err) {
-      console.error("Error updating pros waitlist:", err);
+    } catch (_err) {
+      console.error("Error updating pros waitlist:", _err);
     }
   };
 
@@ -137,8 +138,8 @@ export default function ProfileSettingsScreen() {
             return;
           }
         }
-      } catch (err) {
-        console.error("Error calling revoke-ai-consent:", err);
+      } catch (_err) {
+        console.error("Error calling revoke-ai-consent:", _err);
         Alert.alert("Error", "Could not revoke AI consent. Please try again.");
         return;
       }

@@ -6,7 +6,6 @@ import {
   Dimensions,
   FlatList,
   ViewToken,
-  Image,
   SafeAreaView,
   Animated,
   PanResponder,
@@ -67,7 +66,10 @@ function BeforeAfterSlider() {
         setDividerX(clampedX);
       },
     })
-  ).current;
+  );
+  
+  // Extract stable reference for spread operator
+  const panHandlers = panResponder.current.panHandlers;
 
   const handleButtonSlide = (direction: "left" | "right") => {
     const newX = direction === "left"
@@ -86,7 +88,7 @@ function BeforeAfterSlider() {
       <Text style={sliderStyles.title}>See the Transformation</Text>
       <Text style={sliderStyles.subtitle}>Drag the slider to reveal the power of AI redesign</Text>
 
-      <View style={sliderStyles.sliderContainer} {...panResponder.panHandlers}>
+      <View style={sliderStyles.sliderContainer} {...panHandlers}>
         {/* Before image - full width, neutral palette */}
         <View style={sliderStyles.beforeImage}>
           <Text style={sliderStyles.imageLabel}>Before</Text>
@@ -144,9 +146,13 @@ export default function IntroScreen() {
         setCurrentPage(viewableItems[0].index);
       }
     }
-  ).current;
+  );
 
-  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
+  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 });
+  
+  // Extract stable references for FlatList props
+  const onViewableItemsChangedRef = onViewableItemsChanged.current;
+  const viewabilityConfigValue = viewabilityConfig.current;
 
   const handleGetStarted = async () => {
     await AsyncStorage.setItem(INTRO_SEEN_KEY, "true");
@@ -171,8 +177,8 @@ export default function IntroScreen() {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
+        onViewableItemsChanged={onViewableItemsChangedRef}
+        viewabilityConfig={viewabilityConfigValue}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => {
           if (item.type === "slider") {

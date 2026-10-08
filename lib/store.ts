@@ -136,7 +136,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // Clear all stores
     set({ session: null, profile: null, loading: false, error: null });
     useProjectStore.getState().clear();
-    useInboxStore.getState().clear();
     
     // Clear mock mode session if applicable
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
@@ -210,6 +209,7 @@ interface ProjectState {
   refreshProjectUrls: (project: Project) => Promise<Project>;
   setPendingConsent: (request: PendingConsentRequest) => void;
   clearPendingConsent: () => void;
+  clear: () => void;
 }
 
 export const useProjectStore = create<ProjectState>((set, get) => ({
@@ -687,6 +687,19 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   clearPendingConsent: () => {
     set({ pendingConsent: null });
+  },
+
+  clear: () => {
+    set({
+      projects: [],
+      currentProject: null,
+      loading: false,
+      progress: 0,
+      progressMessage: "",
+      error: null,
+      generatingStartTime: null,
+      pendingConsent: null,
+    });
   },
 }));
 

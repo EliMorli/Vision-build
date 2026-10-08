@@ -27,9 +27,12 @@ export default function EditProfileScreen() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
+  // Sync display name when profile loads
   useEffect(() => {
-    setDisplayName(profile?.display_name || "");
-  }, [profile]);
+    if (profile?.display_name && !displayName) {
+      setDisplayName(profile.display_name);
+    }
+  }, [profile?.display_name, displayName]);
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -81,8 +84,8 @@ export default function EditProfileScreen() {
       if (error) throw error;
 
       return data?.path || null;
-    } catch (error) {
-      console.error("Error uploading photo:", error);
+    } catch (_error) {
+      console.error("Error uploading photo:", _error);
       Alert.alert("Upload Failed", "Could not upload profile photo. Please try again.");
       return null;
     } finally {

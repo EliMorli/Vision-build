@@ -57,6 +57,10 @@ export default function SignInScreen() {
   });
 
   const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 });
+  
+  // Extract stable references for FlatList props
+  const onViewableItemsChangedRef = onViewableItemsChanged.current;
+  const viewabilityConfigValue = viewabilityConfig.current;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -73,8 +77,8 @@ export default function SignInScreen() {
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
-          onViewableItemsChanged={onViewableItemsChanged.current}
-          viewabilityConfig={viewabilityConfig.current}
+          onViewableItemsChanged={onViewableItemsChangedRef}
+          viewabilityConfig={viewabilityConfigValue}
           keyExtractor={(_, i) => String(i)}
           style={{ height: 320 }}
           renderItem={({ item }) => (

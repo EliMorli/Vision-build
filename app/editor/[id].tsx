@@ -14,9 +14,6 @@ import { STYLE_OPTIONS, StyleOption } from "@/lib/types";
 import { useProjectStore } from "@/lib/store";
 import { Button, Banner, IsoRoom } from "@/components";
 
-// Threshold for showing "long-running" UI: Go to Home option and Home Rendering card
-const LONG_RUNNING_THRESHOLD_MS = 45000; // 45 seconds
-
 export default function EditorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -41,15 +38,11 @@ export default function EditorScreen() {
       
       // Start generation (will update store which generating screen monitors)
       await generateDesigns(id, selectedStyle.promptModifier);
-    } catch (error) {
-      console.error("Generate error:", error);
+    } catch (_error) {
+      console.error("Generate error:", _error);
     } finally {
       setIsGenerating(false);
     }
-  };
-
-  const handleGoHome = () => {
-    router.push("/(tabs)/");
   };
 
   const capitalize = (s: string) =>

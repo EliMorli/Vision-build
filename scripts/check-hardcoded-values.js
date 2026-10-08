@@ -14,6 +14,7 @@ const { execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
+// eslint-disable-next-line no-undef
 const ROOT = path.resolve(__dirname, "..");
 
 // Files and patterns to exclude

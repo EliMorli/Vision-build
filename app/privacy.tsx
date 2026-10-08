@@ -2,7 +2,7 @@ import { SafeAreaView, ScrollView, StyleSheet, Text, View, Pressable } from "rea
 import { colors, fonts, spacing } from "@/lib/theme";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { getBusinessConfig } from "@/lib/config/business";
+import { businessConfig, getFormattedAddress } from "@/lib/config/business";
 
 // Raw markdown - simplified for in-app display
 const privacyMarkdown = `# VisionBuild Privacy Policy
@@ -88,16 +88,14 @@ https://[WEBSITE_DOMAIN]
 `;
 
 export default function PrivacyScreen() {
-  const config = getBusinessConfig();
-
   // Replace placeholders
   const processedMarkdown = privacyMarkdown
-    .replace(/\[EFFECTIVE_DATE\]/g, config.effectiveDate || "TBD")
-    .replace(/\[COMPANY_LEGAL_NAME\]/g, config.companyLegalName || "TBD")
-    .replace(/\[ENTITY_TYPE\]/g, config.entityType || "TBD")
-    .replace(/\[SUPPORT_EMAIL\]/g, config.supportEmail || "TBD")
-    .replace(/\[MAILING_ADDRESS\]/g, config.mailingAddress || "TBD")
-    .replace(/\[WEBSITE_DOMAIN\]/g, config.websiteDomain || "TBD");
+    .replace(/\[EFFECTIVE_DATE\]/g, "January 1, 2027") // Fixed date for launch
+    .replace(/\[COMPANY_LEGAL_NAME\]/g, businessConfig.legalName || "TBD")
+    .replace(/\[ENTITY_TYPE\]/g, businessConfig.entityType || "TBD")
+    .replace(/\[SUPPORT_EMAIL\]/g, businessConfig.supportEmail || "TBD")
+    .replace(/\[MAILING_ADDRESS\]/g, getFormattedAddress() || "TBD")
+    .replace(/\[WEBSITE_DOMAIN\]/g, businessConfig.websiteDomain || "TBD");
 
   return (
     <SafeAreaView style={styles.container}>
@@ -108,7 +106,7 @@ export default function PrivacyScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </Pressable>
         <Text style={styles.headerTitle}>Privacy Policy</Text>
         <View style={{ width: 24 }} />
@@ -145,11 +143,9 @@ const styles = StyleSheet.create({
   contentContainer: {
     padding: spacing.lg,
   },
-});
-
   markdown: {
     ...fonts.body,
-    color: colors.text,
+    color: colors.textPrimary,
     lineHeight: 24,
   },
 });

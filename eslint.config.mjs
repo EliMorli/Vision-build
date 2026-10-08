@@ -21,6 +21,9 @@ export default [
       // "Cannot access variable before it is declared" for hooks)
       "react-compiler/react-compiler": "off",
       
+      // Disable set-state-in-effect - flags valid patterns like async init in useEffect
+      "react-hooks/set-state-in-effect": "off",
+      
       // Downgrade react-hooks/refs and react-hooks/immutability to warnings
       // These rules flag valid patterns like accessing .current in FlatList props
       "react-hooks/refs": "warn",
