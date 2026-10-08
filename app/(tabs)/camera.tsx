@@ -143,7 +143,7 @@ export default function CameraScreen() {
             </View>
             <Text style={styles.placeholderTitle}>Add a Room Photo</Text>
             <Text style={styles.placeholderSub}>
-              Take a photo or choose from your gallery
+              Take a photo or pick one from your gallery to get started.
             </Text>
           </Pressable>
         )}
