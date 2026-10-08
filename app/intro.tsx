@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -52,24 +52,29 @@ function BeforeAfterSlider() {
   const sliderPosition = useRef(new Animated.Value(0.5)).current;
   const [dividerX, setDividerX] = useState(width * 0.8 * 0.5); // center of the image width
   const imageWidth = width * 0.8;
+  
+  // Hide labels when divider is too close (within 60px of edges to account for label width)
+  const showBeforeLabel = dividerX > 60;
+  const showAfterLabel = dividerX < imageWidth - 60;
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderMove: (_, gesture) => {
-        const offset = (width - imageWidth) / 2;
-        const relativeX = gesture.moveX - offset;
-        const clampedX = Math.max(0, Math.min(imageWidth, relativeX));
-        const newPosition = clampedX / imageWidth;
-        sliderPosition.setValue(newPosition);
-        setDividerX(clampedX);
-      },
-    })
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderMove: (_, gesture) => {
+          const offset = (width - imageWidth) / 2;
+          const relativeX = gesture.moveX - offset;
+          const clampedX = Math.max(0, Math.min(imageWidth, relativeX));
+          const newPosition = clampedX / imageWidth;
+          sliderPosition.setValue(newPosition);
+          setDividerX(clampedX);
+        },
+      }),
+    [imageWidth, sliderPosition]
   );
   
-  // Extract stable reference for spread operator
-  const panHandlers = panResponder.current.panHandlers;
+  const panHandlers = panResponder.panHandlers;
 
   const handleButtonSlide = (direction: "left" | "right") => {
     const newX = direction === "left"
@@ -91,14 +96,14 @@ function BeforeAfterSlider() {
       <View style={sliderStyles.sliderContainer} {...panHandlers}>
         <View style={sliderStyles.beforeImage}>
           <IsoRoom palette="modern" size={imageWidth * 0.9} />
-          <Text style={sliderStyles.beforeLabel}>Before</Text>
+          {showBeforeLabel && <Text style={sliderStyles.beforeLabel} testID="intro-label-before">Before</Text>}
         </View>
 
         {/* After image - clipped based on slider, modern styled room */}
         <View style={[sliderStyles.afterContainer, { width: dividerX }]}>
           <View style={sliderStyles.afterImage}>
             <IsoRoom palette="modern" size={imageWidth * 0.9} spark />
-            <Text style={sliderStyles.afterLabel}>After</Text>
+            {showAfterLabel && <Text style={sliderStyles.afterLabel} testID="intro-label-after">After</Text>}
           </View>
         </View>
 
@@ -149,12 +154,8 @@ export default function IntroScreen() {
     }
   );
 
-  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 });
+  const viewabilityConfig = useMemo(() => ({ viewAreaCoveragePercentThreshold: 50 }), []);
   
-  // Extract stable references for FlatList props
-  const onViewableItemsChangedRef = onViewableItemsChanged.current;
-  const viewabilityConfigValue = viewabilityConfig.current;
-
   const handleGetStarted = async () => {
     await AsyncStorage.setItem(INTRO_SEEN_KEY, "true");
     if (session) {
@@ -178,8 +179,8 @@ export default function IntroScreen() {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onViewableItemsChanged={onViewableItemsChangedRef}
-        viewabilityConfig={viewabilityConfigValue}
+        onViewableItemsChanged={onViewableItemsChanged.current}
+        viewabilityConfig={viewabilityConfig}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => {
           if (item.type === "slider") {
@@ -327,6 +328,7 @@ const sliderStyles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: radius.sm,
+    zIndex: 1,
   },
   afterLabel: {
     position: "absolute",
@@ -341,6 +343,7 @@ const sliderStyles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: radius.sm,
+    zIndex: 1,
   },
   afterContainer: {
     position: "absolute",

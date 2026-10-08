@@ -55,6 +55,9 @@ jobs:
       - name: Check dev button gating
         run: npm run check:dev-button
       
+      - name: Check launch copy compliance
+        run: npm run check:launch-copy
+      
       - name: Install pg_cron and pg_net in PostgreSQL container
         env:
           PGHOST: localhost

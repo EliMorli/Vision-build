@@ -21,10 +21,10 @@ const LONG_RUNNING_THRESHOLD_MS = 45000; // 45 seconds
 
 const STATUS_MAP: Record<ProjectStatus, { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }> = {
   draft: { label: "Draft", color: colors.textSecondary, icon: "document-outline" },
-  analyzed: { label: "Ready for Design", color: colors.accent, icon: "search-outline" },
+  analyzed: { label: "Ready for design", color: colors.accent, icon: "search-outline" },
   rendering: { label: "Rendering...", color: colors.accent, icon: "hourglass-outline" },
-  generated: { label: "Designs Ready", color: colors.primary, icon: "color-palette-outline" },
-  connected: { label: "Contractors Matched", color: colors.secondary, icon: "people-outline" },
+  generated: { label: "Designs ready", color: colors.primary, icon: "color-palette-outline" },
+  connected: { label: "Designs ready", color: colors.primary, icon: "color-palette-outline" }, // Hidden at launch
   completed: { label: "Completed", color: colors.secondary, icon: "checkmark-circle-outline" },
 };
 
@@ -122,8 +122,6 @@ export default function DashboardScreen() {
           </View>
         </View>
         <View style={styles.emptyContent}>
-          <ProsTeaserCard key={prosCardKey} />
-          
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIllustration}>
               <IsoRoom palette="modern" size={220} spark />
@@ -133,11 +131,13 @@ export default function DashboardScreen() {
               Take a photo of any room to start visualizing your renovation.
             </Text>
             <Button
-              label="Start Your First Project"
+              label="Start your first project"
               onPress={() => router.push("/(tabs)/camera")}
               icon="add-circle-outline"
             />
           </View>
+          
+          <ProsTeaserCard key={prosCardKey} />
         </View>
       </SafeAreaView>
     );
@@ -153,7 +153,11 @@ export default function DashboardScreen() {
         onPress={() => router.push("/(tabs)/camera")}
         fullWidth
       />
-      
+    </View>
+  );
+  
+  const renderFooter = () => (
+    <View style={styles.headerSection}>
       <ProsTeaserCard key={prosCardKey} />
     </View>
   );
@@ -189,6 +193,7 @@ export default function DashboardScreen() {
         data={projects}
         keyExtractor={(p) => p.id}
         ListHeaderComponent={renderHeader}
+        ListFooterComponent={renderFooter}
         contentContainerStyle={styles.list}
         refreshControl={
           <RefreshControl refreshing={false} onRefresh={onRefresh} tintColor={colors.primary} />

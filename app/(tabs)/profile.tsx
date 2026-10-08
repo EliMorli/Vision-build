@@ -12,15 +12,14 @@ import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useAuthStore, useProjectStore } from "@/lib/store";
 import { Button } from "@/components";
 
-// Define all available badges (greyed out if not earned)
-const ALL_BADGES = [
-  { id: "first-room", name: "First room", color: colors.primary, earned: true },
-  { id: "style-hopper", name: "Style hopper", color: "#34A853", earned: true },
-  { id: "got-quotes", name: "Got quotes", color: "#FBBC04", earned: true },
-  { id: "trendsetter", name: "Trendsetter", color: "#8B7CF6", earned: false },
-  { id: "exterior-pro", name: "Exterior pro", color: "#FF7A59", earned: false },
-  { id: "builder", name: "Builder", color: "#2E86C1", earned: false },
-];
+interface Badge {
+  id: string;
+  name: string;
+  color: string;
+  earnedDescription: string;
+  lockedHint: string;
+  earned: boolean;
+}
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -32,15 +31,67 @@ export default function ProfileScreen() {
   const roomsCount = projects.length;
   const designsCount = projects.reduce((sum, p) => {
     const designUrls = p.generated_image_urls || [];
-    return sum + designUrls.length + (p.selected_generation_url ? 1 : 0);
+    return sum + designUrls.length;
   }, 0);
-  const quotesCount = 0; // Coming soon: contractor quotes
 
   // Calculate XP and level
-  const xp = profile?.xp ?? 120;
-  const level = profile?.level ?? Math.floor(xp / 200) + 1;
+  const xp = profile?.xp ?? 0;
+  const level = profile?.level ?? 1;
   const xpForNextLevel = level * 200;
   const xpProgress = (xp / xpForNextLevel) * 100;
+  
+  // Derive earned badges from real data
+  const uniqueStyles = new Set(projects.map(p => p.selected_style).filter(Boolean)).size;
+  
+  const ALL_BADGES: Badge[] = [
+    { 
+      id: "first-room", 
+      name: "First room", 
+      color: colors.primary, 
+      earnedDescription: "Redesigned first room",
+      lockedHint: "Redesign your first room.",
+      earned: roomsCount > 0 
+    },
+    { 
+      id: "style-hopper", 
+      name: "Style hopper", 
+      color: "#34A853", 
+      earnedDescription: "Tried multiple styles",
+      lockedHint: "Try 3 different styles.",
+      earned: uniqueStyles >= 3 
+    },
+    { 
+      id: "trendsetter", 
+      name: "Trendsetter", 
+      color: "#8B7CF6", 
+      earnedDescription: "Design shared publicly",
+      lockedHint: "Share a design publicly.",
+      earned: projects.some(p => p.is_public) 
+    },
+    { 
+      id: "exterior-pro", 
+      name: "Exterior pro", 
+      color: "#FF7A59", 
+      earnedDescription: "Exterior design created",
+      lockedHint: "Redesign an outdoor space.",
+      earned: projects.some(p => {
+        const roomType = p.room_analysis?.roomType?.toLowerCase() || "";
+        return roomType.includes("backyard") || roomType.includes("patio") || 
+               roomType.includes("deck") || roomType.includes("outdoor") || 
+               roomType.includes("exterior") || roomType.includes("yard") ||
+               roomType.includes("garden");
+      })
+    },
+    { 
+      id: "builder", 
+      name: "Builder", 
+      color: "#2E86C1", 
+      earnedDescription: "Five rooms redesigned",
+      lockedHint: "Redesign 5 rooms.",
+      earned: roomsCount >= 5 
+    },
+  ];
+  
   const earnedBadges = ALL_BADGES.filter((b) => b.earned);
 
   const menuItems = [
@@ -86,20 +137,20 @@ export default function ProfileScreen() {
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{roomsCount}</Text>
-            <Text style={styles.statLabel}>Rooms</Text>
+            <Text style={styles.statLabel} testID="profile-stat-rooms">Rooms</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{designsCount}</Text>
-            <Text style={styles.statLabel}>Designs</Text>
+            <Text style={styles.statLabel} testID="profile-stat-designs">Designs</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{quotesCount}</Text>
-            <Text style={styles.statLabel}>Quotes</Text>
+            <Text style={styles.statNumber}>{earnedBadges.length}</Text>
+            <Text style={styles.statLabel} testID="profile-stat-badges">Badges</Text>
           </View>
         </View>
 
         {/* Badges Section */}
-        <View style={styles.badgesSection}>
+        <View style={styles.badgesSection} testID="profile-badges-section">
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Badges</Text>
             <Text style={styles.badgeCount}>
@@ -108,7 +159,7 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.badgeGrid}>
             {ALL_BADGES.map((badge) => (
-              <View key={badge.id} style={styles.badgeItem}>
+              <View key={badge.id} style={styles.badgeItem} testID={`badge-${badge.id}`}>
                 <View
                   style={[
                     styles.badgeIcon,
@@ -118,12 +169,20 @@ export default function ProfileScreen() {
                       opacity: badge.earned ? 1 : 0.45,
                     },
                   ]}
+                  testID={badge.earned ? undefined : `badge-${badge.id}-locked`}
                 >
                   <View style={styles.badgeIconInner}>
-                    <Ionicons name="star" size={26} color="#fff" />
+                    {badge.earned ? (
+                      <Ionicons name="star" size={26} color="#fff" />
+                    ) : (
+                      <Ionicons name="lock-closed" size={20} color="#fff" />
+                    )}
                   </View>
                 </View>
                 <Text style={styles.badgeName}>{badge.name}</Text>
+                {!badge.earned && (
+                  <Text style={styles.badgeHint} testID={`badge-${badge.id}-hint`}>{badge.lockedHint}</Text>
+                )}
               </View>
             ))}
           </View>
@@ -336,6 +395,13 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     textAlign: "center",
     color: colors.textPrimary,
+  },
+  badgeHint: {
+    fontSize: 10,
+    textAlign: "center",
+    color: colors.textSecondary,
+    lineHeight: 13,
+    marginTop: 2,
   },
   section: {
     marginTop: spacing.lg,

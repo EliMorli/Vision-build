@@ -47,7 +47,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           photo_url: null,
           created_at: new Date().toISOString(),
           last_login_at: new Date().toISOString(),
-          xp: 120,
+          xp: 0,
           level: 1,
         } as Profile,
       });

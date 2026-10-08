@@ -71,7 +71,7 @@ export default function EditorScreen() {
         </Banner>
       )}
 
-      <Text style={styles.sectionTitle}>Select a Design Style</Text>
+      <Text style={styles.sectionTitle} testID="style-picker-header">Pick a style</Text>
 
       {/* Style grid */}
       <FlatList
@@ -119,7 +119,7 @@ export default function EditorScreen() {
       {/* Footer */}
       <View style={styles.footer}>
         <Button
-          label={selectedStyle ? "Generate 4 Designs" : "Pick a style"}
+          label={selectedStyle ? "Generate 4 designs" : "Pick a style"}
           icon="sparkles"
           onPress={handleGenerate}
           disabled={!selectedStyle || loading || isGenerating}

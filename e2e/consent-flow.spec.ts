@@ -67,7 +67,7 @@ test.describe("VisionBuild AI Consent Flow", () => {
     await page.getByRole("button", { name: /continue/i }).click();
 
     // Should resume to style picker (analyze completed automatically)
-    await expect(page.getByText("Select a Design Style")).toBeInViewport({ timeout: 10000 });
+    await expect(page.getByTestId("style-picker-header")).toBeInViewport({ timeout: 10000 });
 
     // POSITIVE CONTROL: Verify the analyze-room call was recorded after accepting consent
     const callCountAfterAccept = await page.evaluate(() => window.__VB_MOCK_AI_CALLS__?.length || 0);
@@ -153,7 +153,7 @@ test.describe("VisionBuild AI Consent Flow", () => {
     await page.getByRole("button", { name: /continue/i }).click();
 
     // Should resume to style picker
-    await expect(page.getByText("Select a Design Style")).toBeInViewport({ timeout: 10000 });
+    await expect(page.getByTestId("style-picker-header")).toBeInViewport({ timeout: 10000 });
   });
 
   test("consent decline sends nothing", async ({ page }: { page: Page }) => {
@@ -225,7 +225,7 @@ test.describe("VisionBuild AI Consent Flow", () => {
 
     // Analyze passes (consent check is skipped because mock_consent_version not set)
     await page.getByRole("button", { name: /analyze room/i }).click();
-    await expect(page.getByText("Select a Design Style")).toBeInViewport({ timeout: 10000 });
+    await expect(page.getByTestId("style-picker-header")).toBeInViewport({ timeout: 10000 });
 
     // Record the mock AI call count before triggering re-consent
     const callCountBeforeDecline = await page.evaluate(() => window.__VB_MOCK_AI_CALLS__?.length || 0);
@@ -283,7 +283,7 @@ test.describe("VisionBuild AI Consent Flow", () => {
 
     // Analyze passes (consent check is skipped because mock_consent_version not set)
     await page.getByRole("button", { name: /analyze room/i }).click();
-    await expect(page.getByText("Select a Design Style")).toBeInViewport({ timeout: 10000 });
+    await expect(page.getByTestId("style-picker-header")).toBeInViewport({ timeout: 10000 });
 
     // Get the project ID from the URL
     const editorUrl = page.url();

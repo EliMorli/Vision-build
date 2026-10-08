@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,24 +9,19 @@ import {
   SafeAreaView,
   Alert,
 } from "react-native";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
-import { IsoRoom } from "@/components";
-
-// Feature flag for likes (off by default until feature is real)
-const SHOW_LIKES = false;
-
-// Placeholder data - only public projects
-const PLACEHOLDER_DESIGNS = Array.from({ length: 8 }, (_, i) => ({
-  id: String(i + 1),
-  style: ["modern", "coastal", "farmhouse", "industrial", "luxury", "scandinavian"][i % 6],
-  creator: ["Sarah M.", "Alex K.", "Jordan T.", "Casey R.", "Morgan L.", "Taylor B."][i % 6],
-  likes: Math.floor(Math.random() * 500) + 50,
-  isPublic: true,
-}));
+import { IsoRoom, Button } from "@/components";
+import { useProjectStore } from "@/lib/store";
 
 export default function ExploreScreen() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const { projects } = useProjectStore();
+  
+  // Get only public projects
+  const publicDesigns = projects.filter(p => p.is_public);
 
   const handleReport = (id: string) => {
     Alert.alert(
@@ -40,6 +35,43 @@ export default function ExploreScreen() {
       ]
     );
   };
+
+  // Empty state when no public designs
+  if (publicDesigns.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {/* Search bar */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBar}>
+            <Ionicons name="search" size={20} color={colors.textSecondary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search styles, rooms..."
+              placeholderTextColor={colors.textSecondary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              editable={false}
+            />
+          </View>
+        </View>
+        
+        <View style={styles.emptyState}>
+          <View style={styles.emptyIllustration}>
+            <IsoRoom palette="modern" size={180} spark />
+          </View>
+          <Text style={styles.emptyTitle}>No shared designs yet</Text>
+          <Text style={styles.emptySubtitle}>
+            Make a project public to show it here
+          </Text>
+          <Button
+            label="Start a new room"
+            icon="add-circle-outline"
+            onPress={() => router.push("/(tabs)/camera")}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -59,7 +91,7 @@ export default function ExploreScreen() {
 
       {/* Grid of designs */}
       <FlatList
-        data={PLACEHOLDER_DESIGNS}
+        data={publicDesigns}
         keyExtractor={(item) => item.id}
         numColumns={2}
         contentContainerStyle={styles.grid}
@@ -68,11 +100,11 @@ export default function ExploreScreen() {
           <Pressable 
             style={styles.card}
             accessibilityRole="button"
-            accessibilityLabel={`${item.style} design by ${item.creator}`}
+            accessibilityLabel={`${item.selected_style || 'Unknown'} design`}
           >
             <View style={styles.cardImageWrapper}>
               <IsoRoom
-                palette={item.style}
+                palette={item.selected_style || "modern"}
                 size={160}
                 accessible={false}
                 importantForAccessibility="no-hide-descendants"
@@ -89,16 +121,10 @@ export default function ExploreScreen() {
             </Pressable>
             <View style={styles.cardOverlay}>
               <Text style={styles.cardTitle} numberOfLines={1}>
-                {item.style.charAt(0).toUpperCase() + item.style.slice(1)}
+                {item.title}
               </Text>
               <View style={styles.cardFooter}>
-                <Text style={styles.cardCreator}>by {item.creator}</Text>
-                {SHOW_LIKES && (
-                  <View style={styles.likes}>
-                    <Ionicons name="heart-outline" size={14} color="#fff" />
-                    <Text style={styles.likesText}>{item.likes}</Text>
-                  </View>
-                )}
+                <Text style={styles.cardCreator}>{item.selected_style || 'Modern'}</Text>
               </View>
             </View>
           </Pressable>
@@ -129,6 +155,34 @@ const styles = StyleSheet.create({
     flex: 1,
     ...fonts.body,
     color: colors.textPrimary,
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xxl,
+  },
+  emptyIllustration: {
+    marginBottom: spacing.lg,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  emptyTitle: {
+    ...fonts.heading,
+    fontSize: 24,
+    marginBottom: spacing.xs,
+    textAlign: "center",
+  },
+  emptySubtitle: {
+    ...fonts.regular,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginBottom: spacing.xl,
+    lineHeight: 22,
   },
   grid: { padding: spacing.sm },
   row: { gap: spacing.sm },
@@ -180,15 +234,6 @@ const styles = StyleSheet.create({
   },
   cardCreator: {
     color: "rgba(255,255,255,0.85)",
-    fontSize: 12,
-  },
-  likes: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  likesText: {
-    color: "#fff",
     fontSize: 12,
   },
 });

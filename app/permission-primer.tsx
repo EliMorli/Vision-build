@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { Button } from "@/components";
 
-type PermissionType = "camera" | "photos" | "location";
+type PermissionType = "camera" | "photos";
 
 const PERMISSION_INFO: Record<PermissionType, {
   icon: keyof typeof Ionicons.glyphMap;
@@ -25,13 +25,6 @@ const PERMISSION_INFO: Record<PermissionType, {
     title: "Photo Library Access",
     description: "We need access to your photo library so you can select existing photos of your rooms. We only access the specific photos you choose.",
     primaryAction: "Allow Photos",
-  },
-  location: {
-    icon: "location",
-    title: "Location Access",
-    description: "We use your location to find local contractors in your area. We never share your exact address with contractors until you choose to connect with them.",
-    primaryAction: "Allow Location",
-    secondaryAction: "Enter Zip Code Manually",
   },
 };
 
@@ -54,8 +47,7 @@ export default function PermissionPrimerScreen() {
     if (type === "camera") {
       // Go to photo library picker
       router.push("/(tabs)/camera");
-    } else if (type === "location") {
-      // Go to manual zip code entry (handoff screen)
+    } else {
       router.back();
     }
   };

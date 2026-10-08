@@ -13,6 +13,7 @@
     "supabase:types": "npx supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > lib/database.types.ts",
     "check:models": "node scripts/check-zdr-models.mjs && node scripts/validate-ai-models.mjs",
     "check:dev-button": "bash scripts/check-dev-button.sh",
+    "check:launch-copy": "node scripts/check-launch-copy.js",
     "db:test": "bash scripts/db/run-tests.sh",
     "fn:test": "bash scripts/run-function-tests.sh",
     "e2e:web": "playwright test",

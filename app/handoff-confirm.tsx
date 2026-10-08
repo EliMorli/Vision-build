@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable, SafeAreaView } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, Redirect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { Button } from "@/components";
+
+// Feature flag for contractor outreach
+const CONTRACTOR_OUTREACH_ENABLED = false;
 
 interface PrivacyToggle {
   id: string;
@@ -13,7 +16,7 @@ interface PrivacyToggle {
   enabled: boolean;
 }
 
-export default function HandoffConfirmScreen() {
+function HandoffConfirmScreenInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   
@@ -276,3 +279,13 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
   },
 });
+
+export default function HandoffConfirmScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  
+  if (!CONTRACTOR_OUTREACH_ENABLED) {
+    return <Redirect href={`/pros-coming-soon?projectId=${id}`} />;
+  }
+  
+  return <HandoffConfirmScreenInner />;
+}

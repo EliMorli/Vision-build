@@ -9,7 +9,8 @@ import * as AppleAuthentication from "expo-apple-authentication";
 import { SUPPORT_EMAIL } from "../../lib/config";
 import { colors, fonts } from "../../lib/theme";
 import { supabase } from "@/lib/supabase";
-import { APPLE_DELETION_NOTE, shouldShowAppleNote } from "../../lib/constants/deletion";
+import { shouldShowAppleNote } from "../../lib/constants/deletion";
+import DeletedAccountView from "../../components/DeletedAccountView";
 
 type PageState = "loading" | "valid" | "error" | "deleting" | "deleted";
 
@@ -182,28 +183,11 @@ export default function DeleteAccountConfirm() {
 
   if (state === "deleted") {
     return (
-      <View style={styles.container}>
-        <View style={styles.card}>
-          <Text style={styles.title}>Your account has been deleted</Text>
-          <Text style={styles.body}>
-            All your data has been permanently removed. Thank you for using VisionBuild.
-          </Text>
-          {shouldShowAppleNote(Platform.OS, data.isAppleUser || false) && (
-            <Text style={styles.appleSettingsNote}>
-              {APPLE_DELETION_NOTE}
-            </Text>
-          )}
-          {Platform.OS !== "web" && (
-            <Pressable
-              style={styles.buttonSecondary}
-              onPress={handleDone}
-              testID="delete-done-button"
-            >
-              <Text style={styles.buttonSecondaryText}>Done</Text>
-            </Pressable>
-          )}
-        </View>
-      </View>
+      <DeletedAccountView
+        showNativeActions={Platform.OS !== "web"}
+        isAppleUser={data.isAppleUser || false}
+        onDone={handleDone}
+      />
     );
   }
 
@@ -369,15 +353,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 24,
     fontStyle: "italic",
-  },
-  appleSettingsNote: {
-    ...fonts.body,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.textSecondary,
-    textAlign: "center",
-    marginTop: 8,
-    marginBottom: 20,
   },
   loadingText: {
     ...fonts.label,
