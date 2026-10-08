@@ -60,19 +60,21 @@ export default function AIConsentScreen() {
         if (type === "analyze" && imageUri) {
           // Resume upload and analyze
           const projectStore = useProjectStore.getState();
-          router.replace("/(tabs)");
-          // Retry the upload after a brief delay to let the screen transition
-          setTimeout(() => {
-            projectStore.uploadAndAnalyze(imageUri);
-          }, 100);
+          // Directly call uploadAndAnalyze - it will navigate to editor on success
+          const project = await projectStore.uploadAndAnalyze(imageUri);
+          if (project) {
+            router.replace(`/editor/${project.id}`);
+          } else {
+            // If it failed, go back to home
+            router.replace("/(tabs)");
+          }
         } else if (type === "generate" && projectId && stylePrompt) {
           // Resume generate designs
           const projectStore = useProjectStore.getState();
-          router.replace(`/project/${projectId}`);
-          // Retry generate after a brief delay
-          setTimeout(() => {
-            projectStore.generateDesigns(projectId, stylePrompt);
-          }, 100);
+          // Navigate to generating screen first
+          router.replace(`/generating/${projectId}`);
+          // Call generateDesigns - the generating screen will handle the flow
+          await projectStore.generateDesigns(projectId, stylePrompt);
         } else {
           // No valid resume data, just go back
           if (router.canGoBack()) {
