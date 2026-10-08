@@ -1,7 +1,15 @@
 import { describe, it, expect } from "@jest/globals";
-import { APPLE_DELETION_NOTE, shouldShowAppleNote } from "../deletion";
+import { APPLE_DELETION_NOTE, DELETED_DATA_SUMMARY, shouldShowAppleNote } from "../deletion";
 
 describe("deletion constants", () => {
+  describe("DELETED_DATA_SUMMARY", () => {
+    it("has the exact compliance-approved data summary", () => {
+      expect(DELETED_DATA_SUMMARY).toBe(
+        "your projects, photos, designs, chats and pros waitlist signup"
+      );
+    });
+  });
+
   describe("APPLE_DELETION_NOTE", () => {
     it("has the exact compliance-approved text", () => {
       expect(APPLE_DELETION_NOTE).toBe(

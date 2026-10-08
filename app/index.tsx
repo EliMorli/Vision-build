@@ -13,45 +13,34 @@ const DEV_MOCK_ENABLED =
 export default function Index() {
   const session = useAuthStore((s) => s.session);
   const loading = useAuthStore((s) => s.loading);
-  const setSession = useAuthStore((s) => s.setSession);
   const [introSeen, setIntroSeen] = useState<boolean | null>(null);
+  const [mockSignedOut, setMockSignedOut] = useState<boolean | null>(null);
 
   useEffect(() => {
     const checkIntroSeen = async () => {
       try {
         const seen = await AsyncStorage.getItem(INTRO_SEEN_KEY);
         setIntroSeen(seen === "true");
+        
+        // Check mock signed-out flag
+        if (DEV_MOCK_ENABLED) {
+          const signedOut = await AsyncStorage.getItem("@visionbuild:mock_signed_out");
+          setMockSignedOut(signedOut === "true");
+        } else {
+          setMockSignedOut(false);
+        }
       } catch {
         setIntroSeen(false);
+        setMockSignedOut(false);
       }
     };
     
     checkIntroSeen();
   }, []);
   
-  // Set mock session in dev mode
-  useEffect(() => {
-    if (DEV_MOCK_ENABLED && !session) {
-      const now = Date.now();
-      setSession({
-        user: {
-          id: "mock-user-id",
-          email: "demo@visionbuild.app",
-          app_metadata: {},
-          user_metadata: {},
-          aud: "authenticated",
-          created_at: new Date().toISOString(),
-        },
-        access_token: "mock-token",
-        refresh_token: "mock-refresh",
-        expires_in: 3600,
-        expires_at: now / 1000 + 3600,
-        token_type: "bearer",
-      } as any);
-    }
-  }, [session, setSession]);
+  // Mock session is now created in _layout.tsx so it works on all routes
 
-  if (loading || introSeen === null) {
+  if (loading || introSeen === null || (DEV_MOCK_ENABLED && mockSignedOut === null)) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color={colors.primary} />

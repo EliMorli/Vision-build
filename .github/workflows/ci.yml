@@ -55,6 +55,9 @@ jobs:
       - name: Check dev button gating
         run: npm run check:dev-button
       
+      - name: Check no Alert.alert in app
+        run: bash scripts/check-no-alert.sh
+      
       - name: Check launch copy compliance
         run: npm run check:launch-copy
       
@@ -71,8 +74,8 @@ jobs:
           # Install build dependencies and pg_cron
           docker exec $CONTAINER_ID bash -c "apt-get update && apt-get install -y postgresql-16-cron postgresql-server-dev-16 build-essential git curl libcurl4-openssl-dev libicu-dev"
           
-          # Build and install pg_net from source
-          docker exec $CONTAINER_ID bash -c "cd /tmp && git clone https://github.com/supabase/pg_net.git && cd pg_net && make && make install"
+          # Build and install pg_net from source (pinned to v0.20.5)
+          docker exec $CONTAINER_ID bash -c "cd /tmp && git clone --branch v0.20.5 --depth 1 https://github.com/supabase/pg_net.git && cd pg_net && make && make install"
           
           # Configure pg_cron and pg_net
           docker exec $CONTAINER_ID bash -c "echo \"shared_preload_libraries = 'pg_cron, pg_net'\" >> /var/lib/postgresql/data/postgresql.conf"
@@ -116,6 +119,16 @@ jobs:
           PGPASSWORD: postgres
           PGDATABASE: visionbuild_test
         run: |
+          # Fail if supabase/tests/*.sql exists (they never run)
+          if ls supabase/tests/*.sql 2>/dev/null; then
+            echo "❌ Found SQL files in supabase/tests/ - they never run!"
+            echo "SQL tests must be in scripts/sql-tests/"
+            exit 1
+          fi
+          
+          SQL_FILE_COUNT=$(ls -1 scripts/sql-tests/*.sql 2>/dev/null | wc -l)
+          echo "Running $SQL_FILE_COUNT SQL test files..."
+          
           for test_file in scripts/sql-tests/*.sql; do
             echo "Running $(basename $test_file)..."
             psql -f "$test_file" -v ON_ERROR_STOP=1
@@ -157,11 +170,112 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
       
+      - name: Check Playwright test count
+        run: |
+          LISTED_COUNT=$(npx playwright test --list | grep -c "›" || echo "0")
+          FOUND_COUNT=$(grep -rn "test(" e2e/*.spec.ts | grep -v "test.describe" | grep -v "//" | wc -l)
+          echo "Listed tests: $LISTED_COUNT"
+          echo "test() calls in spec files: $FOUND_COUNT"
+          if [ "$LISTED_COUNT" != "$FOUND_COUNT" ]; then
+            echo "ERROR: Test count mismatch! Listed: $LISTED_COUNT, Found: $FOUND_COUNT"
+            echo "Some tests may not be discovered by Playwright. Check test file structure."
+            exit 1
+          fi
+          echo "✓ Test discovery validation passed"
+      
       - name: Run E2E Web Tests
-        run: npm run e2e:web
+        run: |
+          touch $RUNNER_TEMP/e2e-start
+          npm run e2e:web
         env:
           EXPO_PUBLIC_DEV_MOCK_SESSION: "true"
           CI: "true"
+      
+      - name: Verify screenshot dimensions
+        run: |
+          set -euo pipefail
+          
+          echo "Checking screenshot dimensions (expected 780x1688 at DSF 2)..."
+          
+          # Install ImageMagick if not present
+          if ! command -v identify &> /dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y imagemagick
+          fi
+          
+          MARKER="$RUNNER_TEMP/e2e-start"
+          if [ ! -f "$MARKER" ]; then
+            echo "❌ E2E start marker not found"
+            exit 1
+          fi
+          
+          FAIL=0
+          for screenshot in e2e/screens/*.png; do
+            if [ ! -f "$screenshot" ]; then
+              continue
+            fi
+            
+            # Skip ui-contact-sheet.png - check it after montage regenerates it
+            if [[ "$screenshot" == *"ui-contact-sheet.png" ]]; then
+              continue
+            fi
+            
+            # Check if file is newer than e2e start marker
+            if [ ! "$screenshot" -nt "$MARKER" ]; then
+              echo "❌ $screenshot was not regenerated in this test run"
+              FAIL=1
+              continue
+            fi
+            # Check dimensions with identify (ImageMagick)
+            DIMS=$(identify -format "%wx%h" "$screenshot" 2>/dev/null || echo "error")
+            if [ "$DIMS" = "error" ]; then
+              echo "❌ $screenshot could not be read (corrupted?)"
+              FAIL=1
+            elif [ "$DIMS" != "780x1688" ]; then
+              echo "❌ $screenshot is $DIMS (expected 780x1688)"
+              FAIL=1
+            else
+              echo "✓ $screenshot is $DIMS"
+            fi
+          done
+          
+          # Regenerate ui-contact-sheet.png from all current ui-* shots
+          cd e2e/screens
+          montage $(ls ui-*.png | grep -v contact-sheet) -tile 4x -geometry 195x422+2+2 -background white ui-contact-sheet.png
+          cd ../..
+          echo "✓ Regenerated ui-contact-sheet.png"
+          
+          # Verify the regenerated contact-sheet exists and is newer than test run
+          CONTACT_SHEET="e2e/screens/ui-contact-sheet.png"
+          if [ ! -f "$CONTACT_SHEET" ]; then
+            echo "❌ $CONTACT_SHEET was not generated"
+            FAIL=1
+          else
+            if [ ! "$CONTACT_SHEET" -nt "$MARKER" ]; then
+              echo "❌ $CONTACT_SHEET is stale (older than test run)"
+              FAIL=1
+            else
+              echo "✓ $CONTACT_SHEET (composite, verified)"
+            fi
+          fi
+          
+          # Check that all screenshot paths referenced in specs exist
+          echo ""
+          echo "Checking for missing screenshots referenced in specs..."
+          REFERENCED_SCREENSHOTS=$(grep -roh "e2e/screens/[^\"']*\.png" e2e/*.spec.ts | sort -u)
+          for ref_screenshot in $REFERENCED_SCREENSHOTS; do
+            if [ ! -f "$ref_screenshot" ]; then
+              echo "❌ $ref_screenshot referenced in spec but missing"
+              FAIL=1
+            fi
+          done
+          
+          if [ $FAIL -eq 1 ]; then
+            echo ""
+            echo "Screenshot check failed. All ui-* screenshots must be 780x1688 and regenerated during the test run."
+            exit 1
+          fi
+          echo "✅ All screenshots are 780x1688 and were regenerated."
       
       - name: Upload Playwright Report
         uses: actions/upload-artifact@v4

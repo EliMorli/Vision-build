@@ -7,7 +7,6 @@ import {
   Pressable,
   SafeAreaView,
   ScrollView,
-  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
@@ -18,6 +17,8 @@ import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 interface ReportModalProps {
   visible: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
+  onError?: (error: string) => void;
   type: "design" | "message" | "contractor";
   itemId: string;
 }
@@ -47,7 +48,7 @@ const REPORT_REASONS = {
   ],
 };
 
-export function ReportModal({ visible, onClose, type, itemId }: ReportModalProps) {
+export function ReportModal({ visible, onClose, onSuccess, onError, type, itemId }: ReportModalProps) {
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitReport = useReportStore((s) => s.submitReport);
@@ -68,22 +69,23 @@ export function ReportModal({ visible, onClose, type, itemId }: ReportModalProps
       });
 
       setIsSubmitting(false);
-      onClose();
-
-      Alert.alert(
-        "Thank You",
-        "Your report has been submitted. Our team will review it and take appropriate action.",
-        [{ text: "OK" }]
-      );
-
       setSelectedReason(null);
-    } catch (error) {
+      onClose();
+      
+      // Call onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error: any) {
       setIsSubmitting(false);
-      Alert.alert(
-        "Error",
-        "Failed to submit report. Please try again.",
-        [{ text: "OK" }]
-      );
+      console.error("Failed to submit report:", error);
+      setSelectedReason(null);
+      onClose();
+      
+      // Call onError callback if provided
+      if (onError) {
+        onError(error.message || "Failed to submit report. Please try again.");
+      }
     }
   };
 

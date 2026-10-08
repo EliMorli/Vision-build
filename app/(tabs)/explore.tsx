@@ -7,37 +7,101 @@ import {
   TextInput,
   Pressable,
   SafeAreaView,
-  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
-import { IsoRoom, Button } from "@/components";
-import { useProjectStore } from "@/lib/store";
+import { IsoRoom, Button, ReportModal, ConfirmationSheet, MenuSheet } from "@/components";
+import { useExploreStore, useReportStore } from "@/lib/store";
 
 export default function ExploreScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const { projects } = useProjectStore();
+  const { publicDesigns, fetchPublicDesigns } = useExploreStore();
+  const blockUser = useReportStore((s) => s.blockUser);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportingProjectId, setReportingProjectId] = useState<string>("");
+  const [menuSheet, setMenuSheet] = useState<{
+    visible: boolean;
+    projectId: string;
+    userId: string;
+  }>({ visible: false, projectId: "", userId: "" });
+  const [confirmSheet, setConfirmSheet] = useState<{
+    visible: boolean;
+    type: "report" | "block" | null;
+    projectId: string;
+    userId: string;
+  }>({ visible: false, type: null, projectId: "", userId: "" });
+  const [successMessage, setSuccessMessage] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string>("");
   
-  // Get only public projects
-  const publicDesigns = projects.filter(p => p.is_public);
+  // Fetch public designs on mount
+  useEffect(() => {
+    fetchPublicDesigns();
+  }, [fetchPublicDesigns]);
+  
+  // Filter by search query  
+  const filteredDesigns = publicDesigns.filter(p =>
+    p.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.selected_style?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  const handleReport = (id: string) => {
-    Alert.alert(
-      "Report Design",
-      "Why are you reporting this design?",
-      [
-        { text: "Inappropriate content", onPress: () => {} },
-        { text: "Spam or misleading", onPress: () => {} },
-        { text: "Copyright violation", onPress: () => {} },
-        { text: "Cancel", style: "cancel" },
-      ]
-    );
+  const handleReportMenu = (projectId: string, userId: string) => {
+    setMenuSheet({ visible: true, projectId, userId });
+  };
+
+  const handleReportOption = () => {
+    setConfirmSheet({
+      visible: true,
+      type: "report",
+      projectId: menuSheet.projectId,
+      userId: menuSheet.userId,
+    });
+  };
+
+  const handleBlockOption = () => {
+    setConfirmSheet({
+      visible: true,
+      type: "block",
+      projectId: menuSheet.projectId,
+      userId: menuSheet.userId,
+    });
+  };
+
+  const handleConfirmReport = () => {
+    const { projectId } = confirmSheet;
+    setReportingProjectId(projectId);
+    setReportModalVisible(true);
+    setConfirmSheet({ visible: false, type: null, projectId: "", userId: "" });
+  };
+
+  const handleConfirmBlock = async () => {
+    const { userId } = confirmSheet;
+    
+    if (!userId) {
+      setConfirmSheet({ visible: false, type: null, projectId: "", userId: "" });
+      setErrorMessage("Cannot block: user not found");
+      setTimeout(() => setErrorMessage(""), 3000);
+      return;
+    }
+    
+    // Close sheet first
+    setConfirmSheet({ visible: false, type: null, projectId: "", userId: "" });
+    
+    try {
+      await blockUser(userId);
+      // Reload public designs to reflect the block
+      await fetchPublicDesigns();
+      setSuccessMessage("User blocked. Their designs won't appear in Explore anymore.");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (error: any) {
+      setErrorMessage(error.message || "Failed to block user. Please try again.");
+      setTimeout(() => setErrorMessage(""), 3000);
+    }
   };
 
   // Empty state when no public designs
-  if (publicDesigns.length === 0) {
+  if (filteredDesigns.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
         {/* Search bar */}
@@ -50,7 +114,6 @@ export default function ExploreScreen() {
               placeholderTextColor={colors.textSecondary}
               value={searchQuery}
               onChangeText={setSearchQuery}
-              editable={false}
             />
           </View>
         </View>
@@ -75,6 +138,84 @@ export default function ExploreScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <ReportModal
+        visible={reportModalVisible}
+        onClose={() => {
+          setReportModalVisible(false);
+          setReportingProjectId("");
+        }}
+        onSuccess={() => {
+          setSuccessMessage("Thank you for reporting. We'll review this design.");
+          setTimeout(() => setSuccessMessage(""), 3000);
+        }}
+        onError={(error) => {
+          setErrorMessage(error);
+          setTimeout(() => setErrorMessage(""), 3000);
+        }}
+        type="design"
+        itemId={reportingProjectId}
+      />
+
+      <MenuSheet
+        visible={menuSheet.visible}
+        onClose={() => setMenuSheet({ visible: false, projectId: "", userId: "" })}
+        title="Report or Block"
+        options={[
+          {
+            label: "Report this design",
+            icon: "flag-outline",
+            onPress: handleReportOption,
+            testID: "menu-report-option",
+          },
+          {
+            label: "Block this user",
+            icon: "ban-outline",
+            variant: "destructive",
+            onPress: handleBlockOption,
+            testID: "menu-block-option",
+          },
+        ]}
+        testID="report-block-menu"
+      />
+
+      <ConfirmationSheet
+        visible={confirmSheet.visible && confirmSheet.type === "report"}
+        onClose={() => setConfirmSheet({ visible: false, type: null, projectId: "", userId: "" })}
+        title="Report Design"
+        message="Report this design for inappropriate content?"
+        confirmLabel="Report"
+        confirmVariant="danger"
+        onConfirm={handleConfirmReport}
+        testID="report-confirm-sheet"
+      />
+
+      <ConfirmationSheet
+        visible={confirmSheet.visible && confirmSheet.type === "block"}
+        onClose={() => setConfirmSheet({ visible: false, type: null, projectId: "", userId: "" })}
+        title="Block User"
+        message="Block this user? You won't see their designs in Explore anymore."
+        confirmLabel="Block User"
+        confirmVariant="danger"
+        onConfirm={handleConfirmBlock}
+        testID="block-confirm-sheet"
+      />
+
+      {/* Success message */}
+      {successMessage ? (
+        <View style={styles.successBanner} testID="success-message">
+          <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+          <Text style={styles.successText}>{successMessage}</Text>
+        </View>
+      ) : null}
+
+      {/* Error message */}
+      {errorMessage ? (
+        <View style={styles.errorBanner} testID="error-message">
+          <Ionicons name="alert-circle" size={20} color={colors.error} />
+          <Text style={styles.errorText}>{errorMessage}</Text>
+        </View>
+      ) : null}
+
       {/* Search bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
@@ -101,6 +242,7 @@ export default function ExploreScreen() {
             style={styles.card}
             accessibilityRole="button"
             accessibilityLabel={`${item.selected_style || 'Unknown'} design`}
+            testID="explore-design-card"
           >
             <View style={styles.cardImageWrapper}>
               <IsoRoom
@@ -112,10 +254,11 @@ export default function ExploreScreen() {
             </View>
             <Pressable
               style={styles.moreButton}
-              onPress={() => handleReport(item.id)}
-              accessibilityLabel="Report or block design"
+              onPress={() => handleReportMenu(item.id, item.user_id || "")}
+              accessibilityLabel="Report or block"
               accessibilityRole="button"
               hitSlop={12}
+              testID="explore-report-button"
             >
               <Ionicons name="ellipsis-horizontal" size={20} color="#fff" />
             </Pressable>
@@ -208,7 +351,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.6)",
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1,
@@ -235,5 +378,45 @@ const styles = StyleSheet.create({
   cardCreator: {
     color: "rgba(255,255,255,0.85)",
     fontSize: 12,
+  },
+  successBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+    borderRadius: radius.md,
+    gap: spacing.sm,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  successText: {
+    ...fonts.body,
+    color: colors.textPrimary,
+    flex: 1,
+  },
+  errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.error + "12",
+    padding: spacing.md,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+    borderRadius: radius.md,
+    gap: spacing.sm,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  errorText: {
+    ...fonts.body,
+    color: colors.error,
+    flex: 1,
   },
 });

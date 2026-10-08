@@ -14,9 +14,16 @@ if [ -n "$UNGATED" ]; then
   exit 1
 fi
 
-# Check that SHOW_DEV_BUTTON is properly defined
-if ! grep -q "__DEV__.*EXPO_PUBLIC_DEV_MOCK_SESSION" "app/(tabs)/index.tsx"; then
-  echo "❌ SHOW_DEV_BUTTON is not properly gated with __DEV__ or EXPO_PUBLIC_DEV_MOCK_SESSION"
+# Check that SHOW_DEV_BUTTON uses AND not OR (must be __DEV__ && EXPO_PUBLIC_DEV_MOCK_SESSION)
+if grep -q "__DEV__.*||.*EXPO_PUBLIC_DEV_MOCK_SESSION" "app/(tabs)/index.tsx"; then
+  echo "❌ SHOW_DEV_BUTTON uses OR (||) instead of AND (&&)"
+  echo "Dev button should only show when BOTH __DEV__ AND EXPO_PUBLIC_DEV_MOCK_SESSION are true"
+  exit 1
+fi
+
+# Check that SHOW_DEV_BUTTON is properly defined with AND
+if ! grep -q "__DEV__.*&&.*EXPO_PUBLIC_DEV_MOCK_SESSION" "app/(tabs)/index.tsx"; then
+  echo "❌ SHOW_DEV_BUTTON is not properly gated with __DEV__ && EXPO_PUBLIC_DEV_MOCK_SESSION"
   exit 1
 fi
 

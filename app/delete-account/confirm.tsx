@@ -9,7 +9,7 @@ import * as AppleAuthentication from "expo-apple-authentication";
 import { SUPPORT_EMAIL } from "../../lib/config";
 import { colors, fonts } from "../../lib/theme";
 import { supabase } from "@/lib/supabase";
-import { shouldShowAppleNote } from "../../lib/constants/deletion";
+import { DELETED_DATA_SUMMARY } from "../../lib/constants/deletion";
 import DeletedAccountView from "../../components/DeletedAccountView";
 
 type PageState = "loading" | "valid" | "error" | "deleting" | "deleted";
@@ -262,7 +262,7 @@ export default function DeleteAccountConfirm() {
         <Text style={styles.email}>{data.email}</Text>
         <Text style={styles.title}>Delete your account?</Text>
         <Text style={styles.warning}>
-          Your projects, designs, chats and quotes will be deleted, including your posts on Explore. Remixes other
+          Your {DELETED_DATA_SUMMARY} will be deleted, including your posts on Explore. Remixes other
           people made stay with them.
         </Text>
         {data.isAppleUser && Platform.OS === "ios" && (

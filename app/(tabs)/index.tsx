@@ -14,7 +14,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore, useAuthStore } from "@/lib/store";
 import { Project, ProjectStatus } from "@/lib/types";
-import { Button, EmptyState, IsoRoom, PrivateImage, ProsTeaserCard } from "@/components";
+import { Button, IsoRoom, PrivateImage, ProsTeaserCard } from "@/components";
+import { getDisplayName, getFirstName } from "@/lib/helpers/user";
 
 // Long-running threshold for showing "Rendering..." card in Home
 const LONG_RUNNING_THRESHOLD_MS = 45000; // 45 seconds
@@ -29,22 +30,25 @@ const STATUS_MAP: Record<ProjectStatus, { label: string; color: string; icon: ke
 };
 
 const SHOW_DEV_BUTTON = 
-  (typeof __DEV__ !== 'undefined' && __DEV__) || process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === 'true';
+  (typeof __DEV__ !== 'undefined' && __DEV__) && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === 'true';
 
 export default function DashboardScreen() {
   const router = useRouter();
   const { projects, fetchProjects, generatingStartTime } = useProjectStore();
   const profile = useAuthStore((s) => s.profile);
+  const session = useAuthStore((s) => s.session);
   const [showRenderingCard, setShowRenderingCard] = useState(false);
   const [prosCardKey, setProsCardKey] = useState(0);
 
   // NOTE: AI consent is now enforced server-side in analyze-room, generate-design, and assistant-chat
   // Removed client-side useAIConsentCheck() - consent errors trigger re-consent flow with resume capability
 
+  const displayName = getDisplayName(profile, session?.user);
+  const firstName = getFirstName(displayName);
+  const greeting = firstName === "User" ? "Hey there" : `Hey ${firstName}`;
+
   const xp = profile?.xp || 0;
   const level = profile?.level || 1;
-  const xpForNextLevel = level * 200;
-  const xpProgress = (xp % 200) / xpForNextLevel;
 
   useEffect(() => {
     fetchProjects();
@@ -91,10 +95,10 @@ export default function DashboardScreen() {
 
   if (projects.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} testID="home-screen">
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.greeting}>Hey {profile?.display_name?.split(" ")[0] || "there"}</Text>
+            <Text style={styles.greeting} testID="home-greeting">{greeting}</Text>
             <Text style={fonts.heading}>Ready to redesign?</Text>
           </View>
           <View style={styles.headerRight}>
@@ -163,10 +167,10 @@ export default function DashboardScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="home-screen">
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.greeting}>Hey {profile?.display_name?.split(" ")[0] || "there"}</Text>
+          <Text style={styles.greeting} testID="home-greeting">{greeting}</Text>
           <Text style={fonts.heading}>Ready to redesign?</Text>
         </View>
         <View style={styles.headerRight}>

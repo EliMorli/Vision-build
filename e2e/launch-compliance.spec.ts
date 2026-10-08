@@ -217,10 +217,15 @@ test.describe("Launch Compliance Tests", () => {
     await expect(page.getByText(/modern bathroom remodel/i)).toBeVisible();
     
     // Button should say "Join the pros waitlist" not "Get quotes"
-    await expect(page.getByTestId("project-brief-waitlist")).toBeVisible();
-    await expect(page.getByTestId("project-brief-waitlist")).toContainText("Join the pros waitlist");
+    const waitlistButton = page.getByTestId("project-brief-waitlist");
+    await expect(waitlistButton).toBeVisible();
+    await expect(waitlistButton).toContainText("Join the pros waitlist");
     
-    await page.screenshot({ path: "e2e/screens/ui-project-brief.png", fullPage: false });
+    // Scroll button into view and verify it's in viewport
+    await waitlistButton.scrollIntoViewIfNeeded();
+    await expect(waitlistButton).toBeInViewport();
+    
+    await page.screenshot({ path: "e2e/screens/ui-project-brief-waitlist.png", fullPage: false });
   });
 
   test("profile badges: locked badge with lock icon and hint", async ({ page }: { page: Page }) => {
@@ -282,6 +287,11 @@ test.describe("Launch Compliance Tests", () => {
   });
 
   test("explore empty state: shows clay room and start button", async ({ page }: { page: Page }) => {
+    // Seed empty projects list
+    await page.addInitScript(() => {
+      localStorage.setItem("@visionbuild:mock_seed_projects", JSON.stringify([]));
+    });
+    
     await page.goto(`${BASE_URL}/(tabs)/explore`);
     await page.waitForLoadState("networkidle");
     

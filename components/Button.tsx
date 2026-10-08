@@ -3,7 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 
-type Variant = "primary" | "secondary" | "outline" | "ghost";
+type Variant = "primary" | "secondary" | "outline" | "ghost" | "danger";
 
 interface ButtonProps {
   label: string;
@@ -87,6 +87,15 @@ const VARIANT_STYLES: Record<Variant, { container: ViewStyle; textColor: string;
     }, 
     textColor: "#fff",
     bottomColor: "#23803D",
+  },
+  danger: { 
+    container: { 
+      backgroundColor: colors.error,
+      borderBottomWidth: 5,
+      borderBottomColor: "#B91C1C",
+    }, 
+    textColor: "#fff",
+    bottomColor: "#B91C1C",
   },
   outline: { 
     container: { 

@@ -6,16 +6,18 @@ import {
   ScrollView,
   Pressable,
   SafeAreaView,
-  Alert,
   Linking,
   Switch,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useAuthStore, usePrivacyStore, useSettingsStore } from "@/lib/store";
 import { SUPPORT_EMAIL } from "@/lib/config";
 import { supabase } from "@/lib/supabase";
+import { ConfirmationSheet } from "@/components";
+import { DELETED_DATA_SUMMARY } from "@/lib/constants/deletion";
 
 export default function ProfileSettingsScreen() {
   const router = useRouter();
@@ -32,12 +34,14 @@ export default function ProfileSettingsScreen() {
 
   const [prosWaitlist, setProsWaitlist] = useState(false);
   const [checkingWaitlist, setCheckingWaitlist] = useState(true);
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
   const checkProsWaitlist = useCallback(async () => {
     const userId = useAuthStore.getState().session?.user?.id;
     
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
-      const stored = localStorage.getItem("@visionbuild:waitlist:general");
+      const stored = await AsyncStorage.getItem("@visionbuild:waitlist:general");
       setProsWaitlist(stored === "true");
       setCheckingWaitlist(false);
       return;
@@ -80,15 +84,12 @@ export default function ProfileSettingsScreen() {
 
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
       if (enabled) {
-        localStorage.setItem("@visionbuild:waitlist:general", "true");
+        await AsyncStorage.setItem("@visionbuild:waitlist:general", "true");
       } else {
         // Delete all waitlist entries in mock mode
-        const keys = Object.keys(localStorage);
-        keys.forEach(key => {
-          if (key.startsWith("@visionbuild:waitlist:")) {
-            localStorage.removeItem(key);
-          }
-        });
+        const keys = await AsyncStorage.getAllKeys();
+        const waitlistKeys = keys.filter(key => key.startsWith("@visionbuild:waitlist:"));
+        await AsyncStorage.multiRemove(waitlistKeys);
       }
       setProsWaitlist(enabled);
       return;
@@ -134,13 +135,15 @@ export default function ProfileSettingsScreen() {
           const { error } = await supabase.functions.invoke("revoke-ai-consent");
           if (error) {
             console.error("Error revoking AI consent:", error);
-            Alert.alert("Error", "Could not revoke AI consent. Please try again.");
+            setErrorMessage("Could not revoke AI consent. Please try again.");
+            setTimeout(() => setErrorMessage(""), 3000);
             return;
           }
         }
       } catch (_err) {
         console.error("Error calling revoke-ai-consent:", _err);
-        Alert.alert("Error", "Could not revoke AI consent. Please try again.");
+        setErrorMessage("Could not revoke AI consent. Please try again.");
+        setTimeout(() => setErrorMessage(""), 3000);
         return;
       }
     }
@@ -148,41 +151,50 @@ export default function ProfileSettingsScreen() {
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      "Delete Account",
-      "Are you sure? This will permanently delete your account, all projects, and designs. This action cannot be undone.",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Delete My Account",
-          style: "destructive",
-          onPress: async () => {
-            if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
-              Alert.alert("Account Deleted", "Your account has been scheduled for deletion.");
-              signOut();
-              return;
-            }
+    setDeleteConfirmVisible(true);
+  };
 
-            try {
-              const { error } = await supabase.functions.invoke("delete-account");
-              
-              if (error) throw error;
-              
-              await signOut();
-            } catch (err: any) {
-              Alert.alert(
-                "Error",
-                "Failed to delete account. Please try again or contact support.",
-                [{ text: "OK" }]
-              );
-            }
-          },
-        },
-      ]
-    );
+  const confirmDeleteAccount = async () => {
+    const profile = useAuthStore.getState().profile;
+    const isAppleUser = profile?.email?.endsWith('@privaterelay.appleid.com') || false;
+    
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      // Record mock delete call for E2E testing
+      if (typeof window !== 'undefined') {
+        (window as any).__VB_MOCK_DELETE_CALLS__ = (window as any).__VB_MOCK_DELETE_CALLS__ || [];
+        (window as any).__VB_MOCK_DELETE_CALLS__.push({
+          timestamp: new Date().toISOString(),
+          userId: profile?.id
+        });
+      }
+      
+      // Sign out and set mock signed-out flag
+      await signOut();
+      
+      // Navigate to deleted screen
+      router.replace({
+        pathname: '/deleted-account' as any,
+        params: { variant: isAppleUser ? 'apple' : 'email' }
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.functions.invoke("delete-account");
+      
+      if (error) throw error;
+      
+      await signOut();
+      
+      // Navigate to deleted screen
+      router.replace({
+        pathname: '/deleted-account' as any,
+        params: { variant: isAppleUser ? 'apple' : 'email' }
+      });
+    } catch {
+      setErrorMessage("Failed to delete account. Please try again or contact support.");
+      setTimeout(() => setErrorMessage(""), 3000);
+    }
   };
 
   const handleRequestData = () => {
@@ -199,6 +211,17 @@ export default function ProfileSettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <ConfirmationSheet
+        visible={deleteConfirmVisible}
+        onClose={() => setDeleteConfirmVisible(false)}
+        title="Delete Account"
+        message={`Are you sure? This will permanently delete your account and ${DELETED_DATA_SUMMARY}. This action cannot be undone.`}
+        confirmLabel="Delete My Account"
+        confirmVariant="danger"
+        onConfirm={confirmDeleteAccount}
+        testID="delete-account-confirm"
+      />
+
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={12}>
@@ -207,6 +230,12 @@ export default function ProfileSettingsScreen() {
         <Text style={styles.headerTitle}>Settings</Text>
         <View style={{ width: 24 }} />
       </View>
+
+      {errorMessage ? (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorText}>{errorMessage}</Text>
+        </View>
+      ) : null}
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Notifications Section */}
@@ -393,6 +422,7 @@ export default function ProfileSettingsScreen() {
               onPress={handleDeleteAccount}
               accessibilityRole="button"
               accessibilityLabel="Delete Account. Permanently delete your account and all data."
+              testID="delete-account-button"
             >
               <View style={styles.settingInfo}>
                 <Text style={[styles.settingLabel, styles.dangerLabel]}>
@@ -533,5 +563,18 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: spacing.lg,
     marginBottom: spacing.xl,
+  },
+  errorBanner: {
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+    borderRadius: radius.md,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.error,
+  },
+  errorText: {
+    ...fonts.body,
+    color: colors.error,
   },
 });

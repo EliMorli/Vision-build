@@ -113,13 +113,7 @@ export default function ProjectDetailScreen() {
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </Pressable>
         <Text style={styles.headerTitle}>{toSentenceCase(projectTitle)}</Text>
-        <Pressable 
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="More options"
-        >
-          <Ionicons name="ellipsis-horizontal" size={24} color={colors.textPrimary} />
-        </Pressable>
+        <View style={{ width: 24 }} />
       </View>
 
       <ScrollView>
@@ -218,6 +212,7 @@ export default function ProjectDetailScreen() {
                   key={index}
                   style={styles.designCard}
                   onPress={() => router.push(`/result/${id}`)}
+                  testID="design-card"
                 >
                   <PrivateImage
                     bucket="room-photos"
@@ -304,7 +299,7 @@ export default function ProjectDetailScreen() {
         {/* Project brief */}
         {project?.lead_info?.projectBrief && (
           <View style={styles.briefSection} testID="project-brief">
-            <Text style={styles.sectionTitle}>Project Brief</Text>
+            <Text style={styles.sectionTitle}>Project brief</Text>
             <View style={styles.briefCard}>
               <Text style={styles.briefText}>
                 {project.lead_info.projectBrief}

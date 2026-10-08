@@ -8,6 +8,7 @@ import { supabase } from "./supabase";
 import { Project, Profile, Contractor } from "./types";
 import { getDataLayer } from "./data";
 import { InMemoryDataLayer } from "./data/in-memory";
+import { MOCK_USER_ID } from "./constants/mock";
 
 // ─── Auth Store ────────────────────────────────────────────
 
@@ -30,15 +31,32 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   setSession: (session) => {
     set({ session, loading: false });
-    if (session) get().fetchProfile();
+    if (session) {
+      get().fetchProfile();
+      // Clear mock signed-out flag when signing in
+      if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+        AsyncStorage.removeItem("@visionbuild:mock_signed_out").catch(() => {});
+      }
+    }
   },
 
   fetchProfile: async () => {
-    const userId = get().session?.user?.id;
-    if (!userId) return;
-
-    // In mock mode, use hardcoded profile and skip Supabase calls
+    // In mock mode, check for seeded mock profile first (for E2E testing)
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      const userId = get().session?.user?.id ?? MOCK_USER_ID;
+      
+      try {
+        const seedJson = await AsyncStorage.getItem("@visionbuild:mock_seed_profile");
+        if (seedJson) {
+          const seedProfile = JSON.parse(seedJson);
+          set({ profile: seedProfile });
+          return;
+        }
+      } catch (e) {
+        console.warn("Failed to load mock seed profile:", e);
+      }
+      
+      // Default mock profile when no seed is provided
       set({
         profile: {
           id: userId,
@@ -53,6 +71,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
       return;
     }
+
+    const userId = get().session?.user?.id;
+    if (!userId) return;
 
     // Fetch profile
     const { data: profileData, error: profileError } = await supabase
@@ -138,10 +159,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ session: null, profile: null, loading: false, error: null });
     useProjectStore.getState().clear();
     
-    // Clear mock mode session if applicable
+    // Set mock signed-out flag if in mock mode
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
-      // Just clearing the store state is enough for mock mode
-      // The session null will prevent auth checks from passing
+      await AsyncStorage.setItem("@visionbuild:mock_signed_out", "true");
     }
   },
 }));
@@ -245,7 +265,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       const mockProjects: Project[] = [
         {
           id: "mock-1",
-          user_id: "mock-user",
+          user_id: MOCK_USER_ID,
           title: "Kitchen Renovation",
           original_image_url: "https://placehold.co/800x500/E0E0E0/808080?text=Kitchen+Before",
           room_analysis: {
@@ -271,7 +291,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         },
         {
           id: "mock-2",
-          user_id: "mock-user",
+          user_id: MOCK_USER_ID,
           title: "Bathroom Remodel",
           original_image_url: "https://placehold.co/800x500/D0D0D0/707070?text=Bathroom+Before",
           room_analysis: {
@@ -295,7 +315,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         },
         {
           id: "mock-3",
-          user_id: "mock-user",
+          user_id: MOCK_USER_ID,
           title: "Backyard Oasis",
           original_image_url: "https://placehold.co/800x500/C8E6C9/4CAF50?text=Backyard+Before",
           room_analysis: {
@@ -804,18 +824,33 @@ interface ReportState {
     targetId: string;
     reason: string;
   }) => Promise<void>;
+  blockUser: (userId: string) => Promise<void>;
 }
 
 export const useReportStore = create<ReportState>(() => ({
   submitReport: async ({ targetType, targetId, reason }) => {
-    const userId = useAuthStore.getState().session?.user?.id;
+    const authState = useAuthStore.getState();
+    const userId = authState.session?.user?.id || authState.profile?.id;
 
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
-      console.log("[Mock] Report submitted:", { targetType, targetId, reason, userId: userId || "mock-user" });
+      if (!userId) {
+        throw new Error("You must be signed in to report content");
+      }
+      
+      console.log("[Mock] Report submitted:", { targetType, targetId, reason, userId });
+      
+      // Persist report to AsyncStorage for E2E testing
+      const existingReports = await AsyncStorage.getItem("@visionbuild:reports");
+      const reports = existingReports ? JSON.parse(existingReports) : [];
+      reports.push({ targetType, targetId, reason, userId, createdAt: new Date().toISOString() });
+      await AsyncStorage.setItem("@visionbuild:reports", JSON.stringify(reports));
+      
       return;
     }
 
-    if (!userId) return;
+    if (!userId) {
+      throw new Error("You must be signed in to report content");
+    }
 
     const { error } = await (supabase.from("reports") as any).insert([
       {
@@ -828,6 +863,41 @@ export const useReportStore = create<ReportState>(() => ({
 
     if (error) {
       console.error("Failed to submit report:", error);
+      throw error;
+    }
+  },
+  blockUser: async (blockedId: string) => {
+    const authState = useAuthStore.getState();
+    const userId = authState.session?.user?.id || authState.profile?.id;
+
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      if (!userId) {
+        throw new Error("You must be signed in to block users");
+      }
+      
+      console.log("[Mock] User blocked:", { blockedId, userId });
+      // Store block in AsyncStorage for e2e tests (works as localStorage on web)
+      const blocksJson = await AsyncStorage.getItem("@visionbuild:blocks");
+      const blocks = blocksJson ? JSON.parse(blocksJson) : [];
+      blocks.push({ blocker_id: userId, blocked_id: blockedId });
+      await AsyncStorage.setItem("@visionbuild:blocks", JSON.stringify(blocks));
+      return;
+    }
+
+    if (!userId) {
+      throw new Error("You must be signed in to block users");
+    }
+
+    const { error } = await (supabase.from("blocks") as any).insert([
+      {
+        blocker_id: userId,
+        blocked_id: blockedId,
+        blocked_type: "user",
+      },
+    ]);
+
+    if (error && !error.message?.includes("duplicate key")) {
+      console.error("Failed to block user:", error);
       throw error;
     }
   },
@@ -860,7 +930,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
       const dataLayer = getDataLayer();
-      const settings = await dataLayer.getUserSettings(userId || "mock-user");
+      const settings = await dataLayer.getUserSettings(userId || MOCK_USER_ID);
       if (settings) {
         set({
           pushNotifications: settings.pushNotifications,
@@ -896,7 +966,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
       set({ [key]: value } as any);
       const dataLayer = getDataLayer();
-      await dataLayer.saveUserSettings(userId || "mock-user", {
+      await dataLayer.saveUserSettings(userId || MOCK_USER_ID, {
         ...get(),
         [key]: value,
       });
@@ -917,6 +987,74 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     if (!error) {
       set({ [key]: value } as any);
     }
+  },
+}));
+
+// ─── Explore Store ─────────────────────────────────────────
+
+interface ExploreState {
+  publicDesigns: Project[];
+  loading: boolean;
+  fetchPublicDesigns: () => Promise<void>;
+}
+
+export const useExploreStore = create<ExploreState>((set, get) => ({
+  publicDesigns: [],
+  loading: false,
+
+  fetchPublicDesigns: async () => {
+    const userId = useAuthStore.getState().session?.user?.id;
+    
+    // Dev mode: Check for seeded mock projects first (for E2E testing)
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      try {
+        const seedJson = await AsyncStorage.getItem("@visionbuild:mock_seed_projects");
+        if (seedJson) {
+          const seedProjects = JSON.parse(seedJson);
+          // Filter to only public projects from other users
+          const publicOnly = seedProjects.filter((p: Project) => 
+            p.is_public && p.user_id !== userId
+          );
+          
+          // Check blocks
+          const blocksJson = await AsyncStorage.getItem("@visionbuild:blocks");
+          const blocksData: Array<{ blocked_id: string }> = blocksJson ? JSON.parse(blocksJson) : [];
+          const blockedIds = blocksData.map(b => b.blocked_id);
+          
+          // Filter out blocked users
+          const filtered = publicOnly.filter((p: Project) => 
+            !blockedIds.includes(p.user_id || "")
+          );
+          
+          set({ publicDesigns: filtered });
+          return;
+        }
+      } catch (e) {
+        console.warn("Failed to load mock seed projects:", e);
+      }
+      
+      // Default: no public designs in mock mode without seeds
+      set({ publicDesigns: [] });
+      return;
+    }
+    
+    if (!userId) {
+      set({ publicDesigns: [] });
+      return;
+    }
+
+    set({ loading: true });
+    
+    // Use RPC function that excludes blocked users
+    const { data, error} = await (supabase.rpc("fetch_public_designs") as any);
+
+    if (error) {
+      console.error("Failed to fetch public designs:", error);
+      set({ publicDesigns: [], loading: false });
+      return;
+    }
+
+    set({ publicDesigns: data || [], loading: false });
   },
 }));
 

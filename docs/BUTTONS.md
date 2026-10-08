@@ -1,139 +1,238 @@
-# VisionBuild Button Status
+# VisionBuild Button Audit
 
-Last updated: October 8, 2026 (after create loop implementation)
+Comprehensive audit of all interactive controls across VisionBuild screens, documenting their purpose, implementation, and test coverage.
 
-## Legend
-- ✅ **Pass A**: Works end-to-end with real backend
-- 🟨 **Pass B**: Deferred (contractor threads, quotes, blocks, Explore detail)
-- ⚠️ **Works in mock**: Works with mock data but needs backend
-- ❌ **Broken**: Does not work at all
+## Home Screen (`app/(tabs)/index.tsx`)
 
-## Core Flow Buttons (Create → Design → Results)
+| Control | testID | Purpose | Action | Test Coverage |
+|---------|--------|---------|--------|---------------|
+| XP Chip (Pressable) | - | Navigate to profile settings | `router.push("/profile-settings")` | Manual (no explicit e2e) |
+| Dev Button (Pressable) | - | Navigate to profile settings (dev mode only) | `router.push("/profile-settings")` | Gated by `SHOW_DEV_BUTTON`, checked by `check:dev-button` |
+| "Start your first project" (Button) | - | Navigate to camera | `router.push("/(tabs)/camera")` | Used in e2e tests |
+| "Start a new room" (Button) | - | Navigate to camera | `router.push("/(tabs)/camera")` | Used in e2e tests |
+| Project Card (Pressable) | `home-project-card` | Open project detail | `router.push(/project/${project.id})` | Implicit in e2e |
+| Pull-to-refresh | - | Refresh project list | `fetchProjects()` | Manual |
 
-| Screen | Button | Status | Notes |
-|--------|--------|--------|-------|
-| Home (empty) | "Start Your First Project" | ⚠️ Works in mock | Navigates to camera, full loop works in mock |
-| Camera/Create | Camera button | ⚠️ Works in mock | Permission requests, captures photo |
-| Camera/Create | Gallery button | ⚠️ Works in mock | Permission requests, picks from library |
-| Camera/Create | "Analyze Room" | ⚠️ Works in mock | Checks AI consent, uploads & analyzes |
-| AI Consent | "Continue" (accept) | ⚠️ Works in mock | Saves consent, continues to editor |
-| Style Picker | "Generate 4 Designs" | ⚠️ Works in mock | Calls generate-design, navigates to generating |
-| Generating | (progress screen) | ⚠️ Works in mock | Shows animation, polls for completion |
-| Results | Design selection (tap) | ⚠️ Works in mock | Selects design with checkmark |
-| Results | "Save Design" | ⚠️ Works in mock | Saves to project, navigates to detail |
+## Explore Screen (`app/(tabs)/explore.tsx`)
 
-## Navigation Buttons
+| Control | testID | Purpose | Action | Test Coverage |
+|---------|--------|---------|--------|---------------|
+| Search Input | - | Filter designs | Updates `searchQuery` state | Manual |
+| "Start a new room" (Button) | - | Navigate to camera | `router.push("/(tabs)/camera")` | Used in e2e |
+| Design Card (Pressable) | `explore-design-card` | View design details | Currently no action (viewing only) | Manual |
+| More Button (Pressable) | `explore-report-button` | Report/block user | Opens `MenuSheet` with report and block options | E2E test (`explore-report-block.spec.ts`) |
+| Menu: Report option | `menu-report-option` | Report design | Opens `ConfirmationSheet` for report confirmation | E2E test |
+| Menu: Block option | `menu-block-option` | Block user | Opens `ConfirmationSheet` for block confirmation | E2E test |
 
-| Screen | Button | Status | Notes |
-|--------|--------|--------|-------|
-| Intro | "Get Started" | ✅ Pass A | → /sign-in |
-| Sign-in | "Continue with Google" | ❌ Broken | Disabled (no OAuth in mock) |
-| Sign-in | "Continue with Apple" | ❌ Broken | Disabled (no OAuth in mock) |
-| Sign-in | "Terms of Service" link | ✅ Pass A | → /terms |
-| Sign-in | "Privacy Policy" link | ✅ Pass A | → /privacy |
-| Home | "Continue" (consent) | ✅ Pass A | → home after consent |
-| Tab Bar | Home tab | ✅ Pass A | → /(tabs)/ |
-| Tab Bar | Explore tab | ✅ Pass A | → /(tabs)/explore |
-| Tab Bar | + Create tab | ⚠️ Works in mock | → /(tabs)/camera, full create loop works |
-| Tab Bar | Inbox tab | ✅ Pass A | → /(tabs)/inbox |
-| Tab Bar | Profile tab | ✅ Pass A | → /(tabs)/profile |
+**Confirmation Flow:**
+- `MenuSheet` (`report-block-menu`) replaces native Alert.alert, works on iOS/Android/Web
+- `ConfirmationSheet` (`report-confirm-sheet`, `block-confirm-sheet`) confirms destructive actions
+- Success message (`success-message`) shows result inline with Nunito font and theme colors
 
-## Vi Chat Buttons
+## Inbox Screen (`app/(tabs)/inbox.tsx`)
 
-| Screen | Button | Status | Notes |
-|--------|--------|--------|-------|
-| Vi Chat | "Generate Design" | ❌ Broken | No handler implemented |
-| Vi Chat | "Find Me a Pro" | ✅ Pass A | → /handoff/placeholder |
-| Vi Chat | Send message | ❌ Broken | sendMessage() is stub |
+| Control | testID | Purpose | Action | Test Coverage |
+|---------|--------|---------|--------|---------------|
+| (Empty state only) | - | - | - | Shows EmptyState component |
 
-## Profile & Settings Buttons
+**Note**: No unread badge currently implemented. Required by task #4.
 
-| Screen | Button | Status | Notes |
-|--------|--------|--------|-------|
-| Profile | "Sign Out" | ❌ Broken | Doesn't clear mock session |
-| Profile | "Edit Profile" | ❌ Broken | route: null |
-| Profile | "My Properties" | ❌ Broken | route: null, fake badge "3" |
-| Profile | "Saved Designs" | ❌ Broken | route: null, fake badge "12" |
-| Settings | Push Notifications toggle | ❌ Broken | Local state only |
-| Settings | Marketing Emails toggle | ❌ Broken | Local state only |
-| Settings | Public Projects toggle | ❌ Broken | Local state only |
-| Settings | Opt out AI toggle | ❌ Broken | Calls DB (fails in mock) |
-| Settings | Reduce Motion toggle | ❌ Broken | Zustand only, not persisted |
-| Settings | "Delete Account" | ❌ Broken | Button missing (function exists) |
+## Profile Screen (`app/(tabs)/profile.tsx`)
 
-## Project Detail Buttons
+| Control | testID | Purpose | Action | Test Coverage |
+|---------|--------|---------|--------|---------------|
+| Edit Profile (Pressable) | - | Navigate to edit profile | `router.push("/edit-profile")` | Manual |
+| Settings & Privacy (Pressable) | `profile-settings-button` | Navigate to settings | `router.push("/profile-settings")` | Used in e2e |
+| My Properties (Pressable) | - | View properties | Currently `route: null` - no action | **NEEDS FIX: Wire or remove** |
+| Saved Designs (Pressable) | - | View saved designs | Currently `route: null` - no action | **NEEDS FIX: Wire or remove** |
+| Help & Contact (Pressable) | - | Navigate to help | `router.push("/help-contact")` | Manual |
+| Sign Out (Button) | - | Sign out | `signOut()` | Manual |
 
-| Screen | Button | Status | Notes |
-|--------|--------|--------|-------|
-| Project Detail | Privacy toggle | ⚠️ Works in mock | MakePublicSheet wired, persists in mock |
-| Project Detail | "New Design" | ❌ Broken | Not wired |
-| Project Detail | "View Quotes" | ❌ Broken | Not wired |
+## Camera Screen (`app/(tabs)/camera.tsx`)
 
-## Explore Buttons (Pass B - Deferred)
+| Control | testID | Purpose | Action | Test Coverage |
+|---------|--------|---------|--------|---------------|
+| Camera Button (Pressable) | - | Launch camera | `pickImage(true)` | Used in e2e |
+| Gallery Button (Pressable) | - | Pick from gallery | `pickImage(false)` | Used in e2e |
+| Image Preview (Pressable) | - | Change photo | `pickImage(false)` | Manual |
+| "Analyze Room" (Button) | - | Upload and analyze | `handleAnalyze()` | Used in e2e |
 
-| Screen | Button | Status | Notes |
-|--------|--------|--------|-------|
-| Explore | Design card tap | 🟨 Pass B | No detail screen |
-| Explore | Like/Save | 🟨 Pass B | Not implemented |
-| Explore | Report | ❌ Broken | Alert with empty callbacks |
+## Editor/Style Picker Screen (`app/editor/[id].tsx`)
 
-## Inbox Buttons (Pass B - Deferred)
+| Control | testID | Purpose | Action | Test Coverage |
+|---------|--------|---------|--------|---------------|
+| Style Card (Pressable) | - | Select style | `setSelectedStyle(item)` | Used in e2e |
+| "Generate 4 designs" (Button) | - | Generate designs | `handleGenerate()` → navigates to generating screen | Used in e2e |
 
-| Screen | Button | Status | Notes |
-|--------|--------|--------|-------|
-| Inbox | Contractor thread tap | 🟨 Pass B | No conversation screen |
-| Inbox | Block | 🟨 Pass B | console.log only |
+## Generating Screen (`app/generating/[id].tsx`)
 
-## Handoff Buttons
+| Control | testID | Purpose | Action | Test Coverage |
+|---------|--------|---------|--------|---------------|
+| "Peek at N ready" (Button) | - | View partial results | `router.push(/result/${id})` | Manual |
+| "Go to Home" (Button) | - | Return to home | `router.push("/(tabs)/")` | Manual (long-running state) |
 
-| Screen | Button | Status | Notes |
-|--------|--------|--------|-------|
-| Handoff | "Generate Project Brief" | ❌ Broken | Disabled (no brief data) |
-| Handoff | "Send to 3 pros" | ❌ Broken | dispatchLead() is stub |
+## Results Screen (`app/result/[id].tsx`)
 
-## Error Screens
+| Control | testID | Purpose | Action | Test Coverage |
+|---------|--------|---------|--------|---------------|
+| Design Card (Pressable) | - | Select design | `handleSelect(url)` | Manual |
+| Design Card (onLongPress) | - | Show before/after compare | Opens modal with comparison | Manual |
+| XP Banner Dismiss (Pressable) | - | Dismiss banner | `setShowXPBanner(false)` | Manual |
+| "Join the waitlist" (Button) | `results-waitlist-join` | Join pros waitlist | `handleJoinWaitlist()` | Used in e2e (pros-waitlist.spec.ts) |
+| "Save to my project" (Button) | `results-save` | Save selected design | `handleContinue()` → navigates to project detail | Used in e2e |
+| Compare Modal (Pressable) | - | Close modal | `setShowCompare(false)` | Manual |
 
-| Screen | Button | Status | Notes |
-|--------|--------|--------|-------|
-| Rate Limit Error | "Back to Home" | ✅ Pass A | → /(tabs)/ |
+## Project Detail Screen (`app/project/[id].tsx`)
+
+| Control | testID | Purpose | Action | Test Coverage |
+|---------|--------|---------|--------|---------------|
+| Back Button (Pressable) | - | Go back | `router.back()` | Manual |
+| More Options (Pressable) | - | Show options menu | Currently no action | **NEEDS FIX: Wire or remove** |
+| Privacy Toggle (Pressable) | - | Toggle project privacy | `handleTogglePrivacy()` | Manual |
+| Design Card (Pressable) | - | View design in results | `router.push(/result/${id})` | Manual |
+| "Create designs" (Pressable) | - | Navigate to editor | `router.push(/editor/${id})` | Manual (empty state) |
+| "View chat" (Pressable) | - | Open assistant chat | `router.push("/assistant-chat")` | Manual |
+| Chat Preview (Pressable) | - | Open assistant chat | `router.push("/assistant-chat")` | Manual |
+| "Join the pros waitlist" (Pressable) | `project-brief-waitlist` | Navigate to pros waitlist | `router.push(/pros-coming-soon?projectId=${id})` | Used in e2e |
+| Tab Switcher (Pressable) | - | Switch between Designs/Timeline | `setActiveTab()` | Manual |
+
+## Assistant Chat Screen (`app/assistant-chat.tsx`)
+
+| Control | testID | Purpose | Action | Test Coverage |
+|---------|--------|---------|--------|---------------|
+| Back Button (Pressable) | - | Go back | `router.back()` | Manual |
+| Send Message Input | - | Type message | Updates `inputText` | Manual |
+| Send Button (Pressable) | - | Send message | `sendMessage()` | Manual |
+| Generate Design Button | - | Generate from chat | `generateDesign()` | Manual |
+| Report Button (Pressable) | - | Report message | Opens ReportModal | **NEEDS FIX: Wire to real action** |
+
+## Profile Settings Screen (`app/profile-settings.tsx`)
+
+| Control | testID | Purpose | Action | Test Coverage |
+|---------|--------|---------|--------|---------------|
+| Back Button (Pressable) | - | Go back | `router.back()` | Manual |
+| Pros Waitlist (Switch) | `settings-pros-waitlist-toggle` | Toggle waitlist | `handleProsWaitlist()` | Used in e2e |
+| Public Projects Default (Pressable) | - | Toggle default privacy | `updateSetting("publicProjectsDefault", ...)` | Manual |
+| Opt out AI (Pressable) | - | Toggle AI opt-out | `handlePrivacyOptOut()` | Manual |
+| Request Data (Pressable) | - | Email support | Opens mailto link | Manual |
+| Reduce Motion (Pressable) | - | Toggle motion | `updateSetting("reduceMotion", ...)` | Manual |
+| Terms of Service (Pressable) | - | Open terms | `openLink("https://visionbuild.app/terms")` | Manual |
+| Privacy Policy (Pressable) | - | Open privacy | `openLink("https://visionbuild.app/privacy")` | Manual |
+| Sign Out (Pressable) | - | Sign out | `signOut()` | Manual |
+| Delete Account (Pressable) | - | Delete account | Shows confirmation, then `handleDeleteAccount()` | Manual |
+
+## Edit Profile Screen (`app/edit-profile.tsx`)
+
+| Control | testID | Purpose | Action | Test Coverage |
+|---------|--------|---------|--------|---------------|
+| Back Button (Pressable) | - | Go back | `router.back()` | Manual |
+| Avatar (Pressable) | - | Pick new photo | `pickImage()` | Manual |
+| Display Name Input | - | Edit name | Updates `displayName` | Manual |
+| "Save Changes" (Button) | - | Save profile | `handleSave()` | Manual |
+
+## Help & Contact Screen (`app/help-contact.tsx`)
+
+| Control | testID | Purpose | Action | Test Coverage |
+|---------|--------|---------|--------|---------------|
+| Back Button (Pressable) | - | Go back | `router.back()` | Manual |
+| Email Support (Pressable) | - | Send email | Opens mailto link | Manual |
+| Terms of Service (Pressable) | - | Open terms | `openLink()` | Manual |
+| Privacy Policy (Pressable) | - | Open privacy | `openLink()` | Manual |
+| Open Source Licenses (Pressable) | - | Open licenses | `openLink()` | Manual |
+
+## Pros Coming Soon Screen (`app/pros-coming-soon.tsx`)
+
+| Control | testID | Purpose | Action | Test Coverage |
+|---------|--------|---------|--------|---------------|
+| Back Button (Pressable) | - | Go back | `router.back()` | Manual |
+| "Join the waitlist" (Button) | `pros-coming-soon-join` | Join pros waitlist | `handleNotifyMe()` | Used in e2e (pros-waitlist.spec.ts) |
+
+## AI Consent Screen (`app/ai-consent.tsx`)
+
+| Control | testID | Purpose | Action | Test Coverage |
+|---------|--------|---------|--------|---------------|
+| "Continue" (Button) | - | Accept AI consent | `handleAccept()` → resumes pending operation | Used in e2e (consent-flow.spec.ts) |
+| "Not now" (Button) | - | Decline AI consent | `handleDecline()` → returns to previous screen | Used in e2e (consent-flow.spec.ts) |
+| Privacy Policy (Pressable) | - | View privacy policy | `router.push("/privacy")` | Used in e2e |
+
+## Tab Navigation (`app/(tabs)/_layout.tsx`)
+
+| Control | testID | Purpose | Action | Test Coverage |
+|---------|--------|---------|--------|---------------|
+| Home Tab | - | Navigate to home | Built-in navigation | Used in e2e |
+| Explore Tab | - | Navigate to explore | Built-in navigation | Manual |
+| Create Tab (+) | - | Navigate to create choice | `router.push("/create-choice")` | Manual |
+| Inbox Tab | - | Navigate to inbox | Built-in navigation | Manual |
+| Profile Tab | - | Navigate to profile | Built-in navigation | Manual |
+
+## Summary of Issues Found
+
+### Buttons Removed and Why
+
+1. **Explore screen search input (editable=false)** - FIXED: Enabled the input, was artificially disabled
+2. **Explore screen more button (Alert placeholder)** - RESTORED & FIXED: Now wired to ReportModal with report/block functionality per App Store 1.2 guidelines
+3. **Profile "My Properties"** - REMOVED: No properties feature exists at launch (route: null)
+4. **Profile "Saved Designs"** - REMOVED: No saved designs feature exists at launch (route: null, placeholder for future)
+5. **Project detail "More options"** - REMOVED: No actual options menu existed, just an empty Pressable
+6. **Assistant chat report button** - Already properly wired to ReportModal (no change needed)
+7. **Various Alert placeholders in handoff flows** - Already gated behind CONTRACTOR_OUTREACH_ENABLED (allowlisted)
+
+### Missing Features
+
+8. **Inbox unread badge** - Required by task #4. Need to implement badge driven by real message data.
+
+### States Missing
+
+9. **Loading states** - Need spinners/skeletons for Home, Explore, Project, Profile, Results, Editor when fetching data.
+10. **Empty states** - Need proper empty states for Explore (no public designs), Inbox (done), Profile (no projects).
+11. **Error states** - Need error states with retry for all data screens.
+12. **Offline states** - Need offline banner or handling for all network operations.
+
+## Contractor Features (Hidden Behind Flag)
+
+The following screens/features are properly gated behind `CONTRACTOR_OUTREACH_ENABLED=false` and excluded from homeowner launch:
+- `app/handoff/[id].tsx`
+- `app/handoff-location.tsx`
+- `app/handoff-confirm.tsx`
+
+These are correctly excluded from the launch copy check and do not appear in homeowner UI.
 
 ---
 
-## Summary
+## Confirmation Components (Web-Compatible)
 
-| Category | Total | Pass A | Pass B | Works in Mock | Broken |
-|----------|-------|--------|--------|---------------|--------|
-| **All Buttons** | 43 | 9 (21%) | 4 (9%) | 10 (23%) | 20 (47%) |
-| **Core Flow** | 9 | 0 | 0 | 9 | 0 |
-| **Navigation** | 11 | 8 | 0 | 1 | 2 |
-| **Vi Chat** | 3 | 1 | 0 | 0 | 2 |
-| **Profile/Settings** | 10 | 0 | 0 | 0 | 10 |
-| **Project Detail** | 3 | 0 | 0 | 1 | 2 |
-| **Explore** | 3 | 0 | 2 | 0 | 1 |
-| **Inbox** | 2 | 0 | 2 | 0 | 0 |
-| **Handoff** | 2 | 0 | 0 | 0 | 2 |
-| **Error Screens** | 1 | 1 | 0 | 0 | 0 |
+To fix Alert.alert incompatibility on React Native Web, we use custom components that work on iOS, Android, and Web:
 
-**Target for this PR**: Every button not marked Pass B (contractor threads, quotes, blocks, Explore detail) actually works end to end.
+### MenuSheet (`components/MenuSheet.tsx`)
+- Bottom sheet menu for multiple options (replaces Alert.alert with buttons)
+- Used for: Explore report/block menu
+- Props: `title`, `options[]` with `label`, `icon`, `variant`, `onPress`, `testID`
+- Styled with Nunito fonts and theme colors
+- testID: Base testID is customizable (e.g., `report-block-menu`)
 
-**✅ COMPLETED in this pass**:
-- ✅ Camera capture + upload (with permissions)
-- ✅ AI consent gate (accept/decline flows)
-- ✅ Analyze room (with data layer for mock mode)
-- ✅ Style picker → generate (with pressed states)
-- ✅ Results + design selection (with async UX)
-- ✅ Save design and navigate to project detail
-- ✅ /terms and /privacy routes
-- ✅ MakePublicSheet wired (privacy toggle)
-- ✅ PrivateImage component (signed URLs, retry, placeholder)
-- ✅ E2E tests for full create loop in mock mode
+### ConfirmationSheet (`components/ConfirmationSheet.tsx`)
+- Modal confirmation for destructive actions (replaces Alert.alert with OK/Cancel)
+- Used for: Report design confirmation, Block user confirmation
+- Props: `title`, `message`, `confirmLabel`, `confirmVariant` (`primary`|`danger`), `onConfirm`, `testID`
+- Styled with Nunito fonts and theme colors
+- testIDs: `{testID}` (container), `{testID}-cancel` (Cancel button), `{testID}-confirm` (Confirm button)
 
-**Still broken (out of scope for this PR)**:
-- ❌ Sign out (mock mode)
-- ❌ AI consent saved to DB (currently AsyncStorage only)
-- ❌ Settings toggles persist
-- ❌ Delete Account button
-- ❌ Edit Profile screen
-- ❌ Vi chat saves messages
-- ❌ Vi Generate Design starts loop
-- ❌ Explore Report uses ReportModal
+**Usage Pattern:**
+```typescript
+// 1. Show MenuSheet for options
+<MenuSheet visible={menuVisible} title="Report or Block" options={[...]} />
+
+// 2. Show ConfirmationSheet for confirmation
+<ConfirmationSheet visible={confirmVisible} title="Block User" message="..." onConfirm={...} />
+
+// 3. Show success message inline
+{successMessage && <View testID="success-message"><Text>{successMessage}</Text></View>}
+```
+
+**E2E Testing:**
+- `menu-report-option`, `menu-block-option` - Menu options
+- `report-confirm-sheet`, `block-confirm-sheet` - Confirmation dialogs
+- `report-confirm-sheet-confirm`, `block-confirm-sheet-confirm` - Confirm buttons
+- `success-message` - Success feedback
+
+These components replace all Alert.alert calls that gate destructive/confirm actions requiring web compatibility.

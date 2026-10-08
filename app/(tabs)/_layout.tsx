@@ -14,7 +14,10 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: colors.textSecondary,
         headerStyle: { backgroundColor: "#fff" },
         headerShadowVisible: false,
-        headerTitleStyle: { fontWeight: "600" },
+        headerTitleStyle: { 
+          fontFamily: "Nunito_800ExtraBold",
+          fontWeight: "800",
+        },
         tabBarStyle: { height: 65, paddingBottom: 8 },
       }}
     >

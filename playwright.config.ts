@@ -12,14 +12,18 @@ export default defineConfig({
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 2,
+    reducedMotion: "reduce",
   },
 
   projects: [
     {
       name: "chromium",
-      use: { 
+      use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 390, height: 844 },
+        deviceScaleFactor: 2,
+        reducedMotion: "reduce",
       },
     },
   ],

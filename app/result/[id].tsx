@@ -16,9 +16,10 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore, useAuthStore } from "@/lib/store";
-import { Button, ReportModal, IsoRoom, PrivateImage } from "@/components";
+import { Button, IsoRoom, PrivateImage } from "@/components";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 import { supabase } from "@/lib/supabase";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.82;
@@ -34,8 +35,6 @@ export default function ResultScreen() {
   const reduceMotion = useReducedMotion();
   const [showCompare, setShowCompare] = useState(false);
   const [compareUrl, setCompareUrl] = useState("");
-  const [reportModalVisible, setReportModalVisible] = useState(false);
-  const [reportingImageId, setReportingImageId] = useState<string>("");
   const [showXPBanner, setShowXPBanner] = useState(true);
   const [xpBannerScale] = useState(new Animated.Value(reduceMotion ? 1 : 0.9));
   const [isOnWaitlist, setIsOnWaitlist] = useState(false);
@@ -53,7 +52,7 @@ export default function ResultScreen() {
       const userId = useAuthStore.getState().session?.user?.id;
       
       if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
-        const stored = localStorage.getItem(`@visionbuild:waitlist:${id}`);
+        const stored = await AsyncStorage.getItem(`@visionbuild:waitlist:${id}`);
         setIsOnWaitlist(stored === "true");
         return;
       }
@@ -79,13 +78,18 @@ export default function ResultScreen() {
 
   // XP banner animation
   useEffect(() => {
-    if (showXPBanner && !reduceMotion) {
-      Animated.spring(xpBannerScale, {
-        toValue: 1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }).start();
+    if (showXPBanner) {
+      if (reduceMotion) {
+        // Skip animation, set to final state immediately
+        xpBannerScale.setValue(1);
+      } else {
+        Animated.spring(xpBannerScale, {
+          toValue: 1,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }).start();
+      }
     }
   }, [showXPBanner, reduceMotion, xpBannerScale]);
 
@@ -126,12 +130,12 @@ export default function ResultScreen() {
       const userId = useAuthStore.getState().session?.user?.id;
       const email = profile?.email || "";
 
-      if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        localStorage.setItem(`@visionbuild:waitlist:${id}`, "true");
-        setIsOnWaitlist(true);
-        return;
-      }
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      await AsyncStorage.setItem(`@visionbuild:waitlist:${id}`, "true");
+      setIsOnWaitlist(true);
+      return;
+    }
 
       if (!userId) return;
 
@@ -227,6 +231,7 @@ export default function ResultScreen() {
               accessibilityRole="button"
               accessibilityState={{ selected: isSelected }}
               accessibilityLabel={`Design option ${index + 1}${isSelected ? ", selected" : ""}`}
+              testID={url ? "result-design-card" : undefined}
             >
               {url ? (
                 <>

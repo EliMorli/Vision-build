@@ -1,19 +1,19 @@
-// Web route: /delete-account
-// Form for signed-out users to request account deletion
-
 import { useState } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Alert } from "react-native";
+import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { supabase } from "@/lib/supabase";
+import { DELETED_DATA_SUMMARY } from "@/lib/constants/deletion";
 
 export default function DeleteAccountRequest() {
   const [email, setEmail] = useState("");
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
   const handleSubmit = async () => {
     if (!email.trim() || !email.includes("@")) {
-      Alert.alert("Invalid Email", "Please enter a valid email address.");
+      setErrorMessage("Please enter a valid email address.");
+      setTimeout(() => setErrorMessage(""), 3000);
       return;
     }
 
@@ -66,6 +66,9 @@ export default function DeleteAccountRequest() {
         </Text>
 
         <Text style={styles.label}>Email address</Text>
+        {errorMessage ? (
+          <Text style={styles.error}>{errorMessage}</Text>
+        ) : null}
         <TextInput
           style={styles.input}
           value={email}
@@ -103,8 +106,7 @@ export default function DeleteAccountRequest() {
         </Pressable>
 
         <Text style={styles.warning}>
-          This will permanently delete your account, projects, designs, chats, and quotes. This action cannot be
-          undone.
+          This will permanently delete your account and {DELETED_DATA_SUMMARY}. This action cannot be undone.
         </Text>
       </View>
     </View>
@@ -194,6 +196,13 @@ const styles = StyleSheet.create({
     color: "#C5221F",
     marginTop: 16,
     textAlign: "center",
+    fontWeight: "600",
+  },
+  error: {
+    fontSize: 14,
+    color: "#EA4335",
+    marginTop: 4,
+    marginBottom: 8,
     fontWeight: "600",
   },
 });

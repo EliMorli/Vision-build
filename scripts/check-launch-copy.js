@@ -6,7 +6,10 @@
  * Fails if forbidden contractor-related terms appear in user-facing strings
  * in app/ or components/, outside files gated behind the contractor outreach flag.
  * 
+ * Also fails if 'quote' or 'quotes' appears in deletion screens (no quotes at launch).
+ * 
  * Forbidden terms: "contractor", "matched", "24-48 hours" (case-insensitive)
+ * Deletion-specific: "quote", "quotes" in app/delete-account/* (case-insensitive)
  * 
  * Allowlist: Files explicitly gated behind CONTRACTOR_OUTREACH_ENABLED feature flag.
  */
@@ -31,6 +34,12 @@ const FORBIDDEN_PATTERNS = [
   /\bcontractor\b/i,
   /\bmatched\b/i,
   /\b24-48 hours\b/i,
+];
+
+// Deletion-specific forbidden patterns
+const DELETION_FORBIDDEN_PATTERNS = [
+  /\bquote\b/i,
+  /\bquotes\b/i,
 ];
 
 function walkDir(dir, fileList = []) {
@@ -77,10 +86,14 @@ function main() {
     const content = fs.readFileSync(file, 'utf-8');
     const lines = content.split('\n');
 
+    // Check if this is a deletion file
+    const isDeletionFile = normalizedFile.includes('app/delete-account/');
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       const lineNum = i + 1;
 
+      // Check general forbidden patterns
       for (const pattern of FORBIDDEN_PATTERNS) {
         if (pattern.test(line)) {
           violations.push({
@@ -89,6 +102,20 @@ function main() {
             content: line.trim(),
             term: pattern.source,
           });
+        }
+      }
+
+      // Check deletion-specific patterns
+      if (isDeletionFile) {
+        for (const pattern of DELETION_FORBIDDEN_PATTERNS) {
+          if (pattern.test(line)) {
+            violations.push({
+              file: normalizedFile,
+              line: lineNum,
+              content: line.trim(),
+              term: pattern.source + ' (forbidden in deletion screens)',
+            });
+          }
         }
       }
     }
@@ -106,7 +133,8 @@ function main() {
     });
     console.error(
       `Found ${violations.length} violation(s). Remove contractor-related terms from homeowner-facing UI,\n` +
-      `or add the file to the ALLOWLIST in scripts/check-launch-copy.js if it's gated behind CONTRACTOR_OUTREACH_ENABLED.\n`
+      `or add the file to the ALLOWLIST in scripts/check-launch-copy.js if it's gated behind CONTRACTOR_OUTREACH_ENABLED.\n` +
+      `For deletion screens, 'quote'/'quotes' are forbidden (no quotes at launch).\n`
     );
     process.exit(1);
   }

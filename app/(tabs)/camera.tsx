@@ -6,7 +6,6 @@ import {
   Pressable,
   Image,
   SafeAreaView,
-  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -26,6 +25,7 @@ export const options = {
 export default function CameraScreen() {
   const router = useRouter();
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [permissionError, setPermissionError] = useState<string>("");
   const { loading, progress, progressMessage, error, uploadAndAnalyze } =
     useProjectStore();
   const session = useAuthStore((s) => s.session);
@@ -56,12 +56,10 @@ export default function CameraScreen() {
     }
 
     if (!permissionResult.granted) {
-      Alert.alert(
-        "Permission Required",
+      setPermissionError(
         useCamera
-          ? "Camera permission is required to take photos. Please enable it in your device settings."
-          : "Photo library permission is required to select photos. Please enable it in your device settings.",
-        [{ text: "OK" }]
+          ? "Camera permission is required. Please enable it in your device settings."
+          : "Photo library permission is required. Please enable it in your device settings."
       );
       return;
     }
@@ -165,6 +163,7 @@ export default function CameraScreen() {
 
       {/* Error */}
       {error && <Text style={styles.error}>{error}</Text>}
+      {permissionError && <Text style={styles.error}>{permissionError}</Text>}
 
       {/* Action buttons */}
       {!loading && (
