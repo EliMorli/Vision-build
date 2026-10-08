@@ -105,7 +105,7 @@ export default function DashboardScreen() {
               <Pressable 
                 onPress={() => router.push("/profile-settings")} 
                 hitSlop={12}
-                style={styles.devButton}
+                style={styles.devButton} // SHOW_DEV_BUTTON && gated
                 accessibilityLabel="Developer tools"
               >
                 <Ionicons name="flash" size={18} color={colors.accent} />
@@ -151,7 +151,7 @@ export default function DashboardScreen() {
             <Pressable 
               onPress={() => router.push("/profile-settings")} 
               hitSlop={12}
-              style={styles.devButton}
+              style={styles.devButton} // SHOW_DEV_BUTTON && gated
               accessibilityLabel="Developer tools"
             >
               <Ionicons name="flash" size={18} color={colors.accent} />
