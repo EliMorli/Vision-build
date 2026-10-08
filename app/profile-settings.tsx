@@ -81,11 +81,10 @@ export default function ProfileSettingsScreen() {
       if (enabled) {
         localStorage.setItem("@visionbuild:waitlist:general", "true");
       } else {
-        // Delete all entries in mock mode
-        localStorage.removeItem("@visionbuild:waitlist:general");
+        // Delete all waitlist entries in mock mode
         const keys = Object.keys(localStorage);
         keys.forEach(key => {
-          if (key.startsWith("@visionbuild:waitlist:") && key !== "@visionbuild:waitlist:general") {
+          if (key.startsWith("@visionbuild:waitlist:")) {
             localStorage.removeItem(key);
           }
         });

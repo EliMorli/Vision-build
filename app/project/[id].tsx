@@ -20,9 +20,6 @@ const TIMELINE_EVENTS = [
   { id: "3", type: "chat", label: "Started Vi brainstorm", date: "2 days ago" },
   { id: "4", type: "design", label: "4 designs generated", date: "2 days ago" },
   { id: "5", type: "favorite", label: "Saved 2 favorites", date: "1 day ago" },
-  { id: "6", type: "brief", label: "Project brief created", date: "1 day ago" },
-  { id: "7", type: "contractor", label: "5 pros matched", date: "1 day ago" },
-  { id: "8", type: "quote", label: "3 quotes received", date: "4h ago" },
 ];
 
 // Placeholder designs - using IsoRoom for placeholders
@@ -32,31 +29,6 @@ const DESIGNS = Array.from({ length: 6 }, (_, i) => ({
   source: i < 4 ? "photo" : "chat",
   isFavorite: i === 1 || i === 4,
 }));
-
-// Placeholder quotes
-const QUOTES = [
-  {
-    id: "1",
-    contractor: "ABC Contractors",
-    range: "$12,000 - $18,000",
-    timeline: "3-4 weeks",
-    rating: 4.8,
-  },
-  {
-    id: "2",
-    contractor: "Elite Builders",
-    range: "$15,000 - $20,000",
-    timeline: "2-3 weeks",
-    rating: 4.9,
-  },
-  {
-    id: "3",
-    contractor: "Premium Construction",
-    range: "$10,000 - $15,000",
-    timeline: "4-5 weeks",
-    rating: 4.7,
-  },
-];
 
 export default function ProjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -283,9 +255,9 @@ export default function ProjectDetailScreen() {
           <View style={styles.quotesContainer}>
             <View style={styles.emptyState}>
               <Ionicons name="document-text-outline" size={48} color={colors.textSecondary} />
-              <Text style={styles.emptyText}>No quotes yet</Text>
+              <Text style={styles.emptyText}>Coming soon</Text>
               <Text style={styles.emptySubtext}>
-                Share your project with contractors to receive quotes
+                We'll connect you with local pros when they're available
               </Text>
             </View>
           </View>
@@ -327,9 +299,9 @@ export default function ProjectDetailScreen() {
             </Text>
             <Pressable
               style={styles.briefButton}
-              onPress={() => router.push(`/handoff/${id}`)}
+              onPress={() => router.push(`/pros-coming-soon?projectId=${id}`)}
             >
-              <Text style={styles.briefButtonText}>View full brief</Text>
+              <Text style={styles.briefButtonText}>Get quotes</Text>
               <Ionicons name="arrow-forward" size={14} color={colors.primary} />
             </Pressable>
           </View>

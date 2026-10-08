@@ -31,8 +31,8 @@ const PAGES = [
   },
   {
     icon: "people-outline" as const,
-    title: "Get Real Estimates",
-    subtitle: "We create a professional project brief and connect you with local contractors in 24 hours.",
+    title: "Build Your Vision",
+    subtitle: "Save your favorite designs and track your renovation journey. Local pro connections coming soon.",
   },
 ];
 

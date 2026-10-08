@@ -15,9 +15,10 @@ import {
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
-import { useProjectStore } from "@/lib/store";
+import { useProjectStore, useAuthStore } from "@/lib/store";
 import { Button, ReportModal, IsoRoom, PrivateImage } from "@/components";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
+import { supabase } from "@/lib/supabase";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.82;
@@ -26,6 +27,7 @@ export default function ResultScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { currentProject, selectDesign, loading } = useProjectStore();
+  const profile = useAuthStore((s) => s.profile);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -36,10 +38,44 @@ export default function ResultScreen() {
   const [reportingImageId, setReportingImageId] = useState<string>("");
   const [showXPBanner, setShowXPBanner] = useState(true);
   const [xpBannerScale] = useState(new Animated.Value(reduceMotion ? 1 : 0.9));
+  const [isOnWaitlist, setIsOnWaitlist] = useState(false);
+  const [waitlistLoading, setWaitlistLoading] = useState(false);
 
   const images = currentProject?.generated_image_urls ?? [];
   const totalSlots = 4;
   const allSlots = Array.from({ length: totalSlots }, (_, i) => images[i] || null);
+
+  // Check waitlist status on mount
+  useEffect(() => {
+    if (!id) return;
+    
+    const checkWaitlistStatus = async () => {
+      const userId = useAuthStore.getState().session?.user?.id;
+      
+      if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+        const stored = localStorage.getItem(`@visionbuild:waitlist:${id}`);
+        setIsOnWaitlist(stored === "true");
+        return;
+      }
+
+      if (!userId) return;
+
+      try {
+        const { data } = await (supabase
+          .from("pro_waitlist") as any)
+          .select("id")
+          .eq("user_id", userId)
+          .eq("project_id", id)
+          .single();
+
+        setIsOnWaitlist(!!data);
+      } catch {
+        // Not on waitlist
+      }
+    };
+
+    checkWaitlistStatus();
+  }, [id]);
 
   // XP banner animation
   useEffect(() => {
@@ -78,6 +114,42 @@ export default function ResultScreen() {
       console.error("Error saving design:", _error);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleJoinWaitlist = async () => {
+    if (!id || isOnWaitlist || waitlistLoading) return;
+
+    setWaitlistLoading(true);
+
+    try {
+      const userId = useAuthStore.getState().session?.user?.id;
+      const email = profile?.email || "";
+
+      if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        localStorage.setItem(`@visionbuild:waitlist:${id}`, "true");
+        setIsOnWaitlist(true);
+        return;
+      }
+
+      if (!userId) return;
+
+      const { error } = await (supabase
+        .from("pro_waitlist") as any)
+        .insert({
+          user_id: userId,
+          project_id: id,
+          email,
+        });
+
+      if (!error) {
+        setIsOnWaitlist(true);
+      }
+    } catch (_err) {
+      console.error("Error joining waitlist:", _err);
+    } finally {
+      setWaitlistLoading(false);
     }
   };
 
@@ -198,6 +270,22 @@ export default function ResultScreen() {
           />
         ))}
       </View>
+
+      {/* Waitlist Card */}
+      {!isOnWaitlist && (
+        <View style={styles.waitlistCard}>
+          <Text style={styles.waitlistTitle}>Want this built?</Text>
+          <Pressable
+            style={[styles.waitlistButton, waitlistLoading && styles.waitlistButtonDisabled]}
+            onPress={handleJoinWaitlist}
+            disabled={waitlistLoading}
+          >
+            <Text style={styles.waitlistButtonText}>
+              {waitlistLoading ? "Joining..." : "Join the waitlist"}
+            </Text>
+          </Pressable>
+        </View>
+      )}
 
       {/* CTA */}
       <View style={styles.cta}>
@@ -376,6 +464,39 @@ const styles = StyleSheet.create({
   dot: { height: 8, borderRadius: 4, marginHorizontal: 4 },
   dotActive: { width: 24, backgroundColor: colors.primary },
   dotInactive: { width: 8, backgroundColor: colors.primary + "33" },
+  waitlistCard: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  waitlistTitle: {
+    ...fonts.body,
+    fontSize: 15,
+    fontWeight: "600",
+    color: colors.textPrimary,
+  },
+  waitlistButton: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.sm,
+    paddingVertical: 8,
+    paddingHorizontal: spacing.md,
+  },
+  waitlistButtonDisabled: {
+    opacity: 0.6,
+  },
+  waitlistButtonText: {
+    ...fonts.body,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#fff",
+  },
   cta: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg },
   modal: {
     flex: 1,

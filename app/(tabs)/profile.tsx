@@ -34,7 +34,7 @@ export default function ProfileScreen() {
     const designUrls = p.generated_image_urls || [];
     return sum + designUrls.length + (p.selected_generation_url ? 1 : 0);
   }, 0);
-  const quotesCount = 0; // TODO: Will come from contractor_threads in Pass B
+  const quotesCount = 0; // Coming soon: contractor quotes
 
   // Calculate XP and level
   const xp = profile?.xp ?? 120;

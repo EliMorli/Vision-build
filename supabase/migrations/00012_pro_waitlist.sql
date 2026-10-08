@@ -8,11 +8,13 @@ create table public.pro_waitlist (
   user_id uuid references public.profiles(id) on delete cascade not null,
   project_id uuid references public.projects(id) on delete cascade,
   email text not null,
-  created_at timestamptz not null default now(),
-  
-  -- One entry per user per project (including null project for general waitlist)
-  unique(user_id, project_id)
+  created_at timestamptz not null default now()
 );
+
+-- One entry per user per project (including null project for general waitlist)
+-- Use NULLS NOT DISTINCT to treat NULL project_id values as equal
+create unique index idx_pro_waitlist_unique_user_project 
+  on public.pro_waitlist(user_id, project_id) nulls not distinct;
 
 alter table public.pro_waitlist enable row level security;
 
