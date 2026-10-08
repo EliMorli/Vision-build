@@ -1,5 +1,5 @@
 #!/bin/bash
-# Check that dev buttons are properly gated
+# Check that dev buttons and dev routes are properly gated
 
 set -e
 
@@ -20,4 +20,16 @@ if ! grep -q "__DEV__.*EXPO_PUBLIC_DEV_MOCK_SESSION" "app/(tabs)/index.tsx"; the
   exit 1
 fi
 
-echo "✅ Dev button is properly gated"
+# Check that all routes in app/dev/ have __DEV__ guards
+if [ -d "app/dev" ]; then
+  for file in app/dev/*.tsx; do
+    if [ -f "$file" ]; then
+      if ! grep -q "if (!__DEV__)" "$file"; then
+        echo "❌ Dev route $file is missing __DEV__ guard"
+        exit 1
+      fi
+    fi
+  done
+fi
+
+echo "✅ Dev button and dev routes are properly gated"
