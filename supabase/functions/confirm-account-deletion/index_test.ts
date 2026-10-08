@@ -224,7 +224,7 @@ Deno.test("confirm POST: valid token deletes user", async () => {
   });
   
   const token = "a".repeat(64);
-  const response = await handleConfirmPost(token, deps);
+  const response = await handleConfirmPost(token, undefined, deps);
   
   assertEquals(response.status, 200);
   const body = await response.json();
@@ -266,7 +266,7 @@ Deno.test("confirm POST: expired token does not delete", async () => {
   });
   
   const token = "a".repeat(64);
-  const response = await handleConfirmPost(token, deps);
+  const response = await handleConfirmPost(token, undefined, deps);
   
   assertEquals(response.status, 400);
   const body = await response.json();
@@ -308,7 +308,7 @@ Deno.test("confirm POST: reused token does not delete twice", async () => {
   });
   
   const token = "a".repeat(64);
-  const response = await handleConfirmPost(token, deps);
+  const response = await handleConfirmPost(token, undefined, deps);
   
   assertEquals(response.status, 400);
   const body = await response.json();
@@ -351,7 +351,7 @@ Deno.test("confirm POST: unknown email completes without error", async () => {
   });
   
   const token = "a".repeat(64);
-  const response = await handleConfirmPost(token, deps);
+  const response = await handleConfirmPost(token, undefined, deps);
   
   assertEquals(response.status, 200);
   const body = await response.json();
