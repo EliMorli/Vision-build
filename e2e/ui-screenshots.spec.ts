@@ -107,7 +107,7 @@ test.describe("UI Screenshots", () => {
     // 4. Style picker - navigate to editor with mock project
     await page.goto(`${BASE_URL}/editor/mock-project-id`);
     await page.waitForLoadState("networkidle");
-    await expect(page.getByText(/select a design style/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/pick a style/i).first()).toBeVisible({ timeout: 10000 });
     await page.screenshot({ path: "e2e/screens/ui-style-picker.png", fullPage: false });
 
     // 5. Generating
@@ -134,7 +134,7 @@ test.describe("UI Screenshots", () => {
       const mockProject = {
         id: "mock-project-1",
         user_id: "mock-user",
-        title: "Living Room Refresh",
+        title: "Living room refresh",
         status: "generated",
         selected_style: "modern",
         room_analysis: {
@@ -161,11 +161,62 @@ test.describe("UI Screenshots", () => {
     
     // Assert project card is visible with the seeded project
     await expect(page.getByTestId("home-project-card")).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText("Living Room Refresh")).toBeVisible();
+    await expect(page.getByText("Living room refresh")).toBeVisible();
     
     // XP should reflect the project activity (120 XP from initial seed)
     await expect(page.getByText("120 XP")).toBeVisible();
     
     await page.screenshot({ path: "e2e/screens/ui-home-with-project.png", fullPage: false });
+    
+    // 9. Profile - seed a project to show badges/stats
+    await page.goto(`${BASE_URL}/(tabs)/profile`);
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByText(/level \d+ · rookie designer/i)).toBeVisible({ timeout: 10000 });
+    await page.screenshot({ path: "e2e/screens/ui-profile.png", fullPage: false });
+    
+    // 10. Explore empty state
+    await page.goto(`${BASE_URL}/(tabs)/explore`);
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByText("No shared designs yet")).toBeVisible({ timeout: 10000 });
+    await page.screenshot({ path: "e2e/screens/ui-explore-empty.png", fullPage: false });
+    
+    // 11. Project detail with brief - seed a project with brief
+    await page.evaluate(() => {
+      const mockProjectWithBrief = {
+        id: "mock-project-brief",
+        user_id: "mock-user",
+        title: "Kitchen remodel",
+        status: "generated",
+        selected_style: "modern",
+        room_analysis: {
+          roomType: "kitchen",
+          currentStyle: "traditional",
+          estimatedSqFt: 150,
+          keyElements: ["oak cabinets"],
+          rawAnalysis: "Traditional kitchen",
+        },
+        generated_image_urls: ["mock-1.jpg", "mock-2.jpg"],
+        selected_generation_url: null,
+        original_image_url: null,
+        is_public: false,
+        lead_info: {
+          budgetRange: "$10,000 – $25,000",
+          zipCode: "90210",
+          projectBrief: "Modern kitchen remodel with new fixtures and updated appliances. Budget conscious approach.",
+          matchedContractorIds: [],
+          submittedAt: null,
+        },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      const existingProjects = JSON.parse(localStorage.getItem("@visionbuild:mock_seed_projects") || "[]");
+      existingProjects.push(mockProjectWithBrief);
+      localStorage.setItem("@visionbuild:mock_seed_projects", JSON.stringify(existingProjects));
+    });
+    
+    await page.goto(`${BASE_URL}/project/mock-project-brief`);
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByText("Project Brief")).toBeVisible({ timeout: 10000 });
+    await page.screenshot({ path: "e2e/screens/ui-project-brief.png", fullPage: false });
   });
 });
