@@ -148,7 +148,15 @@ async function main() {
   // ═══════════════════════════════════════════════════════════
   console.log("🗑️  Testing successful deletion...");
   
-  const deleteResult = await deleteUserData(userId, supabase);
+  const { data: { user: userForDelete } } = await supabase.auth.admin.getUserById(userId);
+  
+  const deleteResult = await deleteUserData({
+    userId,
+    userEmail: testEmail,
+    userAppMetadata: userForDelete?.app_metadata || {},
+    userIdentities: userForDelete?.identities || [],
+    supabase,
+  });
   
   if (!deleteResult.success) {
     console.error(`❌ Deletion failed: ${deleteResult.error}`);
@@ -259,7 +267,15 @@ async function main() {
   // Simulate retry function (inline)
   console.log("🔄 Running retry deletion...");
   
-  const deleteResult2 = await deleteUserData(userId2, supabase);
+  const { data: { user: user2ForDelete } } = await supabase.auth.admin.getUserById(userId2);
+  
+  const deleteResult2 = await deleteUserData({
+    userId: userId2,
+    userEmail: testEmail2,
+    userAppMetadata: user2ForDelete?.app_metadata || {},
+    userIdentities: user2ForDelete?.identities || [],
+    supabase,
+  });
   
   if (!deleteResult2.success) {
     console.error(`❌ Retry deletion failed: ${deleteResult2.error}`);

@@ -157,7 +157,7 @@ Deno.test("retry-account-deletions - marks request completed on success", async 
       }
       if (table === "deletion_completion_log") {
         return {
-          insert: () => {
+          insert: (data: any) => {
             completionLogCalled = true;
             return Promise.resolve({ error: null });
           },

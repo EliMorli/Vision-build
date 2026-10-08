@@ -73,7 +73,13 @@ Deno.test("deleteUserData - email never appears in console logs (success path)",
 
   captureConsole();
   
-  const result = await deleteUserData(testUserId, mockSupabase);
+  const result = await deleteUserData({
+    userId: testUserId,
+    userEmail: testEmail,
+    userAppMetadata: {},
+    userIdentities: [],
+    supabase: mockSupabase,
+  });
   
   restoreConsole();
 
@@ -115,7 +121,13 @@ Deno.test("deleteUserData - email never appears in console logs (storage failure
 
   captureConsole();
   
-  const result = await deleteUserData(testUserId, mockSupabase);
+  const result = await deleteUserData({
+    userId: testUserId,
+    userEmail: testEmail,
+    userAppMetadata: {},
+    userIdentities: [],
+    supabase: mockSupabase,
+  });
   
   restoreConsole();
 
@@ -158,7 +170,13 @@ Deno.test("deleteUserData - email never appears in console logs (database failur
 
   captureConsole();
   
-  const result = await deleteUserData(testUserId, mockSupabase);
+  const result = await deleteUserData({
+    userId: testUserId,
+    userEmail: testEmail,
+    userAppMetadata: {},
+    userIdentities: [],
+    supabase: mockSupabase,
+  });
   
   restoreConsole();
 
@@ -209,7 +227,13 @@ Deno.test("deleteUserData - email never appears in console logs (Apple revoke pa
   captureConsole();
   
   // Will attempt Apple revocation (likely fails in test, but shouldn't log email)
-  const result = await deleteUserData(testUserId, mockSupabase);
+  const result = await deleteUserData({
+    userId: testUserId,
+    userEmail: testEmail,
+    userAppMetadata: { provider: "apple", provider_id: "001234.test" },
+    userIdentities: [],
+    supabase: mockSupabase,
+  });
   
   restoreConsole();
 

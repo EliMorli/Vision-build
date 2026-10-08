@@ -36,7 +36,13 @@ Deno.test("deleteUserData - storage list error returns stage 'storage' and doesn
     },
   } as any;
 
-  const result = await deleteUserData(testUserId, mockSupabase);
+  const result = await deleteUserData({
+    userId: testUserId,
+    userEmail: "test@example.com",
+    userAppMetadata: {},
+    userIdentities: [],
+    supabase: mockSupabase,
+  });
 
   assertEquals(result.success, false);
   assertEquals(result.stage, "storage");
@@ -84,7 +90,13 @@ Deno.test("deleteUserData - storage remove error returns stage 'storage' and doe
     },
   } as any;
 
-  const result = await deleteUserData(testUserId, mockSupabase);
+  const result = await deleteUserData({
+    userId: testUserId,
+    userEmail: "test@example.com",
+    userAppMetadata: {},
+    userIdentities: [],
+    supabase: mockSupabase,
+  });
 
   assertEquals(result.success, false);
   assertEquals(result.stage, "storage");
@@ -140,7 +152,13 @@ Deno.test("deleteUserData - DB error returns stage 'database' with table name an
     },
   } as any;
 
-  const result = await deleteUserData(testUserId, mockSupabase);
+  const result = await deleteUserData({
+    userId: testUserId,
+    userEmail: "test@example.com",
+    userAppMetadata: {},
+    userIdentities: [],
+    supabase: mockSupabase,
+  });
 
   assertEquals(result.success, false);
   assertEquals(result.stage, "database");
@@ -194,12 +212,18 @@ Deno.test("deleteUserData - remove that keeps returning same files hits max atte
     },
   } as any;
 
-  const result = await deleteUserData(testUserId, mockSupabase);
+  const result = await deleteUserData({
+    userId: testUserId,
+    userEmail: "test@example.com",
+    userAppMetadata: {},
+    userIdentities: [],
+    supabase: mockSupabase,
+  });
 
   assertEquals(result.success, false);
   assertEquals(result.stage, "storage");
   assertEquals(result.error, "storage:max_attempts_exceeded");
   assertEquals(authDeleteCalled, false, "Auth user should NOT be deleted when stuck in loop");
-  // Should hit the cap (currently 10 in the code)
-  assertEquals(removeCallCount >= 10, true, "Should hit max attempts cap");
+  // Should hit the cap (currently 100 in the code)
+  assertEquals(removeCallCount >= 100, true, "Should hit max attempts cap");
 });
