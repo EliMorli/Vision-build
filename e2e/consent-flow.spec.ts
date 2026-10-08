@@ -97,7 +97,7 @@ test.describe("VisionBuild AI Consent Flow", () => {
     await expect(page.getByText("Select a Design Style")).toBeInViewport({ timeout: 10000 });
   });
 
-  test("decline in re-consent returns to project without calling AI", async ({ page }: { page: Page }) => {
+  test("consent decline sends nothing", async ({ page }: { page: Page }) => {
     // Seed with intro seen, outdated consent, and an existing project
     await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:intro_seen", "true");
@@ -134,8 +134,8 @@ test.describe("VisionBuild AI Consent Flow", () => {
     // Wait for consent screen
     await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 5000 });
 
-    // Click Decline
-    await page.getByRole("button", { name: /decline/i }).click();
+    // Click "Not now"
+    await page.getByRole("button", { name: /not now/i }).click();
 
     // Should be back on camera screen (photo still there)
     await expect(page.getByText(/take a photo or pick one/i)).toBeInViewport({ timeout: 5000 });

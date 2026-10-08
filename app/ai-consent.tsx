@@ -171,14 +171,12 @@ export default function AIConsentScreen() {
           loading={isLoading}
           variant="primary"
         />
-        {isReconsent && (
-          <Button
-            label="Decline"
-            onPress={handleDecline}
-            variant="ghost"
-            style={{ marginTop: spacing.sm }}
-          />
-        )}
+        <Button
+          label="Not now"
+          onPress={handleDecline}
+          variant="ghost"
+          style={{ marginTop: spacing.sm }}
+        />
         <Text style={styles.footerText}>
           By continuing, you consent to this use of AI services.
         </Text>
