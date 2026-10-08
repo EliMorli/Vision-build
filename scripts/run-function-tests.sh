@@ -34,7 +34,7 @@ echo ""
 
 # Run unit tests
 echo "🧪 Running unit tests..."
-if $DENO_BIN test --allow-env --allow-net --allow-read; then
+if $DENO_BIN test --allow-env --allow-net --allow-read --allow-write; then
   echo "✅ All unit tests passed"
 else
   echo "❌ Some unit tests failed"

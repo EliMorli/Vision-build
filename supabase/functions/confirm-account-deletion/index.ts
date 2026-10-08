@@ -186,7 +186,7 @@ export async function handleConfirmPost(
   );
 
   if (lookupError) {
-    console.error(`Failed to lookup user by email ${email}:`, lookupError);
+    console.error(`Failed to lookup user for request ${requestId}:`, lookupError);
     return new Response(
       JSON.stringify({
         success: false,
@@ -208,7 +208,7 @@ export async function handleConfirmPost(
       })
       .eq("id", requestId);
 
-    console.log(`Deletion request completed for ${email} - no account found`);
+    console.log(`Deletion request ${requestId} completed - no account found`);
     return new Response(
       JSON.stringify({
         success: true,

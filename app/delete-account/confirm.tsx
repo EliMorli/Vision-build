@@ -7,6 +7,9 @@ import { View, Text, Pressable, StyleSheet, ActivityIndicator, Platform, Linking
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { SUPPORT_EMAIL } from "../../lib/config";
+import { colors, fonts } from "../../lib/theme";
+import { supabase } from "@/lib/supabase";
+import { APPLE_DELETION_NOTE, shouldShowAppleNote } from "../../lib/constants/deletion";
 
 type PageState = "loading" | "valid" | "error" | "deleting" | "deleted";
 
@@ -125,7 +128,8 @@ export default function DeleteAccountConfirm() {
       if (response.ok && result.success) {
         setState("deleted");
         setData({ 
-          needsManualDisconnect: result.needsManualDisconnect 
+          needsManualDisconnect: result.needsManualDisconnect,
+          isAppleUser: data.isAppleUser 
         });
       } else {
         setState("error");
@@ -164,6 +168,18 @@ export default function DeleteAccountConfirm() {
     );
   }
 
+  const handleDone = async () => {
+    try {
+      // Sign out locally (may fail if session already gone)
+      await supabase.auth.signOut();
+    } catch (error) {
+      // Ignore sign-out errors (account is already deleted)
+      console.log("Sign out error (expected after deletion):", error);
+    }
+    // Navigate to welcome/intro screen
+    router.replace("/");
+  };
+
   if (state === "deleted") {
     return (
       <View style={styles.container}>
@@ -172,10 +188,19 @@ export default function DeleteAccountConfirm() {
           <Text style={styles.body}>
             All your data has been permanently removed. Thank you for using VisionBuild.
           </Text>
-          {data.needsManualDisconnect && Platform.OS === "ios" && (
-            <Text style={styles.bodySmall}>
-              To fully disconnect, remove VisionBuild under Sign in with Apple in your iPhone settings.
+          {shouldShowAppleNote(Platform.OS, data.isAppleUser || false) && (
+            <Text style={styles.appleSettingsNote}>
+              {APPLE_DELETION_NOTE}
             </Text>
+          )}
+          {Platform.OS !== "web" && (
+            <Pressable
+              style={styles.buttonSecondary}
+              onPress={handleDone}
+              testID="delete-done-button"
+            >
+              <Text style={styles.buttonSecondaryText}>Done</Text>
+            </Pressable>
           )}
         </View>
       </View>
@@ -201,6 +226,9 @@ export default function DeleteAccountConfirm() {
           <Text style={styles.body}>{data.error}</Text>
           {canRetry && (
             <>
+              <Text style={styles.bodySecondary}>
+                We'll also keep trying automatically, so you don't need to do anything else.
+              </Text>
               <Pressable
                 style={styles.buttonDanger}
                 onPress={executeDelete}
@@ -237,7 +265,7 @@ export default function DeleteAccountConfirm() {
         <View style={styles.card}>
           <ActivityIndicator size="large" color="#EA4335" />
           <Text style={styles.loadingText}>Deleting your account...</Text>
-          <Text style={styles.bodySmall}>This may take a moment.</Text>
+          <Text style={styles.bodySecondary}>This may take a moment.</Text>
         </View>
       </View>
     );
@@ -279,13 +307,13 @@ export default function DeleteAccountConfirm() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F4F6FE",
+    backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
   },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.background,
     borderRadius: 24,
     padding: 32,
     maxWidth: 480,
@@ -298,55 +326,68 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   email: {
+    ...fonts.title,
     fontSize: 16,
-    fontWeight: "800",
-    color: "#6B7396",
+    fontFamily: "Nunito_800ExtraBold",
+    color: colors.textSecondary,
     marginBottom: 12,
   },
   title: {
+    ...fonts.heading,
     fontSize: 28,
-    fontWeight: "900",
-    color: "#1B2140",
-    marginBottom: 16,
+    fontFamily: "Nunito_900Black",
     textAlign: "center",
+    marginBottom: 16,
   },
   body: {
+    ...fonts.body,
     fontSize: 15,
     lineHeight: 22,
-    color: "#4A5378",
     textAlign: "center",
     marginBottom: 20,
   },
-  bodySmall: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#6B7396",
-    textAlign: "center",
-    marginTop: 8,
-  },
-  warning: {
+  bodySecondary: {
+    ...fonts.body,
     fontSize: 15,
     lineHeight: 22,
-    color: "#1B2140",
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  warning: {
+    ...fonts.body,
+    fontSize: 15,
+    lineHeight: 22,
     textAlign: "center",
     marginBottom: 16,
   },
   appleNote: {
+    ...fonts.body,
     fontSize: 14,
     lineHeight: 20,
-    color: "#6B7396",
+    color: colors.textSecondary,
     textAlign: "center",
     marginBottom: 24,
     fontStyle: "italic",
   },
+  appleSettingsNote: {
+    ...fonts.body,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginTop: 8,
+    marginBottom: 20,
+  },
   loadingText: {
+    ...fonts.label,
     fontSize: 16,
-    fontWeight: "700",
-    color: "#4A5378",
+    fontFamily: "Nunito_700Bold",
+    color: colors.textSecondary,
     marginTop: 16,
   },
   buttonDanger: {
-    backgroundColor: "#EA4335",
+    backgroundColor: colors.error,
     borderRadius: 18,
     paddingVertical: 16,
     paddingHorizontal: 32,
@@ -360,29 +401,32 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   buttonSecondary: {
-    backgroundColor: "#F4F6FE",
+    backgroundColor: colors.surface,
     borderRadius: 18,
     paddingVertical: 14,
     paddingHorizontal: 28,
     borderWidth: 2,
-    borderColor: "#E1E5F2",
+    borderColor: colors.border,
     marginTop: 12,
   },
   buttonSecondaryText: {
-    color: "#1A73E8",
+    ...fonts.label,
+    fontFamily: "Nunito_800ExtraBold",
+    color: colors.primary,
     fontSize: 15,
-    fontWeight: "800",
   },
   buttonText: {
+    ...fonts.button,
+    fontFamily: "Nunito_900Black",
     color: "#fff",
     fontSize: 16,
-    fontWeight: "900",
     letterSpacing: 0.2,
   },
   linkText: {
-    color: "#1A73E8",
+    ...fonts.label,
+    fontFamily: "Nunito_800ExtraBold",
+    color: colors.primary,
     fontSize: 15,
-    fontWeight: "800",
     textDecorationLine: "underline",
   },
 });

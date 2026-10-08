@@ -236,7 +236,7 @@ To unsubscribe from future project leads, click here: ${unsubscribeBaseUrl}?emai
             provider_message_id: sendData.id || null,
           });
         } catch (emailErr: any) {
-          console.error(`Failed to email ${contractor.email}:`, emailErr.message);
+          console.error(`Failed to email contractor ${contractor.id}:`, emailErr.message);
         }
       }
     }

@@ -72,6 +72,8 @@ const ENV_CHECKS: CheckResult[] = [
   },
 ];
 
+// Deletion cron readiness will be checked via SQL function below
+
 function printCheck(check: CheckResult) {
   const icon = check.present ? "✓" : "✗";
   const status = check.present ? "SET" : "MISSING";
@@ -86,7 +88,80 @@ function printCheck(check: CheckResult) {
   }
 }
 
-function main() {
+async function checkDeletionCronReadiness(): Promise<{
+  ready: boolean;
+  checks: Record<string, boolean>;
+}> {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+
+  if (!serviceRoleKey || !supabaseUrl) {
+    return {
+      ready: false,
+      checks: {
+        pg_cron_installed: false,
+        pg_net_installed: false,
+        job_scheduled: false,
+        vault_project_url_present: false,
+        vault_service_role_key_present: false,
+      },
+    };
+  }
+
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/rpc/deletion_cron_ready`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${serviceRoleKey}`,
+          "Content-Type": "application/json",
+          apikey: serviceRoleKey,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      return {
+        ready: false,
+        checks: {
+          pg_cron_installed: false,
+          pg_net_installed: false,
+          job_scheduled: false,
+          vault_project_url_present: false,
+          vault_service_role_key_present: false,
+        },
+      };
+    }
+
+    const result = await response.json();
+    const checks = {
+      pg_cron_installed: result.pg_cron_installed ?? false,
+      pg_net_installed: result.pg_net_installed ?? false,
+      job_scheduled: result.job_scheduled ?? false,
+      vault_project_url_present: result.vault_project_url_present ?? false,
+      vault_service_role_key_present: result.vault_service_role_key_present ?? false,
+    };
+
+    return {
+      ready: Object.values(checks).every((v) => v === true),
+      checks,
+    };
+  } catch {
+    return {
+      ready: false,
+      checks: {
+        pg_cron_installed: false,
+        pg_net_installed: false,
+        job_scheduled: false,
+        vault_project_url_present: false,
+        vault_service_role_key_present: false,
+      },
+    };
+  }
+}
+
+async function main() {
   const isDev = process.env.APP_ENV !== "production" && process.env.NODE_ENV !== "production";
   
   console.log("\n🔍 VisionBuild Configuration Doctor\n");
@@ -122,11 +197,26 @@ function main() {
       console.log(`  - ${key}`);
     }
   }
+
+  // Check deletion cron readiness
+  console.log("\n\n📋 Deletion Cron Readiness:\n");
+  
+  const cronCheck = await checkDeletionCronReadiness();
+  let cronMissing = 0;
+  
+  for (const [key, value] of Object.entries(cronCheck.checks)) {
+    const label = key.replace(/_/g, " ");
+    const icon = value ? "✓" : "✗";
+    const color = value ? "\x1b[32m" : "\x1b[31m";
+    const reset = "\x1b[0m";
+    console.log(`${color}${icon}${reset} ${label}: ${value ? "YES" : "NO"}`);
+    if (!value) cronMissing++;
+  }
   
   // Summary
   console.log("\n\n📊 Summary:\n");
   
-  const totalMissing = missingRequired + missingBusiness.length;
+  const totalMissing = missingRequired + missingBusiness.length + cronMissing;
   
   if (totalMissing === 0) {
     console.log("\x1b[32m✓ All required configuration is complete!\x1b[0m");
@@ -140,12 +230,20 @@ function main() {
   } else {
     console.log(`\x1b[31m✗ ${totalMissing} required setting(s) missing\x1b[0m`);
     
+    if (cronMissing > 0) {
+      console.log("\n⚠️  Deletion cron not ready. See instructions in docs/HANDOFF.md:");
+      console.log("  - Create Vault secrets: project_url, service_role_key");
+      console.log("  - Verify pg_cron and pg_net extensions are installed");
+      console.log("  - Ensure cron job 'retry-account-deletions' is scheduled");
+    }
+    
     if (!isDev) {
       console.log("\n❌ Cannot deploy to production with missing configuration.");
       console.log("\nFill in the missing values in:");
       console.log("  - .env (environment variables)");
       console.log("  - lib/config/business.ts (business details)");
       console.log("  - supabase/functions/_shared/business.ts (server-side)");
+      console.log("  - Supabase Vault secrets (see docs/HANDOFF.md)");
       process.exit(1);
     } else {
       console.log("\n⚠️  Development mode: missing config is okay for local testing.");
