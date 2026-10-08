@@ -14,7 +14,6 @@ import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore, useAuthStore } from "@/lib/store";
 import { Project, ProjectStatus } from "@/lib/types";
 import { Button, EmptyState, IsoRoom, PrivateImage } from "@/components";
-import { useAIConsentCheck } from "@/lib/hooks/useAIConsentCheck";
 
 // Long-running threshold for showing "Rendering..." card in Home
 const LONG_RUNNING_THRESHOLD_MS = 45000; // 45 seconds
@@ -34,7 +33,8 @@ export default function DashboardScreen() {
   const profile = useAuthStore((s) => s.profile);
   const [showRenderingCard, setShowRenderingCard] = useState(false);
 
-  useAIConsentCheck();
+  // NOTE: AI consent is now enforced server-side in analyze-room, generate-design, and assistant-chat
+  // Removed client-side useAIConsentCheck() - consent errors trigger re-consent flow with resume capability
 
   const xp = profile?.xp || 0;
   const level = profile?.level || 1;
