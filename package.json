@@ -46,6 +46,7 @@
     "react-native-svg": "15.8.0",
     "react-native-url-polyfill": "^2.0.0",
     "react-native-web": "~0.19.13",
+    "sharp": "^0.35.5",
     "zustand": "^5.0.0"
   },
   "devDependencies": {
