@@ -10,6 +10,7 @@
  * Requires Supabase local stack to be running: supabase start
  */
 
+/* eslint-disable import/no-unresolved */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { deleteUserData } from "../../supabase/functions/_shared/delete-user-data.ts";
 
@@ -27,7 +28,7 @@ async function main() {
   // ═══════════════════════════════════════════════════════════
   console.log("📋 Discovering all tables with user_id column...");
   
-  const { data: userIdTables, error: schemaError } = await supabase.rpc("exec_sql", {
+  const { data: _userIdTables, error: _schemaError } = await supabase.rpc("exec_sql", {
     sql: `
       SELECT DISTINCT table_name
       FROM information_schema.columns
@@ -87,7 +88,7 @@ async function main() {
   console.log("  ✅ profiles");
   
   // Seed projects
-  const { data: project } = await supabase.from("projects").insert({
+  const { data: _project } = await supabase.from("projects").insert({
     user_id: userId,
     status: "generated",
     original_image_url: `${userId}/test/original.jpg`,
@@ -134,7 +135,7 @@ async function main() {
   console.log("  ✅ leads");
   
   // Seed account_deletion_requests
-  const { data: deletionRequest } = await supabase.from("account_deletion_requests").insert({
+  const { data: _deletionRequest } = await supabase.from("account_deletion_requests").insert({
     email: testEmail,
     user_id: userId,
     token_hash: "test-token-hash",
@@ -174,9 +175,9 @@ async function main() {
     }
     
     const idColumn = table === "profiles" ? "id" : "user_id";
-    const { data, error } = await supabase.from(table).select("*").eq(idColumn, userId);
+    const { data, error: _error } = await supabase.from(table).select("*").eq(idColumn, userId);
     
-    if (error) {
+    if (_error) {
       // Table might not exist or have user_id
       continue;
     }
