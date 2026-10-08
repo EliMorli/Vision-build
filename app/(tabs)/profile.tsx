@@ -10,8 +10,10 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useAuthStore, useProjectStore } from "@/lib/store";
-import { Button } from "@/components";
+import { Button, OfflineBanner, LoadingSkeleton, ErrorState } from "@/components";
 import { getDisplayName, getDisplayInitial } from "@/lib/helpers/user";
+import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
+import { useState, useEffect } from "react";
 
 interface Badge {
   id: string;
@@ -28,6 +30,10 @@ export default function ProfileScreen() {
   const session = useAuthStore((s) => s.session);
   const signOut = useAuthStore((s) => s.signOut);
   const projects = useProjectStore((s) => s.projects);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const networkStatus = useNetworkStatus();
+  const isOffline = !networkStatus.isConnected;
 
   const displayName = getDisplayName(profile, session?.user);
   const displayInitial = getDisplayInitial(displayName);
@@ -105,8 +111,31 @@ export default function ProfileScreen() {
     { icon: "help-circle-outline" as const, label: "Help & Contact", badge: null, route: "/help-contact" },
   ];
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {isOffline && <OfflineBanner testID="offline-banner" />}
+        <LoadingSkeleton variant="list" count={5} testID="profile-loading" />
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {isOffline && <OfflineBanner testID="offline-banner" />}
+        <ErrorState
+          message="Failed to load profile"
+          onRetry={() => setError(null)}
+          testID="profile-error"
+        />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
+      {isOffline && <OfflineBanner testID="offline-banner" />}
       <ScrollView contentContainerStyle={styles.content}>
         {/* Profile header */}
         <View style={styles.header}>

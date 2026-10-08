@@ -16,8 +16,9 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore, useAuthStore } from "@/lib/store";
-import { Button, IsoRoom, PrivateImage } from "@/components";
+import { Button, IsoRoom, PrivateImage, LoadingSkeleton, ErrorState, OfflineBanner } from "@/components";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
+import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
 import { supabase } from "@/lib/supabase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -29,6 +30,9 @@ export default function ResultScreen() {
   const router = useRouter();
   const { currentProject, selectDesign, loading } = useProjectStore();
   const profile = useAuthStore((s) => s.profile);
+  const [error, setError] = useState<string | null>(null);
+  const networkStatus = useNetworkStatus();
+  const isOffline = !networkStatus.isConnected;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -108,7 +112,7 @@ export default function ResultScreen() {
   };
 
   const handleContinue = async () => {
-    if (!selectedUrl || !id || isSaving) return;
+    if (!selectedUrl || !id || isSaving || isOffline) return;
     
     setIsSaving(true);
     try {
@@ -116,13 +120,14 @@ export default function ResultScreen() {
       router.push(`/project/${id}`);
     } catch (_error) {
       console.error("Error saving design:", _error);
+      setError("Failed to save selection");
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleJoinWaitlist = async () => {
-    if (!id || isOnWaitlist || waitlistLoading) return;
+    if (!id || isOnWaitlist || waitlistLoading || isOffline) return;
 
     setWaitlistLoading(true);
 
@@ -157,8 +162,36 @@ export default function ResultScreen() {
     }
   };
 
+  // Loading state
+  if (loading && images.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {isOffline && <OfflineBanner testID="offline-banner" />}
+        <LoadingSkeleton variant="card" count={1} testID="results-loading" />
+      </SafeAreaView>
+    );
+  }
+
+  // Error state
+  if (error || images.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {isOffline && <OfflineBanner testID="offline-banner" />}
+        <ErrorState
+          message={error || "No designs available"}
+          onRetry={() => {
+            setError(null);
+            router.back();
+          }}
+          testID="results-error"
+        />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
+      {isOffline && <OfflineBanner testID="offline-banner" />}
       {/* XP reward banner */}
       {showXPBanner && (
         <Animated.View style={[styles.xpBanner, { transform: [{ scale: xpBannerScale }] }]}>

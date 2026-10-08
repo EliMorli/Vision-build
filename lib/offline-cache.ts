@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 // @ts-ignore - expo-file-system types are bundled with expo
+// eslint-disable-next-line import/no-unresolved
 import * as FileSystem from "expo-file-system";
 
 const OFFLINE_CACHE_KEYS_PREFIX = "@visionbuild:offline:";

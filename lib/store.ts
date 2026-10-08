@@ -1015,6 +1015,7 @@ export const useExploreStore = create<ExploreState>((set, get) => ({
   loading: false,
 
   fetchPublicDesigns: async () => {
+    set({ loading: true });
     const userId = useAuthStore.getState().session?.user?.id;
     
     // Dev mode: Check for seeded mock projects first (for E2E testing)
@@ -1038,7 +1039,7 @@ export const useExploreStore = create<ExploreState>((set, get) => ({
             !blockedIds.includes(p.user_id || "")
           );
           
-          set({ publicDesigns: filtered });
+          set({ publicDesigns: filtered, loading: false });
           return;
         }
       } catch (e) {
@@ -1046,16 +1047,14 @@ export const useExploreStore = create<ExploreState>((set, get) => ({
       }
       
       // Default: no public designs in mock mode without seeds
-      set({ publicDesigns: [] });
+      set({ publicDesigns: [], loading: false });
       return;
     }
     
     if (!userId) {
-      set({ publicDesigns: [] });
+      set({ publicDesigns: [], loading: false });
       return;
     }
-
-    set({ loading: true });
     
     // Use RPC function that excludes blocked users
     const { data, error} = await (supabase.rpc("fetch_public_designs") as any);

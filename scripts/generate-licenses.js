@@ -7,6 +7,7 @@
  * Outputs: lib/generated/licenses.ts
  */
 
+/* eslint-env node */
 const fs = require('fs');
 const path = require('path');
 

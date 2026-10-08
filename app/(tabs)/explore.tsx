@@ -11,14 +11,18 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
-import { IsoRoom, Button, ReportModal, ConfirmationSheet, MenuSheet } from "@/components";
+import { IsoRoom, Button, ReportModal, ConfirmationSheet, MenuSheet, LoadingSkeleton, ErrorState, OfflineBanner } from "@/components";
 import { useExploreStore, useReportStore } from "@/lib/store";
+import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
 
 export default function ExploreScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const { publicDesigns, fetchPublicDesigns } = useExploreStore();
+  const { publicDesigns, fetchPublicDesigns, loading } = useExploreStore();
   const blockUser = useReportStore((s) => s.blockUser);
+  const [error, setError] = useState<string | null>(null);
+  const networkStatus = useNetworkStatus();
+  const isOffline = !networkStatus.isConnected;
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [reportingProjectId, setReportingProjectId] = useState<string>("");
   const [menuSheet, setMenuSheet] = useState<{
@@ -37,7 +41,15 @@ export default function ExploreScreen() {
   
   // Fetch public designs on mount
   useEffect(() => {
-    fetchPublicDesigns();
+    const load = async () => {
+      try {
+        setError(null);
+        await fetchPublicDesigns();
+      } catch (e: any) {
+        setError("Failed to load public designs");
+      }
+    };
+    load();
   }, [fetchPublicDesigns]);
   
   // Filter by search query  
@@ -45,6 +57,15 @@ export default function ExploreScreen() {
     p.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.selected_style?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleRetry = async () => {
+    try {
+      setError(null);
+      await fetchPublicDesigns();
+    } catch (e: any) {
+      setError("Failed to load public designs");
+    }
+  };
 
   const handleReportMenu = (projectId: string, userId: string) => {
     setMenuSheet({ visible: true, projectId, userId });
@@ -95,15 +116,53 @@ export default function ExploreScreen() {
       setSuccessMessage("User blocked. Their designs won't appear in Explore anymore.");
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (error: any) {
-      setErrorMessage(error.message || "Failed to block user. Please try again.");
+      setErrorMessage("Failed to block user");
       setTimeout(() => setErrorMessage(""), 3000);
     }
   };
 
+  // Loading state
+  if (loading && publicDesigns.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {isOffline && <OfflineBanner testID="offline-banner" />}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBar}>
+            <Ionicons name="search" size={20} color={colors.textSecondary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search styles, rooms..."
+              placeholderTextColor={colors.textSecondary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              editable={false}
+            />
+          </View>
+        </View>
+        <LoadingSkeleton variant="grid" count={6} testID="explore-loading" />
+      </SafeAreaView>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {isOffline && <OfflineBanner testID="offline-banner" />}
+        <ErrorState
+          message="Failed to load public designs"
+          onRetry={handleRetry}
+          testID="explore-error"
+        />
+      </SafeAreaView>
+    );
+  }
+
   // Empty state when no public designs
   if (filteredDesigns.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} testID="explore-empty">
+        {isOffline && <OfflineBanner testID="offline-banner" />}
         {/* Search bar */}
         <View style={styles.searchContainer}>
           <View style={styles.searchBar}>
@@ -138,6 +197,7 @@ export default function ExploreScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {isOffline && <OfflineBanner testID="offline-banner" />}
       <ReportModal
         visible={reportModalVisible}
         onClose={() => {

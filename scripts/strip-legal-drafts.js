@@ -8,6 +8,7 @@
  * Processes: app/terms.tsx, app/privacy.tsx
  */
 
+/* eslint-env node */
 const fs = require('fs');
 const path = require('path');
 
