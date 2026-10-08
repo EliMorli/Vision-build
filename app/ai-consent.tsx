@@ -159,7 +159,7 @@ export default function AIConsentScreen() {
               <View style={styles.updateNotice}>
                 <Ionicons name="information-circle" size={20} color={colors.primary} />
                 <View style={styles.updateTextContainer}>
-                  <Text style={styles.updateText}>
+                  <Text style={[styles.updateText, styles.updateTextBold]}>
                     We've updated how your photos are handled.
                   </Text>
                   <Text style={styles.updateText}>
@@ -179,8 +179,7 @@ export default function AIConsentScreen() {
 
             {/* Description - tightened spacing */}
             <Text style={styles.description}>
-              Your photos and chats are sent through OpenRouter only to AI providers that don't keep
-              or train on your data, and only to create your designs.
+              They don't keep or train on your data, and only use it to create your designs.
             </Text>
             
             <Text style={styles.description}>
@@ -284,12 +283,15 @@ const styles = StyleSheet.create({
   },
   updateTextContainer: {
     flex: 1,
-    gap: spacing.xs,
+    gap: 4,
   },
   updateText: {
     ...fonts.body,
     fontSize: 14,
     color: colors.textPrimary,
+  },
+  updateTextBold: {
+    fontWeight: "600",
   },
   infoBox: {
     width: "100%",
