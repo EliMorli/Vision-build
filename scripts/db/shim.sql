@@ -7,6 +7,7 @@
 -- Create schemas
 CREATE SCHEMA IF NOT EXISTS auth;
 CREATE SCHEMA IF NOT EXISTS storage;
+CREATE SCHEMA IF NOT EXISTS vault;
 
 -- ─── Roles ─────────────────────────────────────────────────
 
@@ -223,6 +224,23 @@ END;
 $$;
 
 COMMENT ON FUNCTION set_test_role IS 'Test helper: Sets JWT claims to simulate authenticated user or role';
+
+-- ─── Vault Schema (for testing) ────────────────────────────
+
+-- Minimal vault.decrypted_secrets table for testing
+-- In production Supabase, this is provided by the Vault extension
+CREATE TABLE IF NOT EXISTS vault.decrypted_secrets (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text UNIQUE NOT NULL,
+  decrypted_secret text NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+
+COMMENT ON TABLE vault.decrypted_secrets IS 'Test shim for Supabase Vault secrets';
+
+-- Grant access to service_role only
+GRANT ALL ON TABLE vault.decrypted_secrets TO service_role;
+REVOKE ALL ON TABLE vault.decrypted_secrets FROM PUBLIC, anon, authenticated;
 
 -- Enable uuid-ossp extension (provides uuid_generate_v4)
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

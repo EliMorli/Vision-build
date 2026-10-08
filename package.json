@@ -16,7 +16,8 @@
     "check:launch-copy": "node scripts/check-launch-copy.js",
     "db:test": "bash scripts/db/run-tests.sh",
     "fn:test": "bash scripts/run-function-tests.sh",
-    "e2e:web": "playwright test"
+    "e2e:web": "playwright test",
+    "test": "jest"
   },
   "dependencies": {
     "@expo-google-fonts/nunito": "^0.4.2",
@@ -59,11 +60,14 @@
     "@babel/core": "^7.25.0",
     "@eslint/eslintrc": "^3.3.7",
     "@playwright/test": "^1.64.0",
+    "@types/jest": "^30.0.0",
     "@types/react": "~18.3.0",
     "eslint": "^9.39.5",
     "eslint-config-expo": "~8.0.1",
     "eslint-plugin-react-hooks": "^7.1.1",
+    "jest": "^30.5.2",
     "playwright": "^1.64.0",
+    "ts-jest": "^29.4.14",
     "typescript": "^5.3.0"
   },
   "private": true

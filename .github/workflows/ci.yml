@@ -58,6 +58,32 @@ jobs:
       - name: Check launch copy compliance
         run: npm run check:launch-copy
       
+      - name: Install pg_cron and pg_net in PostgreSQL container
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+        run: |
+          # Get the container ID for the postgres service
+          CONTAINER_ID=$(docker ps --filter "ancestor=postgres:16" --format "{{.ID}}" | head -1)
+          
+          # Install build dependencies and pg_cron
+          docker exec $CONTAINER_ID bash -c "apt-get update && apt-get install -y postgresql-16-cron postgresql-server-dev-16 build-essential git curl libcurl4-openssl-dev libicu-dev"
+          
+          # Build and install pg_net from source
+          docker exec $CONTAINER_ID bash -c "cd /tmp && git clone https://github.com/supabase/pg_net.git && cd pg_net && make && make install"
+          
+          # Configure pg_cron and pg_net
+          docker exec $CONTAINER_ID bash -c "echo \"shared_preload_libraries = 'pg_cron, pg_net'\" >> /var/lib/postgresql/data/postgresql.conf"
+          docker exec $CONTAINER_ID bash -c "echo \"cron.database_name = 'visionbuild_test'\" >> /var/lib/postgresql/data/postgresql.conf"
+          
+          # Restart PostgreSQL in the container
+          docker restart $CONTAINER_ID
+          
+          # Wait for PostgreSQL to be ready
+          timeout 30 bash -c 'until pg_isready -h localhost -p 5432 -U postgres; do sleep 1; done'
+      
       - name: Setup database for tests
         env:
           PGHOST: localhost
@@ -68,6 +94,10 @@ jobs:
         run: |
           # Apply shim
           psql -f scripts/db/shim.sql -q
+          
+          # Seed vault secrets for testing
+          psql -c "INSERT INTO vault.decrypted_secrets (name, decrypted_secret) VALUES ('project_url', 'http://localhost:54321') ON CONFLICT (name) DO UPDATE SET decrypted_secret = EXCLUDED.decrypted_secret;" -q
+          psql -c "INSERT INTO vault.decrypted_secrets (name, decrypted_secret) VALUES ('service_role_key', 'test-service-role-key-ci') ON CONFLICT (name) DO UPDATE SET decrypted_secret = EXCLUDED.decrypted_secret;" -q
           
           # Apply migrations
           for migration in supabase/migrations/*.sql; do
@@ -90,6 +120,9 @@ jobs:
             echo "Running $(basename $test_file)..."
             psql -f "$test_file" -v ON_ERROR_STOP=1
           done
+      
+      - name: Run unit tests
+        run: npm test
       
       - name: Run function tests
         run: npm run fn:test
