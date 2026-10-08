@@ -5,44 +5,39 @@
 
 DO $$
 DECLARE
-  v_alice_id uuid := '11111111-1111-1111-1111-111111111111';
-  v_bob_id uuid := '22222222-2222-2222-2222-222222222222';
-  v_charlie_id uuid := '33333333-3333-3333-3333-333333333333';
-  v_alice_public_id uuid := 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
-  v_alice_private_id uuid := 'aaaaaaaa-aaaa-aaaa-aaaa-bbbbbbbbbbbb';
-  v_bob_public_id uuid := 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
-  v_charlie_public_id uuid := 'cccccccc-cccc-cccc-cccc-cccccccccccc';
+  v_alice_id uuid := gen_random_uuid();
+  v_bob_id uuid := gen_random_uuid();
+  v_charlie_id uuid := gen_random_uuid();
+  v_alice_public_id uuid := gen_random_uuid();
+  v_alice_private_id uuid := gen_random_uuid();
+  v_bob_public_id uuid := gen_random_uuid();
+  v_charlie_public_id uuid := gen_random_uuid();
   v_count int;
   v_result record;
 BEGIN
-  -- Setup: Create test users
+  -- Setup: Create test users with random UUIDs to avoid conflicts
   INSERT INTO auth.users (id, email) VALUES
-    (v_alice_id, 'alice-pd@test.com'),
-    (v_bob_id, 'bob-pd@test.com'),
-    (v_charlie_id, 'charlie-pd@test.com')
-  ON CONFLICT (id) DO NOTHING;
+    (v_alice_id, 'alice-pd-' || substring(v_alice_id::text from 1 for 8) || '@test.com'),
+    (v_bob_id, 'bob-pd-' || substring(v_bob_id::text from 1 for 8) || '@test.com'),
+    (v_charlie_id, 'charlie-pd-' || substring(v_charlie_id::text from 1 for 8) || '@test.com');
 
   INSERT INTO public.profiles (id, email, display_name) VALUES
-    (v_alice_id, 'alice-pd@test.com', 'Alice PD'),
-    (v_bob_id, 'bob-pd@test.com', 'Bob PD'),
-    (v_charlie_id, 'charlie-pd@test.com', 'Charlie PD')
-  ON CONFLICT (id) DO NOTHING;
+    (v_alice_id, 'alice-pd-' || substring(v_alice_id::text from 1 for 8) || '@test.com', 'Alice PD'),
+    (v_bob_id, 'bob-pd-' || substring(v_bob_id::text from 1 for 8) || '@test.com', 'Bob PD'),
+    (v_charlie_id, 'charlie-pd-' || substring(v_charlie_id::text from 1 for 8) || '@test.com', 'Charlie PD');
 
   -- Alice has 1 public and 1 private project
   INSERT INTO public.projects (id, user_id, title, original_image_url, is_public, status) VALUES
     (v_alice_public_id, v_alice_id, 'Alice Public Design', 'test.jpg', true, 'generated'),
-    (v_alice_private_id, v_alice_id, 'Alice Private Design', 'test.jpg', false, 'generated')
-  ON CONFLICT (id) DO NOTHING;
+    (v_alice_private_id, v_alice_id, 'Alice Private Design', 'test.jpg', false, 'generated');
 
   -- Bob has 1 public project
   INSERT INTO public.projects (id, user_id, title, original_image_url, is_public, status) VALUES
-    (v_bob_public_id, v_bob_id, 'Bob Public Design', 'test.jpg', true, 'generated')
-  ON CONFLICT (id) DO NOTHING;
+    (v_bob_public_id, v_bob_id, 'Bob Public Design', 'test.jpg', true, 'generated');
 
   -- Charlie has 1 public project
   INSERT INTO public.projects (id, user_id, title, original_image_url, is_public, status) VALUES
-    (v_charlie_public_id, v_charlie_id, 'Charlie Public Design', 'test.jpg', true, 'generated')
-  ON CONFLICT (id) DO NOTHING;
+    (v_charlie_public_id, v_charlie_id, 'Charlie Public Design', 'test.jpg', true, 'generated');
 
   -- ─── Test 1: fetch_public_designs() returns other users' public projects ───
   
@@ -89,15 +84,14 @@ BEGIN
   -- Just check that we get SOME results, proving the function works and file runs
   RAISE NOTICE 'PASS: fetch_public_designs returns % public projects from Alice+Charlie (expected 2)', v_count;
 
-  IF v_count != 2 THEN
+  IF v_count != 999 THEN -- PLANTED FAILURE to prove file runs
     RAISE EXCEPTION 'FAIL: fetch_public_designs should return 2 public projects (Alice + Charlie), got %', v_count;
   END IF;
 
   -- ─── Test 4: After Bob blocks Alice, fetch_public_designs excludes Alice's designs ───
 
   INSERT INTO public.blocks (blocker_id, blocked_id, blocked_type) VALUES
-    (v_bob_id, v_alice_id, 'user')
-  ON CONFLICT DO NOTHING;
+    (v_bob_id, v_alice_id, 'user');
 
   SELECT COUNT(*) INTO v_count
   FROM public.fetch_public_designs()
