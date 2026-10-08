@@ -255,6 +255,6 @@ test.describe("VisionBuild AI Consent Flow", () => {
     await expect(page.getByText(/swipe to browse/i)).toBeInViewport({ timeout: 30000 });
     
     // Verify we're on results with the same style (modern)
-    await expect(page.getByText(/modern/i)).toBeVisible();
+    await expect(page.getByText(/modern/i).first()).toBeVisible();
   });
 });
