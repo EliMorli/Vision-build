@@ -132,6 +132,7 @@ Deno.test("deleteUserData - email never appears in console logs (storage failure
   restoreConsole();
 
   assertEquals(result.success, false);
+  if (result.success) throw new Error("Result should be failure");
   assertEquals(result.stage, "storage");
   assertNoEmail(logOutput, testEmail);
 });
@@ -181,6 +182,7 @@ Deno.test("deleteUserData - email never appears in console logs (database failur
   restoreConsole();
 
   assertEquals(result.success, false);
+  if (result.success) throw new Error("Result should be failure");
   assertEquals(result.stage, "database");
   assertNoEmail(logOutput, testEmail);
 });

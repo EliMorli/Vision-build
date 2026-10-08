@@ -45,6 +45,7 @@ Deno.test("deleteUserData - storage list error returns stage 'storage' and doesn
   });
 
   assertEquals(result.success, false);
+  if (result.success) throw new Error("Result should be failure");
   assertEquals(result.stage, "storage");
   assertEquals(result.error, "storage:list_failed");
   assertEquals(authDeleteCalled, false, "Auth user should NOT be deleted on storage error");
@@ -99,6 +100,7 @@ Deno.test("deleteUserData - storage remove error returns stage 'storage' and doe
   });
 
   assertEquals(result.success, false);
+  if (result.success) throw new Error("Result should be failure");
   assertEquals(result.stage, "storage");
   assertEquals(result.error, "storage:remove_failed");
   assertEquals(authDeleteCalled, false, "Auth user should NOT be deleted on storage error");
@@ -161,6 +163,7 @@ Deno.test("deleteUserData - DB error returns stage 'database' with table name an
   });
 
   assertEquals(result.success, false);
+  if (result.success) throw new Error("Result should be failure");
   assertEquals(result.stage, "database");
   assertEquals(result.error, "database:leads");
   assertEquals(authDeleteCalled, false, "Auth user should NOT be deleted on DB error");
@@ -221,6 +224,7 @@ Deno.test("deleteUserData - remove that keeps returning same files hits max atte
   });
 
   assertEquals(result.success, false);
+  if (result.success) throw new Error("Result should be failure");
   assertEquals(result.stage, "storage");
   assertEquals(result.error, "storage:max_attempts_exceeded");
   assertEquals(authDeleteCalled, false, "Auth user should NOT be deleted when stuck in loop");
