@@ -17,7 +17,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore } from "@/lib/store";
-import { Button, ReportModal } from "@/components";
+import { Button, ReportModal, IsoRoom } from "@/components";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 
 const { width } = Dimensions.get("window");
@@ -129,6 +129,7 @@ export default function ResultScreen() {
           const isSelected = selectedUrl === url;
           const isGenerating = !url && index < images.length + 1 && loading;
           const isPlaceholder = !url && !isGenerating;
+          const style = currentProject?.selected_style || "modern";
           
           return (
             <Pressable
@@ -161,7 +162,10 @@ export default function ResultScreen() {
                 </View>
               ) : (
                 <View style={styles.placeholderCard}>
-                  <Ionicons name="image-outline" size={48} color={colors.textSecondary + "60"} />
+                  <IsoRoom style={style as any} width={CARD_WIDTH} height={CARD_WIDTH} />
+                  <View style={styles.optionLabel}>
+                    <Text style={styles.optionText}>Option {index + 1}</Text>
+                  </View>
                 </View>
               )}
             </Pressable>

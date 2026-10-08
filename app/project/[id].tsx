@@ -13,6 +13,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore } from "@/lib/store";
+import { IsoRoom } from "@/components";
 
 // Placeholder timeline data
 const TIMELINE_EVENTS = [
@@ -26,10 +27,10 @@ const TIMELINE_EVENTS = [
   { id: "8", type: "quote", label: "3 quotes received", date: "4h ago" },
 ];
 
-// Placeholder designs
+// Placeholder designs - using IsoRoom for placeholders
 const DESIGNS = Array.from({ length: 6 }, (_, i) => ({
   id: String(i + 1),
-  url: `https://placehold.co/400x300/${["1A73E8", "34A853", "FBBC04", "EA4335", "8E44AD", "E67E22"][i]}/FFFFFF?text=Design+${i + 1}`,
+  style: ["modern", "farmhouse", "coastal", "industrial", "luxury", "scandinavian"][i],
   source: i < 4 ? "photo" : "chat",
   isFavorite: i === 1 || i === 4,
 }));
@@ -200,7 +201,9 @@ export default function ProjectDetailScreen() {
                 style={styles.designCard}
                 onPress={() => router.push(`/result/${id}`)}
               >
-                <Image source={{ uri: design.url }} style={styles.designImage} />
+                <View style={styles.designImage}>
+                  <IsoRoom style={design.style as any} width={180} height={180} />
+                </View>
                 {design.isFavorite && (
                   <View style={styles.favoritebadge}>
                     <Ionicons name="heart" size={16} color={colors.error} />
@@ -466,6 +469,9 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: radius.md,
     backgroundColor: colors.surface,
+    overflow: "hidden",
+    justifyContent: "center",
+    alignItems: "center",
   },
   favoritebadge: {
     position: "absolute",
