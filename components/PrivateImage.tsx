@@ -89,7 +89,8 @@ export function PrivateImage({
   showLoadingSpinner = false,
   testID,
 }: PrivateImageProps) {
-  const signedUrl = useSignedUrl(bucket, path);
+  const [retryTrigger, setRetryTrigger] = useState(0);
+  const signedUrl = useSignedUrl(bucket, path, 3600 + retryTrigger); // Add retry trigger to force re-fetch
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [showPlaceholder, setShowPlaceholder] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -139,9 +140,8 @@ export function PrivateImage({
 
     if (!isMountedRef.current) return;
 
-    // The useSignedUrl hook will automatically fetch a new URL
-    // when the cache is cleared and the component re-renders
-    // Force a re-fetch by setting imageUrl to null temporarily
+    // Trigger a re-fetch by incrementing retryTrigger (changes hook dependency)
+    setRetryTrigger(prev => prev + 1);
     setImageUrl(null);
     setIsLoading(true);
   };

@@ -6,6 +6,7 @@ import * as ImageManipulator from "expo-image-manipulator";
 import { supabase } from "./supabase";
 import { Project, Profile, Contractor } from "./types";
 import { getDataLayer } from "./data";
+import { InMemoryDataLayer } from "./data/in-memory";
 
 // ─── Auth Store ────────────────────────────────────────────
 
@@ -361,9 +362,15 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       let signedUrl: string | null;
 
       if (isMockMode) {
-        // Mock mode: skip actual upload
+        // Mock mode: skip actual upload, but store the actual file URI
         set({ progress: 0.3, progressMessage: "Processing image..." });
         fileName = `mock/${userId}/${Date.now()}.jpg`;
+        
+        // Store the actual uploaded file URI so getSignedUrl can return it
+        if (dataLayer instanceof InMemoryDataLayer) {
+          (dataLayer as any).storeUploadedFile(fileName, imageUri);
+        }
+        
         signedUrl = await dataLayer.getSignedUrl("room-photos", fileName);
       } else {
         // 1. Strip EXIF/GPS data by re-encoding (client-side privacy)

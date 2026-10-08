@@ -4,19 +4,48 @@ import { DataLayer } from "./index";
 // In a real implementation, this would be a local asset
 const MOCK_IMAGE_URL = "https://placehold.co/800x600/E8F5E9/4CAF50?text=Mock+Room+Design";
 
+// Store actual uploaded file URIs in mock mode (keyed by mock storage path)
+const mockUploadedFiles = new Map<string, string>();
+
+// Test-only fault injection for image loading (when EXPO_PUBLIC_DEV_MOCK_SESSION is true)
+let mockImageLoadShouldFail = false;
+
+export function setMockImageLoadFault(shouldFail: boolean) {
+  mockImageLoadShouldFail = shouldFail;
+}
+
 /**
  * In-memory mock implementation of the data layer
  * Used in development without Supabase connection
  */
 export class InMemoryDataLayer implements DataLayer {
+  // Store an uploaded file's actual URI for mock mode
+  storeUploadedFile(path: string, actualUri: string) {
+    mockUploadedFiles.set(path, actualUri);
+  }
+
   async getSignedUrl(
     bucket: string,
     path: string,
     expiresIn: number = 3600
   ): Promise<string | null> {
-    // In mock mode, return a placeholder image URL
-    // This simulates what a real signed URL would look like
-    await new Promise((resolve) => setTimeout(resolve, 50)); // Simulate network delay
+    // Simulate network delay
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    
+    // If this path has an actual uploaded file in mock mode, return that
+    const actualUri = mockUploadedFiles.get(path);
+    if (actualUri) {
+      return actualUri;
+    }
+    
+    // For design images in mock mode, return different URLs to distinguish from original
+    if (path.includes('design_')) {
+      // Return a URL that can be intercepted in tests
+      const designNumber = path.match(/design_(\d+)/)?.[1] || '1';
+      return `http://localhost:19006/__mock__/design_${designNumber}.png`;
+    }
+    
+    // Default: return the placeholder
     return MOCK_IMAGE_URL;
   }
 
