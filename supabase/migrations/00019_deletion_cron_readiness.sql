@@ -20,6 +20,11 @@ DECLARE
   project_url_present boolean;
   service_role_key_present boolean;
 BEGIN
+  -- Only service_role can call this function
+  IF current_user NOT IN ('service_role', 'postgres') THEN
+    RAISE EXCEPTION 'deletion_cron_ready() can only be called by service_role';
+  END IF;
+  
   -- Check if vault schema exists
   has_vault := EXISTS(SELECT 1 FROM information_schema.schemata WHERE schema_name = 'vault');
   
