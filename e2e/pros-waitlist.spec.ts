@@ -123,7 +123,7 @@ test.describe("Pros Waitlist", () => {
     await expect(page.getByText("You're on the list")).toBeInViewport({ timeout: 5000 });
   });
 
-  test("contractor entry point lands on pros-coming-soon", async ({ page }: { page: Page }) => {
+  test("contractor entry point lands on pros-coming-soon and Quotes tab not visible", async ({ page }: { page: Page }) => {
     await page.goto(BASE_URL);
     await page.waitForLoadState("networkidle");
 
@@ -157,6 +157,10 @@ test.describe("Pros Waitlist", () => {
 
       // Should be on project detail page
       await page.waitForLoadState("networkidle");
+
+      // Assert "Quotes" tab does not appear
+      await expect(page.getByText("Quotes", { exact: true })).not.toBeVisible();
+      await expect(page.getByText(/quotes \(/i)).not.toBeVisible();
 
       // Look for contractor entry point (e.g., "Get quotes" button)
       const quotesButton = page.getByRole("button", { name: /get quotes|view full brief/i }).first();

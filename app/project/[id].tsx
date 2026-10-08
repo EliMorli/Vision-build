@@ -33,7 +33,7 @@ const DESIGNS = Array.from({ length: 6 }, (_, i) => ({
 export default function ProjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"designs" | "timeline" | "quotes">("designs");
+  const [activeTab, setActiveTab] = useState<"designs" | "timeline">("designs");
   
   const projects = useProjectStore((s) => s.projects);
   const toggleProjectPrivacy = useProjectStore((s) => s.toggleProjectPrivacy);
@@ -184,14 +184,6 @@ export default function ProjectDetailScreen() {
               Timeline
             </Text>
           </Pressable>
-          <Pressable
-            style={[styles.tab, activeTab === "quotes" && styles.tabActive]}
-            onPress={() => setActiveTab("quotes")}
-          >
-            <Text style={[styles.tabText, activeTab === "quotes" && styles.tabTextActive]}>
-              Quotes (0)
-            </Text>
-          </Pressable>
         </View>
 
         {/* Tab content */}
@@ -251,17 +243,6 @@ export default function ProjectDetailScreen() {
           </View>
         )}
 
-        {activeTab === "quotes" && (
-          <View style={styles.quotesContainer}>
-            <View style={styles.emptyState}>
-              <Ionicons name="document-text-outline" size={48} color={colors.textSecondary} />
-              <Text style={styles.emptyText}>Coming soon</Text>
-              <Text style={styles.emptySubtext}>
-                We'll connect you with local pros when they're available
-              </Text>
-            </View>
-          </View>
-        )}
 
         {/* Chat summary */}
         <View style={styles.chatSection}>
@@ -526,10 +507,6 @@ const styles = StyleSheet.create({
     ...fonts.regular,
     fontSize: 13,
     marginTop: 2,
-  },
-  quotesContainer: {
-    padding: spacing.lg,
-    gap: spacing.md,
   },
   quoteCard: {
     padding: spacing.md,
