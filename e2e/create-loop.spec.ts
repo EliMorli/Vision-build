@@ -1,14 +1,14 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:19006";
 
 test.describe("VisionBuild Create Loop", () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page }: { page: Page }) => {
     // Mock mode should be enabled (EXPO_PUBLIC_DEV_MOCK_SESSION=true)
     await page.goto(BASE_URL);
   });
 
-  test("completes full create loop in mock mode", async ({ page }) => {
+  test("completes full create loop in mock mode", async ({ page }: { page: Page }) => {
     // Wait for app to load
     await page.waitForLoadState("networkidle");
 
@@ -90,7 +90,7 @@ test.describe("VisionBuild Create Loop", () => {
     expect(errors).toHaveLength(0);
   });
 
-  test("handles consent decline correctly", async ({ page }) => {
+  test("handles consent decline correctly", async ({ page }: { page: Page }) => {
     // Track requests to verify no analyze or generate requests are made
     const requests: string[] = [];
     page.on("request", (request) => {
@@ -125,7 +125,7 @@ test.describe("VisionBuild Create Loop", () => {
     expect(requests).toHaveLength(0);
   });
 
-  test("handles image load failure with placeholder", async ({ page }) => {
+  test("handles image load failure with placeholder", async ({ page }: { page: Page }) => {
     // Intercept first image request and return 403
     let requestCount = 0;
     await page.route("**/room-photos/**", (route) => {

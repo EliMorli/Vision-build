@@ -15,7 +15,6 @@
   ],
   "exclude": [
     "supabase",
-    "e2e",
-    "playwright.config.ts"
+    "scripts"
   ]
 }
