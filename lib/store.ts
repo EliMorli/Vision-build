@@ -55,20 +55,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       xp = 120;
       level = 1;
     } else {
-      // Call the get_user_xp function
-      const { data: xpData, error: xpError } = await supabase
+      // Call the get_user_xp function - cast to any to work around Supabase typing issues
+      const { data: xpData, error: xpError } = await (supabase as any)
         .rpc("get_user_xp", { target_user_id: userId });
 
-      if (!xpError && xpData && xpData.length > 0) {
-        xp = parseInt(xpData[0].total_xp) || 0;
+      if (!xpError && xpData && Array.isArray(xpData) && xpData.length > 0) {
+        xp = parseInt(String(xpData[0].total_xp)) || 0;
         level = xpData[0].level || 1;
       }
     }
 
     // Merge XP data into profile
-    if (profileData) {
-      set({ profile: { ...profileData, xp, level } });
-    }
+    set({ profile: { ...(profileData as any), xp, level } as Profile });
   },
 
   signInWithOAuth: async (provider) => {
