@@ -9,6 +9,7 @@ import { Project, Profile, Contractor } from "./types";
 import { getDataLayer } from "./data";
 import { InMemoryDataLayer } from "./data/in-memory";
 import { MOCK_USER_ID } from "./constants/mock";
+import { wipeOfflineCache } from "./offline-cache";
 
 // ─── Auth Store ────────────────────────────────────────────
 
@@ -159,7 +160,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     
     // Wipe offline cache for this user
     if (userId) {
-      const { wipeOfflineCache } = await import("./offline-cache");
       try {
         await wipeOfflineCache(userId);
       } catch (error) {
@@ -1154,8 +1154,8 @@ export const useInboxStore = create<InboxState>((set, get) => ({
       return;
     }
 
-    const { count } = await supabase
-      .from("chat_messages")
+    const { count } = await (supabase
+      .from("chat_messages") as any)
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
       .eq("is_read", false);
@@ -1172,8 +1172,8 @@ export const useInboxStore = create<InboxState>((set, get) => ({
 
     if (!userId) return;
 
-    const { error } = await supabase
-      .from("chat_messages")
+    const { error } = await (supabase
+      .from("chat_messages") as any)
       .update({ is_read: true })
       .eq("id", messageId)
       .eq("user_id", userId);
