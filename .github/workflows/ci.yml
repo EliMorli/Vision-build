@@ -92,9 +92,9 @@ jobs:
           # Apply shim
           psql -f scripts/db/shim.sql -q
           
-          # Set config for cron job (fallback when vault is not available in tests)
-          psql -c "ALTER DATABASE visionbuild_test SET app.project_url = 'http://localhost:54321';" -q
-          psql -c "ALTER DATABASE visionbuild_test SET app.service_role_key = 'test-service-role-key';" -q
+          # Seed vault secrets for testing
+          psql -c "INSERT INTO vault.decrypted_secrets (name, decrypted_secret) VALUES ('project_url', 'http://localhost:54321') ON CONFLICT (name) DO UPDATE SET decrypted_secret = EXCLUDED.decrypted_secret;" -q
+          psql -c "INSERT INTO vault.decrypted_secrets (name, decrypted_secret) VALUES ('service_role_key', 'test-service-role-key-ci') ON CONFLICT (name) DO UPDATE SET decrypted_secret = EXCLUDED.decrypted_secret;" -q
           
           # Apply migrations
           for migration in supabase/migrations/*.sql; do
