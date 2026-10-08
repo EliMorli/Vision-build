@@ -36,9 +36,11 @@ export default function EditorScreen() {
     setIsGenerating(true);
     
     try {
-      // Start generation and immediately navigate to the generating screen
-      await generateDesigns(id, selectedStyle.promptModifier);
+      // Navigate to generating screen first, then start generation
       router.push(`/generating/${id}`);
+      
+      // Start generation (will update store which generating screen monitors)
+      await generateDesigns(id, selectedStyle.promptModifier);
     } catch (error) {
       console.error("Generate error:", error);
     } finally {

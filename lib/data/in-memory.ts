@@ -42,8 +42,9 @@ export class InMemoryDataLayer implements DataLayer {
     stylePrompt: string,
     roomAnalysis: string
   ): Promise<string[]> {
-    // Simulate generation time
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    // Simulate realistic generation time for testing
+    // Long enough to see the generating screen with countdown (needs at least 2-3 seconds)
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     // Return mock storage paths (not URLs - the component will call getSignedUrl)
     return [

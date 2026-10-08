@@ -70,6 +70,17 @@ export default function ProjectDetailScreen() {
   const [isPublic, setIsPublic] = useState(project?.is_public ?? false);
   const [showMakePublicSheet, setShowMakePublicSheet] = useState(false);
 
+  // Use actual project data instead of hardcoded values
+  const roomType = project?.room_analysis?.roomType || "room";
+  const sqFt = project?.room_analysis?.estimatedSqFt || 0;
+  const currentStyle = project?.room_analysis?.currentStyle || "";
+  const keyElements = project?.room_analysis?.keyElements || [];
+  const selectedStyle = project?.selected_style || "modern";
+  const generatedDesigns = project?.generated_image_urls || [];
+  
+  // Build title from room type
+  const projectTitle = project?.title || `${roomType.charAt(0).toUpperCase() + roomType.slice(1)} Renovation`;
+
   const handleTogglePrivacy = () => {
     if (!project) return;
 
@@ -110,7 +121,7 @@ export default function ProjectDetailScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Kitchen Renovation</Text>
+        <Text style={styles.headerTitle}>{projectTitle}</Text>
         <Pressable hitSlop={12}>
           <Ionicons name="ellipsis-horizontal" size={24} color={colors.textPrimary} />
         </Pressable>
@@ -155,25 +166,31 @@ export default function ProjectDetailScreen() {
           <PrivateImage
             bucket="room-photos"
             path={project?.original_image_url}
-            palette={project?.selected_style || "modern"}
+            palette={selectedStyle}
             placeholderSize={200}
             style={styles.originalImage}
             containerStyle={styles.originalImage}
-            accessibilityLabel="Original kitchen photo before renovation"
+            accessibilityLabel={`Original ${roomType} photo before renovation`}
           />
           <View style={styles.analysisChips}>
-            <View style={styles.chip}>
-              <Ionicons name="resize-outline" size={14} color={colors.textSecondary} />
-              <Text style={styles.chipText}>150 sq ft</Text>
-            </View>
-            <View style={styles.chip}>
-              <Ionicons name="home-outline" size={14} color={colors.textSecondary} />
-              <Text style={styles.chipText}>Traditional style</Text>
-            </View>
-            <View style={styles.chip}>
-              <Ionicons name="list-outline" size={14} color={colors.textSecondary} />
-              <Text style={styles.chipText}>Oak cabinets</Text>
-            </View>
+            {sqFt > 0 && (
+              <View style={styles.chip}>
+                <Ionicons name="resize-outline" size={14} color={colors.textSecondary} />
+                <Text style={styles.chipText}>{sqFt} sq ft</Text>
+              </View>
+            )}
+            {currentStyle && (
+              <View style={styles.chip}>
+                <Ionicons name="home-outline" size={14} color={colors.textSecondary} />
+                <Text style={styles.chipText}>{currentStyle} style</Text>
+              </View>
+            )}
+            {keyElements.slice(0, 1).map((element, i) => (
+              <View key={i} style={styles.chip}>
+                <Ionicons name="list-outline" size={14} color={colors.textSecondary} />
+                <Text style={styles.chipText}>{element}</Text>
+              </View>
+            ))}
           </View>
         </View>
 
@@ -184,7 +201,7 @@ export default function ProjectDetailScreen() {
             onPress={() => setActiveTab("designs")}
           >
             <Text style={[styles.tabText, activeTab === "designs" && styles.tabTextActive]}>
-              Designs ({DESIGNS.length})
+              Designs ({generatedDesigns.length})
             </Text>
           </Pressable>
           <Pressable
@@ -200,7 +217,7 @@ export default function ProjectDetailScreen() {
             onPress={() => setActiveTab("quotes")}
           >
             <Text style={[styles.tabText, activeTab === "quotes" && styles.tabTextActive]}>
-              Quotes ({QUOTES.length})
+              Quotes (0)
             </Text>
           </Pressable>
         </View>
@@ -208,32 +225,38 @@ export default function ProjectDetailScreen() {
         {/* Tab content */}
         {activeTab === "designs" && (
           <View style={styles.designsGrid}>
-            {DESIGNS.map((design) => (
-              <Pressable
-                key={design.id}
-                style={styles.designCard}
-                onPress={() => router.push(`/result/${id}`)}
-              >
-                <View style={styles.designImage}>
-                  <IsoRoom palette={design.style as any} size={180} />
-                </View>
-                {design.isFavorite && (
-                  <View style={styles.favoritebadge}>
-                    <Ionicons name="heart" size={16} color={colors.error} />
-                  </View>
-                )}
-                <View style={styles.sourceTag}>
-                  <Ionicons
-                    name={design.source === "photo" ? "camera" : "chatbubbles"}
-                    size={10}
-                    color="#fff"
+            {generatedDesigns.length > 0 ? (
+              generatedDesigns.map((designUrl, index) => (
+                <Pressable
+                  key={index}
+                  style={styles.designCard}
+                  onPress={() => router.push(`/result/${id}`)}
+                >
+                  <PrivateImage
+                    bucket="room-photos"
+                    path={designUrl}
+                    palette={selectedStyle}
+                    placeholderSize={180}
+                    style={styles.designImage}
+                    containerStyle={styles.designImage}
+                    accessibilityLabel={`Design option ${index + 1}`}
                   />
-                  <Text style={styles.sourceText}>
-                    {design.source === "photo" ? "Photo" : "Vi"}
-                  </Text>
-                </View>
-              </Pressable>
-            ))}
+                  {designUrl === project?.selected_generation_url && (
+                    <View style={styles.favoritebadge}>
+                      <Ionicons name="heart" size={16} color={colors.error} />
+                    </View>
+                  )}
+                  <View style={styles.sourceTag}>
+                    <Ionicons name="camera" size={10} color="#fff" />
+                    <Text style={styles.sourceText}>Photo</Text>
+                  </View>
+                </Pressable>
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>No designs generated yet</Text>
+              </View>
+            )}
           </View>
         )}
 
@@ -258,36 +281,13 @@ export default function ProjectDetailScreen() {
 
         {activeTab === "quotes" && (
           <View style={styles.quotesContainer}>
-            {QUOTES.map((quote) => (
-              <Pressable
-                key={quote.id}
-                style={styles.quoteCard}
-                onPress={() => router.push("/(tabs)/inbox")}
-              >
-                <View style={styles.quoteHeader}>
-                  <View style={styles.iconCircle}>
-                    <Ionicons name="business-outline" size={20} color={colors.primary} />
-                  </View>
-                  <View style={styles.quoteInfo}>
-                    <Text style={styles.quoteName}>{quote.contractor}</Text>
-                    <View style={styles.ratingRow}>
-                      <Ionicons name="star" size={14} color={colors.accent} />
-                      <Text style={styles.ratingText}>{quote.rating}</Text>
-                    </View>
-                  </View>
-                </View>
-                <View style={styles.quoteDetails}>
-                  <View style={styles.quoteRow}>
-                    <Ionicons name="cash-outline" size={16} color={colors.textSecondary} />
-                    <Text style={styles.quoteValue}>{quote.range}</Text>
-                  </View>
-                  <View style={styles.quoteRow}>
-                    <Ionicons name="time-outline" size={16} color={colors.textSecondary} />
-                    <Text style={styles.quoteValue}>{quote.timeline}</Text>
-                  </View>
-                </View>
-              </Pressable>
-            ))}
+            <View style={styles.emptyState}>
+              <Ionicons name="document-text-outline" size={48} color={colors.textSecondary} />
+              <Text style={styles.emptyText}>No quotes yet</Text>
+              <Text style={styles.emptySubtext}>
+                Share your project with contractors to receive quotes
+              </Text>
+            </View>
           </View>
         )}
 
@@ -680,5 +680,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.primary,
     fontWeight: "600",
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing.xl * 2,
+  },
+  emptyText: {
+    ...fonts.title,
+    fontSize: 16,
+    marginTop: spacing.md,
+    color: colors.textSecondary,
+  },
+  emptySubtext: {
+    ...fonts.body,
+    fontSize: 14,
+    marginTop: spacing.xs,
+    color: colors.textSecondary,
+    textAlign: "center",
   },
 });

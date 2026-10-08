@@ -138,6 +138,7 @@ interface IsoRoomProps {
   accessibilityLabel?: string;
   accessible?: boolean;
   importantForAccessibility?: "auto" | "yes" | "no" | "no-hide-descendants";
+  testID?: string;
 }
 
 export function IsoRoom({
@@ -147,6 +148,7 @@ export function IsoRoom({
   accessibilityLabel,
   accessible = true,
   importantForAccessibility,
+  testID,
 }: IsoRoomProps) {
   const pal = PALETTES[paletteKey] || PALETTES.modern;
   const { wallL, wallR, floor, sofa, rug, accent, plant } = pal;
@@ -183,6 +185,7 @@ export function IsoRoom({
       accessibilityLabel={accessibilityLabel}
       importantForAccessibility={importantForAccessibility}
       aria-hidden={!accessible}
+      testID={testID}
     >
       <Svg width={size} height={size * 0.8} viewBox="0 -14 200 160">
         {/* Left wall */}
