@@ -20,8 +20,8 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- Create a test project for Alice
-INSERT INTO public.projects (id, user_id, room_type, status)
-VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', 'kitchen', 'draft')
+INSERT INTO public.projects (id, user_id, original_image_url, status)
+VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', 'test/image.jpg', 'draft')
 ON CONFLICT (id) DO NOTHING;
 
 COMMIT;
