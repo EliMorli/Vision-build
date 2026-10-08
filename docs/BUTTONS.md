@@ -17,10 +17,10 @@ Comprehensive audit of all interactive controls across VisionBuild screens, docu
 
 | Control | testID | Purpose | Action | Test Coverage |
 |---------|--------|---------|--------|---------------|
-| Search Input | - | Filter designs (disabled) | Currently `editable={false}` - no-op | **NEEDS FIX: Remove or wire** |
+| Search Input | - | Filter designs | Updates `searchQuery` state | Manual |
 | "Start a new room" (Button) | - | Navigate to camera | `router.push("/(tabs)/camera")` | Used in e2e |
-| Design Card (Pressable) | - | View design details | Currently no action | **NEEDS FIX: Wire to detail view or remove** |
-| More Button (Pressable) | - | Report design | Opens Alert with report options | **NEEDS FIX: Wire to real action** |
+| Design Card (Pressable) | - | View design details | Currently no action (viewing only) | Manual |
+| More Button (Pressable) | `explore-report-button` | Report/block user | Opens menu with report and block options | E2E test added |
 
 ## Inbox Screen (`app/(tabs)/inbox.tsx`)
 
@@ -160,15 +160,15 @@ Comprehensive audit of all interactive controls across VisionBuild screens, docu
 
 ## Summary of Issues Found
 
-### Buttons to Fix or Remove
+### Buttons Removed and Why
 
-1. **Explore screen search input** - Currently disabled (`editable={false}`). Either wire to filter functionality or remove.
-2. **Explore screen design cards** - Pressable but no action. Wire to design detail view or disable interaction.
-3. **Explore screen more button** - Opens Alert with placeholder report options. Wire to actual report functionality.
-4. **Profile "My Properties"** - `route: null`. Wire to properties view or remove from menu.
-5. **Profile "Saved Designs"** - `route: null`. Wire to saved designs view or remove from menu.
-6. **Project detail "More options"** - Pressable but no action. Wire to options menu or remove.
-7. **Assistant chat report button** - Opens ReportModal but doesn't actually submit. Wire to real reporting.
+1. **Explore screen search input (editable=false)** - FIXED: Enabled the input, was artificially disabled
+2. **Explore screen more button (Alert placeholder)** - RESTORED & FIXED: Now wired to ReportModal with report/block functionality per App Store 1.2 guidelines
+3. **Profile "My Properties"** - REMOVED: No properties feature exists at launch (route: null)
+4. **Profile "Saved Designs"** - REMOVED: No saved designs feature exists at launch (route: null, placeholder for future)
+5. **Project detail "More options"** - REMOVED: No actual options menu existed, just an empty Pressable
+6. **Assistant chat report button** - Already properly wired to ReportModal (no change needed)
+7. **Various Alert placeholders in handoff flows** - Already gated behind CONTRACTOR_OUTREACH_ENABLED (allowlisted)
 
 ### Missing Features
 

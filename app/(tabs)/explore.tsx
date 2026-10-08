@@ -7,20 +7,65 @@ import {
   TextInput,
   Pressable,
   SafeAreaView,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
-import { IsoRoom, Button } from "@/components";
-import { useProjectStore } from "@/lib/store";
+import { IsoRoom, Button, ReportModal } from "@/components";
+import { useProjectStore, useReportStore } from "@/lib/store";
 
 export default function ExploreScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const { projects } = useProjectStore();
+  const blockUser = useReportStore((s) => s.blockUser);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportingProjectId, setReportingProjectId] = useState<string>("");
+  const [blockedUsers, setBlockedUsers] = useState<Set<string>>(new Set());
   
-  // Get only public projects
-  const publicDesigns = projects.filter(p => p.is_public);
+  // Load blocked users from localStorage (for mock mode) or from store
+  useEffect(() => {
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      const blocks = JSON.parse(localStorage.getItem("@visionbuild:blocks") || "[]");
+      const blocked = new Set(blocks.map((b: any) => b.blocked_id));
+      setBlockedUsers(blocked);
+    }
+  }, []);
+  
+  // Get only public projects from non-blocked users
+  const publicDesigns = projects.filter(p => p.is_public && !blockedUsers.has(p.user_id || ""));
+
+  const handleReportMenu = (projectId: string, userId: string) => {
+    Alert.alert(
+      "Report or Block",
+      "What would you like to do?",
+      [
+        {
+          text: "Report this design",
+          onPress: () => {
+            setReportingProjectId(projectId);
+            setReportModalVisible(true);
+          },
+        },
+        {
+          text: "Block this user",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await blockUser(userId);
+              // Add to local blocked list
+              setBlockedUsers(prev => new Set([...prev, userId]));
+              Alert.alert("User Blocked", "You won't see designs from this user anymore.");
+            } catch (error) {
+              Alert.alert("Error", "Failed to block user. Please try again.");
+            }
+          },
+        },
+        { text: "Cancel", style: "cancel" },
+      ]
+    );
+  };
 
   // Empty state when no public designs
   if (publicDesigns.length === 0) {
@@ -60,6 +105,16 @@ export default function ExploreScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <ReportModal
+        visible={reportModalVisible}
+        onClose={() => {
+          setReportModalVisible(false);
+          setReportingProjectId("");
+        }}
+        type="design"
+        itemId={reportingProjectId}
+      />
+
       {/* Search bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
@@ -95,6 +150,16 @@ export default function ExploreScreen() {
                 importantForAccessibility="no-hide-descendants"
               />
             </View>
+            <Pressable
+              style={styles.moreButton}
+              onPress={() => handleReportMenu(item.id, item.user_id || "")}
+              accessibilityLabel="Report or block"
+              accessibilityRole="button"
+              hitSlop={12}
+              testID="explore-report-button"
+            >
+              <Ionicons name="ellipsis-horizontal" size={20} color="#fff" />
+            </Pressable>
             <View style={styles.cardOverlay}>
               <Text style={styles.cardTitle} numberOfLines={1}>
                 {item.title}
@@ -176,6 +241,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
+  },
+  moreButton: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1,
   },
   cardOverlay: {
     position: "absolute",

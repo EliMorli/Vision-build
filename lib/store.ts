@@ -804,6 +804,7 @@ interface ReportState {
     targetId: string;
     reason: string;
   }) => Promise<void>;
+  blockUser: (userId: string) => Promise<void>;
 }
 
 export const useReportStore = create<ReportState>(() => ({
@@ -828,6 +829,33 @@ export const useReportStore = create<ReportState>(() => ({
 
     if (error) {
       console.error("Failed to submit report:", error);
+      throw error;
+    }
+  },
+  blockUser: async (blockedId: string) => {
+    const userId = useAuthStore.getState().session?.user?.id;
+
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      console.log("[Mock] User blocked:", { blockedId, userId: userId || "mock-user" });
+      // Store block in localStorage for e2e tests
+      const blocks = JSON.parse(localStorage.getItem("@visionbuild:blocks") || "[]");
+      blocks.push({ blocker_id: userId || "mock-user", blocked_id: blockedId });
+      localStorage.setItem("@visionbuild:blocks", JSON.stringify(blocks));
+      return;
+    }
+
+    if (!userId) return;
+
+    const { error } = await (supabase.from("blocks") as any).insert([
+      {
+        blocker_id: userId,
+        blocked_id: blockedId,
+        blocked_type: "user",
+      },
+    ]);
+
+    if (error && !error.message?.includes("duplicate key")) {
+      console.error("Failed to block user:", error);
       throw error;
     }
   },
