@@ -7,13 +7,12 @@ import {
   Image,
   Pressable,
   SafeAreaView,
-  Alert,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
-import { useProjectStore } from "@/lib/store";
-import { IsoRoom } from "@/components";
+import { useProjectStore, useAuthStore } from "@/lib/store";
+import { IsoRoom, MakePublicSheet } from "@/components";
 
 // Placeholder timeline data
 const TIMELINE_EVENTS = [
@@ -67,31 +66,33 @@ export default function ProjectDetailScreen() {
   
   const projects = useProjectStore((s) => s.projects);
   const toggleProjectPrivacy = useProjectStore((s) => s.toggleProjectPrivacy);
+  const profile = useAuthStore((s) => s.profile);
   const project = projects.find((p) => p.id === id);
   const [isPublic, setIsPublic] = useState(project?.is_public ?? false);
+  const [showMakePublicSheet, setShowMakePublicSheet] = useState(false);
 
   const handleTogglePrivacy = () => {
     if (!project) return;
 
     if (!isPublic) {
-      Alert.alert(
-        "Make Project Public?",
-        "Your design will be visible in the Explore tab for others to see and get inspired by. You can change this anytime.",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Make Public",
-            onPress: async () => {
-              setIsPublic(true);
-              await toggleProjectPrivacy(project.id, true);
-            },
-          },
-        ]
-      );
+      // Show confirmation sheet before making public
+      setShowMakePublicSheet(true);
     } else {
+      // Switch back to private (no confirmation needed)
       setIsPublic(false);
       toggleProjectPrivacy(project.id, false);
     }
+  };
+
+  const handleMakePublic = async () => {
+    if (!project) return;
+    setShowMakePublicSheet(false);
+    setIsPublic(true);
+    await toggleProjectPrivacy(project.id, true);
+  };
+
+  const handleKeepPrivate = () => {
+    setShowMakePublicSheet(false);
   };
 
   return (
