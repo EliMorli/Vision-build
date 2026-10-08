@@ -34,11 +34,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   fetchProfile: async () => {
-    const userId = get().session?.user?.id;
-    if (!userId) return;
-
     // In mock mode, check for seeded mock profile first (for E2E testing)
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      const userId = get().session?.user?.id ?? "mock-user";
+      
       try {
         const seedJson = await AsyncStorage.getItem("@visionbuild:mock_seed_profile");
         if (seedJson) {
@@ -65,6 +64,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
       return;
     }
+
+    const userId = get().session?.user?.id;
+    if (!userId) return;
 
     // Fetch profile
     const { data: profileData, error: profileError } = await supabase

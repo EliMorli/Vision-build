@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -18,10 +18,15 @@ import { useProjectStore, useReportStore } from "@/lib/store";
 export default function ExploreScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const { projects } = useProjectStore();
+  const { projects, fetchProjects } = useProjectStore();
   const blockUser = useReportStore((s) => s.blockUser);
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [reportingProjectId, setReportingProjectId] = useState<string>("");
+  
+  // Fetch projects on mount
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
   
   // Initialize blocked users from localStorage (for mock mode)
   const getInitialBlockedUsers = (): Set<string> => {

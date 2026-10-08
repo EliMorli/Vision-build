@@ -33,6 +33,11 @@ export default function RootLayout() {
     // Hydrate existing session on cold start
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      
+      // In mock mode, fetch profile immediately since there's no real session
+      if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+        useAuthStore.getState().fetchProfile();
+      }
     });
 
     // React to all auth changes (sign-in, sign-out, token refresh)

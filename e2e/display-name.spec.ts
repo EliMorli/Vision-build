@@ -23,20 +23,12 @@ test.describe("VisionBuild Display Name Consistency", () => {
     await expect(homeGreeting).toBeVisible({ timeout: 5000 });
     await expect(homeGreeting).toHaveText("Hey Elimar");
 
-    // Navigate to Profile by URL and wait for profile to load
+    // Navigate to Profile by URL
     await page.goto(`${BASE_URL}/(tabs)/profile`);
     
-    // Wait for profile to be fetched by checking the name updates from "User" to "Elimar"
+    // Check Profile screen name and initial with exact text
     const profileName = page.getByTestId("profile-display-name");
     await expect(profileName).toBeVisible({ timeout: 5000 });
-    // Give profile fetch time to complete
-    await page.waitForFunction(
-      () => {
-        const el = document.querySelector('[data-testid="profile-display-name"]');
-        return el?.textContent && el.textContent !== "User";
-      },
-      { timeout: 5000 }
-    );
     await expect(profileName).toHaveText("Elimar");
     
     const profileInitial = page.getByTestId("profile-avatar-initial");
@@ -78,21 +70,12 @@ test.describe("VisionBuild Display Name Consistency", () => {
     await expect(homeGreeting).toBeVisible({ timeout: 5000 });
     await expect(homeGreeting).toHaveText("Hey Elimar");
 
-    // Navigate to Profile by URL and wait for profile to load
+    // Navigate to Profile by URL
     await page.goto(`${BASE_URL}/(tabs)/profile`);
     
-    // Wait for profile to be fetched
+    // Check Profile screen name and initial
     const profileName = page.getByTestId("profile-display-name");
     await expect(profileName).toBeVisible({ timeout: 5000 });
-    await page.waitForFunction(
-      () => {
-        const el = document.querySelector('[data-testid="profile-display-name"]');
-        return el?.textContent && el.textContent !== "User";
-      },
-      { timeout: 5000 }
-    );
-
-    // Profile should also show "Elimar" from default mock profile
     await expect(profileName).toHaveText("Elimar");
     
     // Check avatar initial is 'E'
