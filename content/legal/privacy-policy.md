@@ -2,261 +2,258 @@
 
 # VisionBuild Privacy Policy
 
-**Effective date:** [EFFECTIVE DATE]
-**Last updated:** [EFFECTIVE DATE]
+**Effective date:** {{EFFECTIVE_DATE}}
+**Last updated:** {{EFFECTIVE_DATE}}
 
-This Privacy Policy explains what information VisionBuild collects, how we use it, who we share it with, and the choices and rights you have. It applies to the VisionBuild mobile app (iOS and Android), the web version of the app, and related services (together, the "Service").
+This Privacy Policy explains what information VisionBuild collects, how we use it, who receives it, how long we keep it, and the choices and rights you have. It covers the VisionBuild mobile app (iOS and Android), the web pages that support it (such as {{WEBSITE_DOMAIN}}/delete-account), and related services (together, the "Service").
 
-VisionBuild is operated by [COMPANY LEGAL NAME], a [ENTITY TYPE] based in California ("VisionBuild," "we," "us," or "our"). You can reach us at [SUPPORT EMAIL] or [MAILING ADDRESS].
+VisionBuild is operated by {{COMPANY_LEGAL_NAME}}, a {{ENTITY_TYPE}} ("VisionBuild," "we," "us," or "our"). You can reach us at {{SUPPORT_EMAIL}} or {{MAILING_ADDRESS}}.
 
-> [NOTE: Until a legal entity is formed, the operator would be Elimar Morli as an individual. Decide which name goes here before publishing.]
+> [NOTE: If no company has been formed by launch, the operator is Elimar Morli as an individual. Fill {{COMPANY_LEGAL_NAME}} and {{ENTITY_TYPE}} to match.]
 
 ## The short version
 
-- You sign in with Google or Apple. We don't see or store your Google or Apple password.
-- Your photos and chats are sent through OpenRouter only to AI providers that don't keep or train on your data, and only to create your designs.
-- Location data (EXIF/GPS) is removed from your photos **on your device**, before upload.
-- Projects are **Private** by default. Only designs you choose to make Public appear in Explore.
-- Contractors only see the project details you switch on. Your phone number and email stay hidden until you pick a pro.
-- We don't sell your personal information, we don't share it for cross-context behavioral advertising, and we don't show ads.
-- You can delete your account, and everything in it, from **Settings → Delete account**.
+- You sign in with Apple or Google. We never see your Apple or Google password.
+- You must be 13 or older.
+- **Your photos and chats are sent through OpenRouter only to AI providers that don't keep or train on your data, and only to create your designs.** We ask for your permission before any AI processing, and you can choose "Not now."
+- Location and other hidden data (EXIF) are removed from your photos before they are uploaded.
+- Your original room photos are stored privately. Only you can see them.
+- Projects are private by default. If you make a project Public, only the AI-generated designs are shown on Explore. Your original photo is never made public.
+- We don't use analytics, crash reporting, ads, or tracking. We don't sell your personal information or share it for cross-context behavioral advertising.
+- If you join the pros waitlist, we save your account email (and the project ID, if you joined from a project) to send you one email when pros are live. You can leave the list in Settings.
+- You can delete your account in the app or at {{WEBSITE_DOMAIN}}/delete-account.
 
 ---
 
 ## 1. Information we collect
 
-### Information you give us
+The table below lists what we collect, where it comes from, why, and who receives it. "Supabase" is our database, login, and file storage provider. Section 4 explains each recipient.
 
-- **Account information.** When you sign in with Google or Sign in with Apple, we receive basic profile information from that provider, such as your name, email address (which may be an Apple "Hide My Email" relay address), and a unique account identifier. We also record that you confirmed you are 13 or older.
-- **Profile information.** Your public handle and any other profile details you add. [NOTE: Confirm how handles are created — user-chosen, auto-generated, or derived from the sign-in name — and whether there is a profile photo.]
-- **Photos.** Pictures you take or upload of a room, home exterior, or backyard. Location/EXIF data is stripped on your device before the photo is uploaded, so we do not receive the photo's GPS location.
-- **Chats with Vi.** Messages you send to our AI assistant, "Vi," and Vi's replies.
-- **Designs and project data.** Styles you choose, AI-generated design visualizations, project names, project briefs, timelines, and other content saved in your project library.
-- **"Find me a pro" details.** Your ZIP code, budget range, and the project brief, plus any contact details you choose to give contractors (such as your phone number and email). [NOTE: Confirm where the user's phone number is collected — e.g., entered optionally in the "Find me a pro" flow — and whether it is required.]
-- **Messages and quotes.** Messages you exchange with contractors in the in-app Inbox, and replies and quotes contractors send back.
-- **Reports and blocks.** Content or users you report or block, and any details you include in a report.
-- **Settings and choices.** Your notification settings, default Public/Private setting, Reduce Motion setting, and your privacy choices.
-- **Support requests.** Anything you send us when you contact support.
+| Data category | What it includes | Source | Why we use it | Who receives it |
+|---|---|---|---|---|
+| **Account information** | Name, email address (which may be an Apple "Hide My Email" relay address), the account ID from Apple or Google, and the profile picture link Google or Apple provides (if any) | Apple or Google when you sign in | Create and secure your account; sign you in; contact you about your account | Supabase; Apple or Google (they already have it) |
+| **Public profile** | The name or handle and the level shown next to your public designs | Your account; your XP | Show who made a public design | Supabase; other users (only for designs you make Public) |
+| **Age confirmation** | That you checked "I confirm I am 13 years or older" | You | Keep children under 13 off the Service | Supabase [NOTE: The current code doesn't save this checkbox to the server; it only blocks the sign-in buttons until you check it. Decide whether to store it.] |
+| **Room photos** | Photos you take or upload, after EXIF and location data are removed on your device | You | Analyze the room and create designs | Supabase (private storage); OpenRouter and Google (Gemini) for analysis and rendering |
+| **Room analysis** | The AI's description of the room (room type, current style, estimated size, key features) | Created by AI from your photo | Create designs that fit your room | Supabase; OpenRouter and AI providers when making designs |
+| **Designs** | AI-generated design images, the style you picked, your selected design, project names | You; created by AI | Show your designs and keep your project library | Supabase; other users only if you make the project Public |
+| **Vi chats and design briefs** | Messages you send to Vi, our AI assistant; Vi's replies; the design brief created for your project | You; created by AI | Answer your questions; help you plan your design | Supabase; OpenRouter and Anthropic (Claude) [NOTE: Confirm Vi chat history is saved with the project. The code has no table for chat history yet.] |
+| **Public activity** | Likes, saves, and remixes of public designs | You | Run the Explore feed | Supabase; other users can see a design's public activity [NOTE: Likes, saves, and remixes are not built yet; the Explore feed shows sample data. Confirm what other users can see, such as like counts or who remixed.] |
+| **Pros waitlist** | The email address on your account, plus the project ID if you joined from a project (from Results or the "Pros are coming soon" screen). Joining from Home saves one general entry per person with your email only. | You (when you tap "Join the waitlist"); your account | Send you a one-time email when pros are live on VisionBuild | Supabase; Resend (to send that one email) |
+| **AI consent records** | Your user ID, the consent version, and the date and time you agreed | Created when you agree | Prove and enforce your choice; our servers refuse AI requests without a current consent record | Supabase |
+| **Settings and privacy choices** | Your Public/Private default, Reduce Motion setting, AI choice, and "Your Privacy Choices" selections | You | Remember your settings across devices | Supabase |
+| **Reports and blocks** | What you reported or blocked, the reason you picked, and when | You | Review reports, enforce our rules, hide blocked users from you | Supabase; our moderators |
+| **Usage counts** | A record each time you use an AI feature (for example, a room analysis or a set of designs) | Created when you use the Service | Apply daily usage limits and prevent abuse | Supabase |
+| **XP, levels, and badges** | XP events (for example, finishing a design) and the level calculated from them | Created when you use the Service | Run the game features | Supabase; your level is shown on your public designs |
+| **Account deletion requests (web)** | The email you enter, a scrambled (hashed) copy of the confirmation link, the IP address the request came from, an optional reason you type, and the request's status and times | You; your browser | Confirm it's really you, prevent abuse, and complete the deletion | Supabase; Resend (to email the confirmation link) |
+| **Support messages** | Anything you send to {{SUPPORT_EMAIL}} | You | Answer you and fix problems | Our email provider [NOTE: Name the support mailbox provider, for example Google Workspace, if it should be listed.] |
+| **Technical data** | IP address, device and browser type, app version, timestamps, and server error logs, collected automatically when the app talks to our servers | Your device | Run, secure, and debug the Service | Supabase |
 
-### Information created when you use the Service
+### What we don't collect
 
-- **AI consent records.** When you agree to AI processing, we record your consent along with the consent version and date.
-- **Outreach logs.** Each time we send your project brief to a contractor on your behalf, we log the send (for example: which contractor, when, and what information was included).
-- **Gamification and usage events.** XP, levels, badges, quests, weekly challenges, and records of actions you take in the app (for example, creating a design, liking or remixing a design). We also track how much you use AI features so we can apply daily usage limits.
-- **Public activity.** Likes, saves, and remixes on public designs.
-- **Device and push information.** If you allow notifications, a push notification token for your device (handled through Expo, Apple, and Google).
-- **Basic technical data.** Information such as IP address, device type, operating system, app version, browser type (web), time zone/language settings, timestamps, and error logs, collected automatically when your device connects to our servers.
+- **No precise location.** Photo location (GPS/EXIF) data is removed on your device before upload. We don't ask for device location.
+- **No passwords.** We never receive your Apple or Google password.
+- **No payment information.** The Service is free and has no payments.
+- **No analytics, crash reporting, advertising, or tracking tools.** None are in the app at launch. If we ever add one, we will update this Policy first, before the tool is turned on.
+- **No contacts, microphone, or health data.**
 
-> [NOTE: Analytics and crash-reporting tools have not been chosen yet. When one is added (e.g., a crash reporter or product analytics), list it here and in Section 4, describe what it collects, and confirm it is configured not to be used for advertising. Also update the CCPA table in Section 10 and the App Store / Google Play privacy labels.]
-
-### Information we do **not** collect
-
-- We do not collect your precise location. (We receive the ZIP code you type in, which is not precise location.)
-- We do not receive your Google or Apple password.
-- We do not collect payment information (the Service has no payments at this time).
+Photos of your home could accidentally show people, documents, or personal items. Please don't upload photos of people without their permission, and crop out anything you don't want analyzed.
 
 ## 2. How we use your information
 
-We use your information to:
+We use your information only to:
 
-- **Provide the Service** — create your account, sign you in, store your projects, and show your designs.
-- **Generate AI designs and run Vi** — send your photos, chats, and chosen style to AI providers to create design visualizations, chat replies, and project briefs.
-- **Find contractors for you** — write your project brief, email it to local contractors using the information you switched on, deliver their replies and quotes to your Inbox, and let you chat with them.
-- **Run public features** — show designs from Public projects in Explore, along with your handle and level, and allow likes, saves, and remixes.
-- **Run gamification** — track XP, levels, badges, quests, and challenges.
-- **Send notifications** — if you allow it, notify you when a long render finishes or when you get a message.
-- **Keep the Service safe** — apply daily usage limits, review reports, moderate content, block or ban accounts, prevent abuse of contractor outreach and fake leads, and protect against fraud and security incidents.
-- **Maintain and improve the Service** — troubleshoot bugs and fix errors. [NOTE: If you plan to use user content (photos, chats, designs) to improve the product beyond fixing bugs, that must be disclosed here and should be consistent with the AI consent screen. As drafted, we do not.]
-- **Communicate with you** — respond to support requests and send important notices about the Service, such as changes to these policies.
-- **Comply with law** — meet legal obligations, enforce our Terms of Service, and respond to lawful requests.
+- **Provide the Service:** sign you in, store your projects, create designs, run Vi, and show your library.
+- **Run public features:** show designs from projects you make Public on Explore, with your name or handle and level, and let others like, save, and remix them.
+- **Run the game features:** XP, levels, and badges.
+- **Send emails you need or ask for:** account deletion confirmations, and, if you joined the pros waitlist, one email telling you pros are live, sent through Resend.
+- **Run the pros waitlist:** if you tap "Join the waitlist" (on Home, on Results, or on the "Pros are coming soon" screen), we save your account email and, when you join from a project, that project's ID. We use it only to send you one "pros are live" email. That email includes an unsubscribe link and our mailing address. Joining the waitlist doesn't earn XP, and we don't use it for other marketing.
+- **Keep the Service safe:** apply daily AI limits, review reports, act on blocks, remove content that breaks our Terms, and prevent fraud and abuse.
+- **Fix problems:** troubleshoot errors using server logs.
+- **Follow the law:** respond to legal requests and enforce our Terms of Service.
 
-We do **not** use your photos or chats to train AI models, and we do not use your information for advertising.
+We do **not** use your photos, chats, or designs to train AI models, and neither do the AI providers we use. We don't use your information for advertising. We don't send marketing emails at launch. [NOTE: The Settings screen in the code has a "Marketing Emails" toggle. Remove it for launch, or keep it off and add CAN-SPAM-compliant marketing before ever sending one.]
 
 ## 3. AI processing
 
-VisionBuild uses third-party AI models to create design visualizations, power Vi, and draft project briefs.
+VisionBuild uses outside AI models to analyze rooms, create designs, and run Vi.
 
-- **How it works.** Your photos, chats, and design choices are sent through **OpenRouter**, an AI routing service, to AI model providers — currently **Google** (Gemini models via Google Vertex AI) and **Anthropic** (Claude models).
-- **No retention, no training.** Your photos and chats are sent through OpenRouter only to AI providers that don't keep or train on your data, and only to create your designs. We have configured OpenRouter for zero data retention and no data collection.
-- **Your consent.** Before your first AI request, we ask for your consent and record it on your account with the version and date.
-- **Your designs stay yours.** Your designs stay in your projects until you delete them.
-- **AI can be wrong.** AI results are labeled "AI visualization, not a plan or quote." They may be inaccurate and are not architectural, engineering, structural, permitting, or cost advice. See our Terms of Service.
+- **How it works.** Requests are sent from our servers through **OpenRouter**, an AI routing service, to these providers:
+  - **Room analysis:** Google Gemini 2.5 Pro.
+  - **Vi chat and the design brief:** Anthropic Claude.
+  - **Design images:** Google's Gemini image model, through Google Vertex.
+- **No keeping, no training.** Your photos and chats are sent through OpenRouter only to AI providers that don't keep or train on your data, and only to create your designs. Our requests tell OpenRouter to deny data collection, require zero data retention, and never fall back to other providers. If no provider meets these rules, the request fails rather than going somewhere else.
+- **Your permission comes first.** Before any AI processing, we show you a consent screen and you choose to continue or "Not now." If you agree, we save a consent record with your user ID, the consent version, and the time. Our servers refuse any AI request that doesn't have a consent record for the current version. When we change how AI processing works, we ask again.
+- **Changing your mind.** If you choose "Not now," nothing is sent to AI providers, and AI features won't work until you agree. You can withdraw consent in Settings → Your Privacy Choices. [NOTE: The code has an "Opt out of AI processing" switch, but the server doesn't check it yet. The server must refuse AI requests when it's on before this sentence is true.]
+- **How the AI sees your photo.** To analyze or redesign a photo, our server gives the AI provider a private link to it that expires in one hour.
+- **AI can be wrong.** Designs are inspiration, not construction plans or price quotes. See our Terms of Service.
 
-> [NOTE: Confirm the zero-data-retention settings are enforced on the OpenRouter account for every model actually used, and check whether any provider keeps data briefly for abuse/safety monitoring even under ZDR. If so, adjust wording here and on the consent screen. Update the provider list whenever models change.]
+> [NOTE: Before launch, confirm in the OpenRouter account that zero data retention is enforced for every model in use, and that renders are actually routed to Google Vertex. Update this list whenever a model or provider changes.]
 
-## 4. How we share information
+## 4. Who receives your information
 
-We don't sell your personal information and we don't share it for cross-context behavioral advertising. We share information only as described below.
+We don't sell your personal information, and we don't share it for cross-context behavioral advertising. We share it only as described here.
 
 ### Service providers
 
-We use these companies to run the Service. They may process your information only on our behalf and under our instructions:
+These companies process information for us, only on our instructions, to run the Service:
 
 | Provider | What they do for us | Information involved |
 |---|---|---|
-| **Supabase** | Database, file storage, and authentication | Account info, photos, designs, chats, project data, messages, logs |
-| **OpenRouter** | Routes AI requests to model providers (zero data retention, no data collection) | Photos, chats, style choices, brief inputs |
-| **Google (Vertex AI / Gemini)** | AI model processing | Photos, chats, style choices, brief inputs |
-| **Anthropic (Claude)** | AI model processing | Chats, brief inputs, and possibly photos |
-| **Resend** | Sends project-brief emails to contractors | Contractor email addresses, the brief and info you switched on |
-| **Expo** | Push notification delivery | Push token, notification content |
-| **Apple and Google** | Sign-in, and push notification delivery on their platforms | Sign-in identifiers, push token |
-| [NOTE: analytics / crash reporting — TBD] | | |
+| **Supabase** | Database, sign-in, and file storage | Everything listed in Section 1 that we store |
+| **OpenRouter** | Routes AI requests (no data collection, zero data retention, no fallbacks) | Photos (through one-hour links), room analysis, chats, style choices |
+| **Google (Gemini, including through Google Vertex)** | Room analysis and design images | Photos, room analysis, style choices |
+| **Anthropic (Claude)** | Vi chat and design briefs | Chats and project details used for the brief |
+| **Resend** | Sends account deletion confirmations and the one-time "pros are live" waitlist email | Your email address and the email's content |
+| **Apple and Google** | Sign-in | Sign-in identifiers they already hold |
 
-> [NOTE: Confirm the exact data each provider receives (e.g., whether photos go to Anthropic models or only to Gemini) and fill in hosting regions (e.g., Supabase project region).]
+> [NOTE: Fill in where data is stored (the Supabase project region) and confirm that each provider has data processing terms in place.]
 
-### Contractors — only what you choose
+### Other users — only designs you make Public
 
-When you use **"Find me a pro,"** we email a project brief to local contractors on your behalf. Before anything is sent, you see a screen where you can switch each piece of information on or off. Contractors receive only what you switched on. **Your phone number and email address stay hidden until you pick a pro.** Contractors then reply through us, and their replies and quotes come back to your in-app Inbox.
+Projects are **Private** by default. If you make a project **Public**, you'll be asked to confirm. Only the **AI-generated designs** are copied to public storage and shown on Explore, with your name or handle and level. **Your original room photo, chats, and briefs are never made public.** Other users can view, like, save, and remix public designs.
 
-Once a contractor receives your brief or your contact details, the contractor has its own copy and handles it under its own practices. We can't delete information from a contractor's own records.
+If you switch a project back to **Private**, we remove its public copies and it leaves Explore. **Remixes other users already made stay with them**, even if you switch your project to Private or delete your account. Someone could also have taken a screenshot while it was public.
 
-### Other users — only Public projects
+### Moderators
 
-Projects are **Private** by default. If you make a project **Public** (you'll be asked to confirm), its designs appear in the Explore feed with your handle and level. Other users can view, like, save, and remix those designs. You can make a project Private again at any time, but other users may have already viewed, saved, or remixed it.
-
-> [NOTE: Confirm that only AI-generated designs — not original room photos, chats, briefs, ZIP code, budget, or quotes — become visible when a project is made Public. Also decide what happens to other users' saves and remixes when a design is made Private or deleted, and state it here.]
+People we authorize to review reports can see reported content and related account details, only to handle the report.
 
 ### Legal and safety reasons
 
-We may disclose information if we believe in good faith it is required by law or legal process, or needed to protect the rights, safety, or property of our users, the public, or VisionBuild, including to investigate fraud, abuse, or violations of our Terms.
+We may disclose information if we believe in good faith that the law requires it, or that it's needed to protect the rights, safety, or property of our users, the public, or VisionBuild.
 
 ### Business changes
 
-If VisionBuild is involved in a merger, acquisition, financing, reorganization, or sale of assets, information may be transferred as part of that transaction, subject to this Policy.
+If VisionBuild is involved in a merger, acquisition, financing, reorganization, or sale of assets, information may be transferred as part of that deal. This Policy will still apply to it.
 
-### With your direction
+### Pros (coming soon)
 
-We may share information in other ways when you ask us to or give us permission.
+There are no contractors or pros on VisionBuild at launch, and we don't share your information with any, including waitlist entries. When pros are available, we'll update this Policy, explain how sharing works, and ask you first.
 
 ## 5. Your choices in the app
 
-- **Public / Private.** Choose per project, and set your default in Settings.
-- **What contractors see.** Toggle each item on the pre-send screen.
-- **Notifications.** Turn push notifications on or off in your device settings and in Settings → Notifications.
-- **Your Privacy Choices.** Use Settings → Your Privacy Choices to submit privacy requests and opt-out choices.
-- **Report and Block.** Report or block Explore content, AI results, Vi replies, and contractor chats.
-- **Delete account.** Settings → Delete account (see Section 7).
+- **AI consent:** agree, or choose "Not now." You can withdraw it later in Settings → Your Privacy Choices.
+- **Public / Private:** choose for each project, and set your default in Settings.
+- **Your Privacy Choices:** Settings → Your Privacy Choices, to manage your AI choice and send privacy requests.
+- **Report and Block:** report content or block users you don't want to see.
+- **Pros waitlist:** join with "Join the waitlist"; leave at any time with the **Pros waitlist** switch in Settings, or the unsubscribe link in the "pros are live" email.
+- **Delete account:** in the app or on the web (Section 7).
 
-**Do Not Track / Global Privacy Control.** We don't sell or share personal information or track you across other apps or websites for advertising, so there is nothing to opt out of. We will honor Global Privacy Control (GPC) signals sent from browsers using the web version as a valid opt-out request.
+Your settings and privacy choices are saved to our servers, so they follow you to any device you sign in on. [NOTE: In the current code, notification, marketing, and Public-by-default settings are kept only on the screen and are lost, and Reduce Motion is saved only on the device. Only the AI opt-out is saved to the server.]
 
-## 6. Data retention
+**Global Privacy Control (GPC).** We don't sell or share personal information, so there is nothing to opt out of. If our practices ever change, we will treat a GPC signal from a browser as a valid opt-out request.
 
-We keep information only as long as needed for the purposes described in this Policy:
+## 6. How long we keep information
+
+We keep information only as long as we need it for the reasons in this Policy. Proposed periods:
 
 | Information | How long we keep it |
 |---|---|
-| Account information | Until you delete your account |
-| Photos, designs, chats, briefs, timelines, project data | Until you delete them or delete your account ("Your designs stay in your projects until you delete them.") |
-| Messages and quotes with contractors | Until you delete the project or your account [NOTE: confirm] |
-| XP, levels, badges, usage events | Until you delete your account |
-| AI consent records | For the life of your account, and up to [NOTE: retention period] afterward as proof of consent |
-| Outreach send logs | [NOTE: retention period, e.g., X months/years — needed for anti-spam compliance and abuse prevention] |
-| Reports, blocks, and moderation records | [NOTE: retention period; may need to be kept after deletion to enforce bans] |
-| Server and technical logs | [NOTE: retention period, e.g., 30–90 days] |
-| Backups | Deleted data may remain in encrypted backups for up to [NOTE: backup retention period, per Supabase plan] before being overwritten |
-| Push token | Until you turn off notifications, sign out, or delete your account |
+| Account information and public profile | Until you delete your account [CONFIRM] |
+| Room photos, room analysis, designs, chats, briefs | Until you delete them or your account [CONFIRM] |
+| Public copies of designs | Until you switch the project to Private, delete it, or delete your account [CONFIRM] |
+| Other users' remixes of your public designs | They belong to the user who made them and stay until that user deletes them [CONFIRM] |
+| AI consent records | While your account exists, and deleted with your account [CONFIRM] [NOTE: The code deletes consent records with the account. The attorney may want a minimal record kept longer as proof of consent.] |
+| Usage counts (for daily limits) | 30 days [CONFIRM] [NOTE: Limits only need 24 hours of data. The code currently keeps these until the account is deleted, so a cleanup job is needed.] |
+| XP, levels, badges | Until you delete your account [CONFIRM] |
+| Settings and privacy choices | Until you delete your account [CONFIRM] |
+| Pros waitlist entries | Until you leave the list (Settings → Pros waitlist, or the unsubscribe link), you delete your account, or 30 days after we send the "pros are live" email, whichever comes first [CONFIRM] |
+| Reports you file and moderation records | 1 year after the report is closed, longer if needed to enforce a ban or for legal reasons [CONFIRM] [NOTE: The code deletes the reports you filed when you delete your account. Reports filed about you are kept.] |
+| Blocks | Until you unblock or delete your account [CONFIRM] |
+| Web account deletion requests (email, IP address, status) | 90 days after the request is completed or expires, then deleted [CONFIRM] [NOTE: No cleanup job exists in the code yet.] |
+| Support emails | 2 years after the last message [CONFIRM] |
+| Server and technical logs | Up to 30 days [CONFIRM] [NOTE: Depends on the Supabase plan.] |
+| Backups | Deleted data may stay in backups for up to 30 days before being overwritten [CONFIRM] [NOTE: Depends on the Supabase plan.] |
+| Data sent to AI providers | Not kept by the providers (zero data retention) |
 
-We may keep information longer if required by law or to resolve disputes, prevent fraud or abuse, or enforce our agreements.
+We may keep information longer if the law requires it or to resolve disputes, prevent fraud or abuse, or enforce our Terms.
 
 ## 7. Deleting your account
 
-You can delete your account at any time from **Settings → Delete account**. This permanently deletes your account, projects, designs, and related data, and revokes your Sign in with Apple token (if you used Apple to sign in). Deletion can't be undone.
+- **In the app:** Profile → Settings → Delete account. This deletes your account, projects, photos, designs, and related data from our database and from both our private and public storage, takes your designs off Explore, and revokes Sign in with Apple if you used it.
+- Deleting your account also deletes your pros waitlist entries.
+- **On the web (if you're signed out or can't use the app):** go to **https://{{WEBSITE_DOMAIN}}/delete-account** and enter your email address. We'll email you a single-use confirmation link that works for 24 hours. Nothing is deleted until you open the link and press the delete button on the confirmation page.
+- **By email:** write to {{SUPPORT_EMAIL}} from the email address on your account.
 
-If you can't access the app, email [SUPPORT EMAIL] from the email address associated with your account to request deletion. [NOTE: Google Play requires a web link where users can request account deletion without reinstalling the app — e.g., https://[WEBSITE DOMAIN]/delete-account. Create it and list it here.]
-
-Some information may remain after deletion, as described in Section 6 (for example, limited records we must keep, backups until they are overwritten, copies already received by contractors, and designs other users already saved or remixed from your Public projects).
+Deletion can't be undone. Some information may remain for a limited time as described in Section 6, such as backups until they are overwritten and records we must keep. Remixes other users made from your public designs stay with them.
 
 ## 8. Security
 
-We use reasonable technical and organizational measures to protect your information, including encryption in transit, access controls on our database and storage, stripping location data from photos on your device, and limiting what AI providers and contractors receive. No system is 100% secure, and we can't guarantee absolute security. If we learn of a security breach affecting your personal information, we will notify you as required by law.
+We use reasonable safeguards, including encryption in transit, access rules that keep each user's data separate, private storage for original photos with links that expire after one hour, and removing location data from photos before upload. No system is completely secure. If a breach affects your personal information, we will notify you as the law requires.
 
-> [NOTE: Confirm encryption at rest (Supabase default), row-level security on all tables/buckets, and who on the team has admin access.]
+> [NOTE: Confirm encryption at rest (a Supabase default), and list who has admin access to the database and the moderation tool.]
 
-## 9. Children
+## 9. Children and teens
 
-VisionBuild is not for children under 13. You must confirm you are 13 or older to use the Service. We do not knowingly collect personal information from children under 13. If we learn that we have, we will delete it. If you believe a child under 13 is using VisionBuild, contact us at [SUPPORT EMAIL].
+VisionBuild is not for children under 13. You must confirm you are 13 or older to sign in. We don't knowingly collect personal information from children under 13. If we learn we have, we will delete it. If you believe a child under 13 is using VisionBuild, contact {{SUPPORT_EMAIL}}.
 
-If you are between 13 and 17, you need permission from a parent or guardian to use VisionBuild. We do not sell or share personal information of anyone, including users under 16.
+If you are 13 to 17, please use VisionBuild only with a parent's or guardian's permission. We don't sell or share anyone's personal information, including that of users under 16.
 
-## 10. Your California privacy rights (CCPA / CPRA)
+## 10. Your California privacy rights (CCPA/CPRA)
 
-If you are a California resident, the California Consumer Privacy Act, as amended by the California Privacy Rights Act ("CCPA"), gives you the rights below.
+If you live in California, the California Consumer Privacy Act, as amended by the California Privacy Rights Act ("CCPA"), gives you these rights.
 
-> [NOTE: The CCPA legally applies only to businesses that meet certain thresholds (e.g., annual revenue above the inflation-adjusted threshold, or buying/selling/sharing personal information of 100,000+ California consumers or households). VisionBuild may not meet them yet. This section is drafted to comply anyway, which is good practice and expected by users. Have the attorney confirm.]
+> [NOTE for attorney: The CCPA applies only to businesses that meet certain size thresholds, and VisionBuild may not meet them yet. This section is written to comply anyway.]
 
 ### Your rights
 
-- **Right to know / access.** You can ask what personal information we have collected about you, the categories of sources, why we collected it, the categories of third parties we disclose it to, and a copy of the specific pieces of personal information we have about you.
-- **Right to delete.** You can ask us to delete personal information we collected from you, subject to legal exceptions.
+- **Right to know.** You can ask what personal information we've collected about you, where it came from, why we collected it, who we disclosed it to, and for a copy of the specific information.
+- **Right to delete.** You can ask us to delete personal information we collected from you, with some legal exceptions.
 - **Right to correct.** You can ask us to correct inaccurate personal information.
-- **Right to opt out of sale or sharing.** We do **not** sell your personal information and do **not** share it for cross-context behavioral advertising, and we have not done so in the past 12 months. You can still record an opt-out choice in Settings → Your Privacy Choices, and we will honor it if our practices ever change.
-- **Right to limit use of sensitive personal information.** Some information we handle may count as "sensitive personal information" under the CCPA — specifically, the contents of messages you exchange with contractors through the Inbox. We use it only to provide the Service you request and for other purposes the CCPA permits (such as security and preventing fraud). We do not use or disclose sensitive personal information to infer characteristics about you, so the right to limit does not apply. [NOTE: Attorney to confirm the analysis.]
-- **Right to non-discrimination.** We won't deny you service, charge you a different price, or give you a different level of service because you exercised your privacy rights.
+- **Right to opt out of sale or sharing.** We **don't sell** your personal information and **don't share** it for cross-context behavioral advertising, and we haven't in the past 12 months. If that ever changes, we'll update this Policy first and give you a way to opt out.
+- **Right to limit use of sensitive personal information.** We use sensitive personal information only as needed to provide the Service you ask for and for other purposes the CCPA allows, such as security. We don't use it to infer things about you, so this right doesn't come into play. [ATTORNEY DECISION: Confirm whether anything we collect counts as "sensitive personal information" (for example, the content of Vi chats, or a Hide My Email address combined with sign-in) and whether this statement is correct.]
+- **Right to non-discrimination.** We won't deny you the Service, charge you differently, or give you a lower level of service for using your rights.
 
-### How to exercise your rights
+### How to make a request
 
-- **In the app:** Settings → **Your Privacy Choices**, or Settings → **Delete account**.
-- **By email:** [SUPPORT EMAIL] (subject line: "Privacy Request").
-- [NOTE: Optional — add a web form at https://[WEBSITE DOMAIN]/privacy-request. A toll-free number is not required for businesses that operate exclusively online and have a direct relationship with consumers.]
+- **In the app:** Settings → Your Privacy Choices, or Settings → Delete account.
+- **On the web:** https://{{WEBSITE_DOMAIN}}/delete-account (for deletion).
+- **By email:** {{SUPPORT_EMAIL}}, subject line "Privacy Request."
 
 ### Verification
 
-To protect your account, we verify requests before acting on them. Requests made from within the app while you are signed in are verified by your sign-in. For email requests, we will ask you to confirm control of the email address linked to your account, and we may ask for additional information that matches what we have. We will use information you provide for verification only to verify your request.
+Before acting on a request, we confirm it's really you. Requests made in the app while you're signed in are verified by your sign-in. Web deletion requests are verified by the confirmation link we email to your account's address. For email requests, we'll ask you to confirm you control the email address on your account, and we may ask for details that match our records. We use verification information only to verify your request.
 
 ### Authorized agents
 
-You can use an authorized agent to make a request for you. We will require the agent to provide signed written permission from you (or a valid power of attorney), and we may ask you to verify your identity directly and confirm you gave the agent permission.
+You can have an authorized agent make a request for you. We'll ask the agent for your signed permission (or a valid power of attorney), and we may ask you to verify your identity directly and confirm you gave permission.
 
-### Response timing
+### Timing
 
-We will confirm receipt of your request within 10 business days and respond within **45 calendar days**. If we need more time (up to another 45 days), we will tell you why. Requests are free; we may decline or charge a reasonable fee only for requests that are clearly unfounded or excessive, as the law allows.
+We'll confirm we got your request within 10 business days and respond within **45 calendar days**. If we need more time (up to another 45 days), we'll tell you why. Requests are free.
 
-### Categories of personal information (last 12 months)
+### CCPA categories (past 12 months)
 
-| CCPA category | Examples of what we collect | Sources | Business purposes | Categories of recipients | Sold or shared? |
-|---|---|---|---|---|---|
-| **Identifiers** | Name, email address (or Apple relay address), account ID, public handle, IP address, push token | You; Apple or Google sign-in; your device | Provide and secure the Service; sign-in; notifications; support | Service providers (Supabase, Expo, Apple, Google); contractors only if you switch your contact info on or pick a pro; other users see your handle on Public designs | No |
-| **Personal information in Cal. Civ. Code § 1798.80(e)** | Name, email, phone number (if you provide it) | You; Apple or Google sign-in | Contractor outreach at your direction; account management | Service providers (Supabase, Resend); contractors you choose | No |
-| **Characteristics of protected classifications** | Confirmation that you are 13 or older (age range only) | You | Eligibility | Service providers (Supabase) | No |
-| **Commercial information** | Projects, styles, project briefs, budget range, quotes received, timelines | You; AI-generated from your inputs; contractors | Provide the Service; contractor outreach | Service providers (Supabase, OpenRouter, Google, Anthropic, Resend); contractors (only what you switch on) | No |
-| **Internet or other electronic network activity** | In-app actions, XP/usage events, likes, saves, remixes, reports and blocks, outreach logs, error logs, device/app/browser info | Your device; your use of the Service | Run gamification and usage limits; security; moderation; debugging | Service providers (Supabase; [NOTE: analytics/crash tool TBD]) | No |
-| **Geolocation data** | ZIP code you enter (not precise location; photo GPS data is removed on your device) | You | Find local contractors | Service providers (Supabase, OpenRouter/AI providers for the brief, Resend); contractors (if switched on) | No |
-| **Audio, electronic, visual, or similar information** | Room photos you upload; AI-generated design images | You; AI-generated | Generate designs; store your projects; Explore (designs only, if Public) | Service providers (Supabase, OpenRouter, Google, Anthropic); contractors (if switched on); other users (Public designs only) | No |
-| **Communications content** (may be sensitive PI) | Chats with Vi; messages with contractors | You; contractors; AI-generated replies | Provide Vi and Inbox; moderation of reported content | Service providers (Supabase, OpenRouter, Google, Anthropic, Resend); the contractor you're messaging | No |
-| **Inferences** | We do not create profiles or inferences about you. [NOTE: Update if personalized recommendations are added.] | — | — | — | No |
-| **Consent and choice records** | AI consent version and date; privacy choices; settings | You | Legal compliance; honoring your choices | Service providers (Supabase) | No |
+| CCPA category | What we collect | Sold or shared? |
+|---|---|---|
+| Identifiers | Name, email or relay email, account ID, IP address | No |
+| Customer records (Cal. Civ. Code § 1798.80(e)) | Name, email | No |
+| Characteristics of protected classifications | Confirmation that you are 13 or older (age range only) | No |
+| Internet or other electronic network activity | Usage counts, XP events, likes, saves, remixes, reports, blocks, server logs | No |
+| Audio, electronic, visual, or similar information | Room photos and AI-generated designs | No |
+| Inferences | None. We don't build profiles about you. | No |
+| Other (content and choices) | Vi chats, design briefs, consent records, settings, pros waitlist entries | No |
 
-We do not collect government IDs, financial account or payment card information, precise geolocation, biometric information, health information, or information about racial or ethnic origin, religion, or sexual orientation. Note that photos of your home could incidentally show personal items or people; please don't upload photos of people without their permission.
+Sources, purposes, recipients, and retention for each are in Sections 1, 2, 4, and 6. We disclose these categories for business purposes only to the service providers in Section 4, and designs you make Public to other users at your direction.
 
-Retention periods for each category are described in Section 6.
+We don't collect precise geolocation, government IDs, financial or payment information, biometric data, or health information.
 
 ### California "Shine the Light"
 
-We do not share personal information with third parties for their own direct marketing purposes.
+We don't share personal information with third parties for their own direct marketing.
 
-## 11. Information about contractors
+## 11. Where your information is processed
 
-When you use "Find me a pro," we contact local contractors by email. If you are a contractor:
+VisionBuild is based in the United States, and our providers process information in the United States. [NOTE: Confirm the regions for Supabase and the AI providers.] VisionBuild is meant for users in the United States.
 
-- **What we collect:** your business name and business contact information (such as email address, phone number, business address, website, and license number if listed), the messages you send through VisionBuild, and the quotes you provide.
-- **Where we get it:** [NOTE: Specify the source(s) of contractor contact info — e.g., publicly available business listings, a licensed data provider, or contractors who sign up. This is required to be disclosed and affects legal risk.] and directly from you when you reply.
-- **How we use it:** to send you project briefs that homeowners asked us to send, to deliver your replies and quotes to the homeowner, to log each outreach send, to honor unsubscribe requests, and to prevent abuse.
-- **Who sees it:** the homeowner you're responding to, and our service providers (Supabase, Resend, and AI providers when helping format or summarize messages [NOTE: confirm whether contractor replies are processed by AI]).
-- **Unsubscribe:** Every outreach email includes an unsubscribe link and our mailing address. If you unsubscribe, we will stop sending you project briefs, and we keep a minimal record of your email address on a suppression list so we don't email you again.
-- **Your rights:** California contractors have the same CCPA rights described in Section 10 (know, delete, correct, and non-discrimination). Email [SUPPORT EMAIL] to make a request.
+## 12. Changes to this Policy
 
-## 12. Where your information is processed
+We'll update this Policy before we change how we handle your information, including before adding any analytics, crash reporting, advertising, or tracking tools. If a change is material, we'll tell you in the app or by email before it takes effect. If a change affects how your photos or chats are processed by AI, we'll ask for your consent again.
 
-VisionBuild is based in the United States, and our service providers process information in the United States [NOTE: confirm regions for Supabase and the AI providers]. If you use VisionBuild from outside the U.S., your information will be transferred to and processed in the U.S.
+## 13. Contact us
 
-## 13. Changes to this Policy
-
-We may update this Privacy Policy from time to time. If we make material changes, we will notify you in the app or by email before the changes take effect, and update the "Last updated" date above. If a change affects how we use photos or chats with AI, we will ask for your consent again.
-
-## 14. Contact us
-
-[COMPANY LEGAL NAME]
-[MAILING ADDRESS]
-Email: [SUPPORT EMAIL]
-Website: https://[WEBSITE DOMAIN]
+{{COMPANY_LEGAL_NAME}}
+{{MAILING_ADDRESS}}
+Email: {{SUPPORT_EMAIL}}
+Website: https://{{WEBSITE_DOMAIN}}
