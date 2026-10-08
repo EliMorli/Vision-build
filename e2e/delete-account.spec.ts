@@ -117,4 +117,23 @@ test.describe("Delete Account Flow", () => {
     // Should navigate to welcome/sign-in screen
     await expect(page.getByTestId("sign-in-screen")).toBeVisible({ timeout: 5000 });
   });
+  
+  test("signed-out navigation guard: protected route redirects to sign-in without errors", async ({ page }: { page: Page }) => {
+    const pageErrors: Error[] = [];
+    page.on('pageerror', (err) => pageErrors.push(err));
+    
+    await page.addInitScript(() => {
+      localStorage.setItem("@visionbuild:intro_seen", "true");
+      localStorage.setItem("@visionbuild:mock_signed_out", "true");
+    });
+    
+    // Go directly to protected route while signed out
+    await page.goto(`${BASE_URL}/(tabs)/explore`);
+    
+    // Should redirect to sign-in screen
+    await expect(page.getByTestId("sign-in-screen")).toBeVisible({ timeout: 5000 });
+    
+    // Should have no page errors (no 'navigate before mounting' error)
+    expect(pageErrors).toEqual([]);
+  });
 });

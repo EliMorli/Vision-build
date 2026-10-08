@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Stack, useRouter, useSegments } from "expo-router";
+import { Stack, useRouter, useSegments, useRootNavigationState } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as WebBrowser from "expo-web-browser";
 import * as SplashScreen from "expo-splash-screen";
@@ -27,7 +27,7 @@ export default function RootLayout() {
   const loadSettings = useSettingsStore((s) => s.loadSettings);
   const router = useRouter();
   const segments = useSegments();
-  const [mockSignedOut, setMockSignedOut] = useState<string | null>(null);
+  const rootNavigationState = useRootNavigationState();
 
   const [fontsLoaded, fontError] = useFonts({
     Nunito_600SemiBold,
@@ -39,12 +39,9 @@ export default function RootLayout() {
   useEffect(() => {
     // Hydrate existing session on cold start
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      
-      // In mock mode, create mock session if not signed out
+      // In mock mode, check signed-out flag first, then set session once
       if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
         const signedOut = await AsyncStorage.getItem("@visionbuild:mock_signed_out");
-        setMockSignedOut(signedOut);
         
         if (!session && signedOut !== "true") {
           const now = Date.now();
@@ -63,10 +60,14 @@ export default function RootLayout() {
             expires_at: now / 1000 + 3600,
             token_type: "bearer",
           } as any);
+        } else {
+          setSession(session);
         }
         
         // Fetch profile immediately since there's no real session
         useAuthStore.getState().fetchProfile();
+      } else {
+        setSession(session);
       }
     });
 
@@ -92,6 +93,9 @@ export default function RootLayout() {
 
   // Guard: redirect to root when session becomes null on protected routes
   useEffect(() => {
+    // Don't navigate until the root navigator is ready
+    if (!rootNavigationState?.key) return;
+    
     const checkSessionGuard = async () => {
       if (!session && segments.length > 0) {
         const firstSegment = segments[0];
@@ -116,7 +120,7 @@ export default function RootLayout() {
     };
     
     checkSessionGuard();
-  }, [session, segments, router]);
+  }, [session, segments, router, rootNavigationState?.key]);
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
