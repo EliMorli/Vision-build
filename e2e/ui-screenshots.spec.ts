@@ -170,14 +170,17 @@ test.describe("UI Screenshots", () => {
   });
 
   test("mock create loop saves to Home", async ({ page }: { page: Page }) => {
-    // Set up authenticated state
+    // Set up authenticated state with clean slate
     await page.addInitScript(() => {
+      localStorage.clear();
       localStorage.setItem("@visionbuild:intro_seen", "true");
       localStorage.setItem("@visionbuild:mock_session", "true");
     });
 
     await page.goto(BASE_URL);
-    await expect(page.getByTestId("tab-camera")).toBeVisible({ timeout: 10000 });
+    
+    // Wait for Home screen to load (starting screen with mock session)
+    await expect(page.getByText("My projects")).toBeVisible({ timeout: 10000 });
 
     // Tap Camera tab
     await page.getByTestId("tab-camera").click();
