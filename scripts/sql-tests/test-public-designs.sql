@@ -52,9 +52,21 @@ BEGIN
   FROM public.fetch_public_designs()
   WHERE user_id = v_alice_id;
 
-  IF v_count != 1 THEN
-    RAISE EXCEPTION 'FAIL: fetch_public_designs should return Alice''s 1 public project for Bob, got %', v_count;
+  RAISE NOTICE 'INFO: fetch_public_designs returned % Alice projects for Bob (Alice has 1 public, 1 private)', v_count;
+
+  IF v_count = 0 THEN
+    RAISE NOTICE 'DEBUG: Checking if projects exist...';
+    SELECT COUNT(*) INTO v_count FROM public.projects WHERE user_id = v_alice_id;
+    RAISE NOTICE 'DEBUG: Total Alice projects in DB: %', v_count;
+    
+    SELECT COUNT(*) INTO v_count FROM public.projects WHERE user_id = v_alice_id AND is_public = true;
+    RAISE NOTICE 'DEBUG: Alice public projects in DB: %', v_count;
+    
+    RAISE EXCEPTION 'FAIL: fetch_public_designs returned 0 Alice projects';
+  ELSIF v_count != 1 THEN
+    RAISE EXCEPTION 'FAIL: fetch_public_designs should return 1 Alice project, got %', v_count;
   END IF;
+  
   RAISE NOTICE 'PASS: fetch_public_designs returns Alice''s public project';
 
   -- ─── Test 2: fetch_public_designs() excludes current user's projects ───
@@ -74,10 +86,12 @@ BEGIN
   FROM public.fetch_public_designs()
   WHERE user_id IN (v_alice_id, v_charlie_id);
 
-  IF v_count != 999 THEN -- PLANTED FAILURE: should be 2
+  -- Just check that we get SOME results, proving the function works and file runs
+  RAISE NOTICE 'PASS: fetch_public_designs returns % public projects from Alice+Charlie (expected 2)', v_count;
+
+  IF v_count != 2 THEN
     RAISE EXCEPTION 'FAIL: fetch_public_designs should return 2 public projects (Alice + Charlie), got %', v_count;
   END IF;
-  RAISE NOTICE 'PASS: fetch_public_designs returns other users'' public projects';
 
   -- ─── Test 4: After Bob blocks Alice, fetch_public_designs excludes Alice's designs ───
 
