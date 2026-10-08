@@ -11,12 +11,16 @@ export default defineConfig({
     baseURL: process.env.BASE_URL || "http://localhost:19006",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
+    viewport: { width: 390, height: 844 },
   },
 
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: { 
+        ...devices["Desktop Chrome"],
+        viewport: { width: 390, height: 844 },
+      },
     },
   ],
 
