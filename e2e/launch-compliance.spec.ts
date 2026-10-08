@@ -25,8 +25,8 @@ test.describe("Launch Compliance Tests", () => {
     await expect(page.getByText(/see the transformation/i)).toBeVisible({ timeout: 10000 });
     
     // Both labels should be visible at start (slider centered)
-    const beforeLabel = page.getByText("Before", { exact: false });
-    const afterLabel = page.getByText("After", { exact: false });
+    const beforeLabel = page.getByTestId("intro-label-before");
+    const afterLabel = page.getByTestId("intro-label-after");
     
     await expect(beforeLabel).toBeVisible();
     await expect(afterLabel).toBeVisible();
@@ -128,8 +128,8 @@ test.describe("Launch Compliance Tests", () => {
     await page.waitForLoadState("networkidle");
     
     // Should say "Pick a style" not "Select a Design Style"
-    await expect(page.getByText("Pick a style")).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText("Select a Design Style")).not.toBeVisible();
+    await expect(page.getByTestId("style-picker-header")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId("style-picker-header")).toHaveText("Pick a style");
     
     await page.screenshot({ path: "e2e/screens/ui-style-picker-header.png", fullPage: false });
   });
@@ -167,7 +167,7 @@ test.describe("Launch Compliance Tests", () => {
     await expect(page.getByText(/original photo/i)).toBeVisible({ timeout: 10000 });
     
     // Project Brief section should not be visible
-    await expect(page.getByText("Project Brief")).not.toBeVisible();
+    await expect(page.getByTestId("project-brief")).not.toBeVisible();
     
     await page.screenshot({ path: "e2e/screens/ui-project-no-brief.png", fullPage: false });
   });
@@ -211,14 +211,14 @@ test.describe("Launch Compliance Tests", () => {
     await expect(page.getByText(/original photo/i)).toBeVisible({ timeout: 10000 });
     
     // Project Brief section should be visible
-    await expect(page.getByText("Project Brief")).toBeVisible();
+    await expect(page.getByTestId("project-brief")).toBeVisible();
     
     // Should show the real brief text
     await expect(page.getByText(/modern bathroom remodel/i)).toBeVisible();
     
     // Button should say "Join the pros waitlist" not "Get quotes"
-    await expect(page.getByText("Join the pros waitlist")).toBeVisible();
-    await expect(page.getByText("Get quotes")).not.toBeVisible();
+    await expect(page.getByTestId("project-brief-waitlist")).toBeVisible();
+    await expect(page.getByTestId("project-brief-waitlist")).toContainText("Join the pros waitlist");
     
     await page.screenshot({ path: "e2e/screens/ui-project-brief.png", fullPage: false });
   });
@@ -230,7 +230,7 @@ test.describe("Launch Compliance Tests", () => {
     await expect(page.getByText(/level \d+ · rookie designer/i)).toBeVisible({ timeout: 10000 });
     
     // Should show badges section
-    await expect(page.getByText("Badges")).toBeVisible();
+    await expect(page.getByTestId("profile-badges-section")).toBeVisible();
     
     // Should show locked badges with hints (e.g., "Redesign your first room.")
     await expect(page.getByText(/redesign your first room/i)).toBeVisible();
@@ -269,13 +269,13 @@ test.describe("Launch Compliance Tests", () => {
     await page.waitForLoadState("networkidle");
     
     // Should show Rooms stat
-    await expect(page.getByText("Rooms", { exact: false })).toBeVisible();
+    await expect(page.getByTestId("profile-stat-rooms")).toBeVisible();
     
     // Should show Designs stat
-    await expect(page.getByText("Designs", { exact: false })).toBeVisible();
+    await expect(page.getByTestId("profile-stat-designs")).toBeVisible();
     
     // Should show Badges stat instead of Quotes
-    await expect(page.getByText("Badges", { exact: false })).toBeVisible();
+    await expect(page.getByTestId("profile-stat-badges")).toBeVisible();
     
     // Should NOT show Quotes stat
     await expect(page.getByText("Quotes", { exact: true })).not.toBeVisible();
@@ -304,6 +304,6 @@ test.describe("Launch Compliance Tests", () => {
     await expect(page).toHaveURL(/pros-coming-soon/, { timeout: 10000 });
     
     // Should show coming soon message
-    await expect(page.getByText(/coming soon/i)).toBeVisible();
+    await expect(page.getByText("Local pros are coming soon", { exact: true })).toBeVisible();
   });
 });

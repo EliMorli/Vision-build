@@ -84,7 +84,7 @@ test.describe("VisionBuild Create Loop", () => {
     await page.getByRole("button", { name: /analyze room/i }).click();
 
     // Assert Style picker, then screenshot
-    await expect(page.getByText("Select a Design Style")).toBeInViewport({ timeout: 10000 });
+    await expect(page.getByTestId("style-picker-header")).toBeInViewport({ timeout: 10000 });
     await page.screenshot({ path: "e2e/screens/a5-style.png", fullPage: true });
 
     // Select a style (e.g., Modern)

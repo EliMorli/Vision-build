@@ -107,7 +107,7 @@ test.describe("UI Screenshots", () => {
     // 4. Style picker - navigate to editor with mock project
     await page.goto(`${BASE_URL}/editor/mock-project-id`);
     await page.waitForLoadState("networkidle");
-    await expect(page.getByText(/pick a style/i).first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId("style-picker-header")).toBeVisible({ timeout: 10000 });
     await page.screenshot({ path: "e2e/screens/ui-style-picker.png", fullPage: false });
 
     // 5. Generating
@@ -179,9 +179,16 @@ test.describe("UI Screenshots", () => {
     await page.waitForLoadState("networkidle");
     await expect(page.getByText("No shared designs yet")).toBeVisible({ timeout: 10000 });
     await page.screenshot({ path: "e2e/screens/ui-explore-empty.png", fullPage: false });
-    
-    // 11. Project detail with brief - seed a project with brief
-    await page.evaluate(() => {
+  });
+
+  test("project detail with brief screenshot", async ({ page }: { page: Page }) => {
+    // Set up authenticated mock state
+    await page.addInitScript(() => {
+      localStorage.setItem("@visionbuild:intro_seen", "true");
+      localStorage.setItem("@visionbuild:mock_session", "true");
+      localStorage.setItem("@visionbuild:ai_consent", "true");
+      localStorage.setItem("@visionbuild:ai_consent_version", "2026-10-07b");
+      
       const mockProjectWithBrief = {
         id: "mock-project-brief",
         user_id: "mock-user",
@@ -209,14 +216,12 @@ test.describe("UI Screenshots", () => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-      const existingProjects = JSON.parse(localStorage.getItem("@visionbuild:mock_seed_projects") || "[]");
-      existingProjects.push(mockProjectWithBrief);
-      localStorage.setItem("@visionbuild:mock_seed_projects", JSON.stringify(existingProjects));
+      localStorage.setItem("@visionbuild:mock_seed_projects", JSON.stringify([mockProjectWithBrief]));
     });
     
     await page.goto(`${BASE_URL}/project/mock-project-brief`);
     await page.waitForLoadState("networkidle");
-    await expect(page.getByText("Project Brief")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId("project-brief")).toBeVisible({ timeout: 10000 });
     await page.screenshot({ path: "e2e/screens/ui-project-brief.png", fullPage: false });
   });
 });

@@ -131,20 +131,20 @@ export default function ProfileScreen() {
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{roomsCount}</Text>
-            <Text style={styles.statLabel}>Rooms</Text>
+            <Text style={styles.statLabel} testID="profile-stat-rooms">Rooms</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{designsCount}</Text>
-            <Text style={styles.statLabel}>Designs</Text>
+            <Text style={styles.statLabel} testID="profile-stat-designs">Designs</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{earnedBadges.length}</Text>
-            <Text style={styles.statLabel}>Badges</Text>
+            <Text style={styles.statLabel} testID="profile-stat-badges">Badges</Text>
           </View>
         </View>
 
         {/* Badges Section */}
-        <View style={styles.badgesSection}>
+        <View style={styles.badgesSection} testID="profile-badges-section">
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Badges</Text>
             <Text style={styles.badgeCount}>
@@ -153,7 +153,7 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.badgeGrid}>
             {ALL_BADGES.map((badge) => (
-              <View key={badge.id} style={styles.badgeItem}>
+              <View key={badge.id} style={styles.badgeItem} testID={`badge-${badge.id}`}>
                 <View
                   style={[
                     styles.badgeIcon,
@@ -163,6 +163,7 @@ export default function ProfileScreen() {
                       opacity: badge.earned ? 1 : 0.45,
                     },
                   ]}
+                  testID={badge.earned ? undefined : `badge-${badge.id}-locked`}
                 >
                   <View style={styles.badgeIconInner}>
                     {badge.earned ? (
@@ -174,7 +175,7 @@ export default function ProfileScreen() {
                 </View>
                 <Text style={styles.badgeName}>{badge.name}</Text>
                 {!badge.earned && (
-                  <Text style={styles.badgeHint}>{badge.lockedHint}</Text>
+                  <Text style={styles.badgeHint} testID={`badge-${badge.id}-hint`}>{badge.lockedHint}</Text>
                 )}
               </View>
             ))}

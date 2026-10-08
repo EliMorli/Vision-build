@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -42,11 +42,19 @@ export default function ProjectDetailScreen() {
   const [activeTab, setActiveTab] = useState<"designs" | "timeline">("designs");
   
   const projects = useProjectStore((s) => s.projects);
+  const fetchProjects = useProjectStore((s) => s.fetchProjects);
   const toggleProjectPrivacy = useProjectStore((s) => s.toggleProjectPrivacy);
   const profile = useAuthStore((s) => s.profile);
   const project = projects.find((p) => p.id === id);
   const [isPublic, setIsPublic] = useState(project?.is_public ?? false);
   const [showMakePublicSheet, setShowMakePublicSheet] = useState(false);
+  
+  // Fetch projects if not found (for E2E tests that seed localStorage)
+  useEffect(() => {
+    if (!project && id) {
+      fetchProjects();
+    }
+  }, [id, project, fetchProjects]);
 
   // Use actual project data instead of hardcoded values
   const roomType = project?.room_analysis?.roomType || "room";
@@ -295,7 +303,7 @@ export default function ProjectDetailScreen() {
 
         {/* Project brief */}
         {project?.lead_info?.projectBrief && (
-          <View style={styles.briefSection}>
+          <View style={styles.briefSection} testID="project-brief">
             <Text style={styles.sectionTitle}>Project Brief</Text>
             <View style={styles.briefCard}>
               <Text style={styles.briefText}>
@@ -304,6 +312,7 @@ export default function ProjectDetailScreen() {
               <Pressable
                 style={styles.briefButton}
                 onPress={() => router.push(`/pros-coming-soon?projectId=${id}`)}
+                testID="project-brief-waitlist"
               >
                 <Text style={styles.briefButtonText}>Join the pros waitlist</Text>
                 <Ionicons name="arrow-forward" size={14} color={colors.primary} />

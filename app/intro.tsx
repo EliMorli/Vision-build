@@ -96,14 +96,14 @@ function BeforeAfterSlider() {
       <View style={sliderStyles.sliderContainer} {...panHandlers}>
         <View style={sliderStyles.beforeImage}>
           <IsoRoom palette="modern" size={imageWidth * 0.9} />
-          {showBeforeLabel && <Text style={sliderStyles.beforeLabel}>Before</Text>}
+          {showBeforeLabel && <Text style={sliderStyles.beforeLabel} testID="intro-label-before">Before</Text>}
         </View>
 
         {/* After image - clipped based on slider, modern styled room */}
         <View style={[sliderStyles.afterContainer, { width: dividerX }]}>
           <View style={sliderStyles.afterImage}>
             <IsoRoom palette="modern" size={imageWidth * 0.9} spark />
-            {showAfterLabel && <Text style={sliderStyles.afterLabel}>After</Text>}
+            {showAfterLabel && <Text style={sliderStyles.afterLabel} testID="intro-label-after">After</Text>}
           </View>
         </View>
 

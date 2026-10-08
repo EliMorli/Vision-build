@@ -71,7 +71,7 @@ export default function EditorScreen() {
         </Banner>
       )}
 
-      <Text style={styles.sectionTitle}>Pick a style</Text>
+      <Text style={styles.sectionTitle} testID="style-picker-header">Pick a style</Text>
 
       {/* Style grid */}
       <FlatList
