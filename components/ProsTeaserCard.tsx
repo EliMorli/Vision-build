@@ -18,7 +18,7 @@ export function ProsTeaserCard() {
     const userId = useAuthStore.getState().session?.user?.id;
     
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
-      const stored = localStorage.getItem("@visionbuild:waitlist:general");
+      const stored = await AsyncStorage.getItem("@visionbuild:waitlist:general");
       setIsOnWaitlist(stored === "true");
       setChecking(false);
       return;
@@ -59,13 +59,13 @@ export function ProsTeaserCard() {
       const userId = useAuthStore.getState().session?.user?.id;
       const email = profile?.email || "";
 
-      if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        localStorage.setItem("@visionbuild:waitlist:general", "true");
-        setIsOnWaitlist(true);
-        setLoading(false);
-        return;
-      }
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      await AsyncStorage.setItem("@visionbuild:waitlist:general", "true");
+      setIsOnWaitlist(true);
+      setLoading(false);
+      return;
+    }
 
       if (!userId) {
         setLoading(false);

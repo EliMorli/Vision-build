@@ -4,36 +4,39 @@ const BASE_URL = process.env.BASE_URL || "http://localhost:19006";
 
 test.describe("VisionBuild Explore Report and Block", () => {
   test("report a design - mock call recorded", async ({ page }: { page: Page }) => {
-    // Seed test data
+    // Seed test data (guard with sessionStorage to prevent re-seeding on navigation/reload)
     await page.addInitScript(() => {
-      localStorage.setItem("@visionbuild:intro_seen", "true");
-      localStorage.setItem("@visionbuild:mock_seed_profile", JSON.stringify({
-        id: "test-user-123",
-        email: "viewer@visionbuild.app",
-        display_name: "Test Viewer",
-        photo_url: null,
-        created_at: new Date().toISOString(),
-        last_login_at: new Date().toISOString(),
-        xp: 0,
-        level: 1
-      }));
-      
-      const projects = [
-        {
-          id: "project-public-1",
-          user_id: "other-user-1",
-          title: "Modern Living Room",
-          selected_style: "modern",
-          is_public: true,
-          status: "generated",
-          original_image_url: "mock/original.jpg",
+      if (!sessionStorage.getItem("__vb_seeded")) {
+        localStorage.setItem("@visionbuild:intro_seen", "true");
+        localStorage.setItem("@visionbuild:mock_seed_profile", JSON.stringify({
+          id: "test-user-123",
+          email: "viewer@visionbuild.app",
+          display_name: "Test Viewer",
+          photo_url: null,
           created_at: new Date().toISOString(),
-          generated_image_urls: ["mock/gen1.jpg"]
-        },
-      ];
-      localStorage.setItem("@visionbuild:mock_seed_projects", JSON.stringify(projects));
-      localStorage.setItem("@visionbuild:blocks", JSON.stringify([]));
-      localStorage.setItem("@visionbuild:reports", JSON.stringify([]));
+          last_login_at: new Date().toISOString(),
+          xp: 0,
+          level: 1
+        }));
+        
+        const projects = [
+          {
+            id: "project-public-1",
+            user_id: "other-user-1",
+            title: "Modern Living Room",
+            selected_style: "modern",
+            is_public: true,
+            status: "generated",
+            original_image_url: "mock/original.jpg",
+            created_at: new Date().toISOString(),
+            generated_image_urls: ["mock/gen1.jpg"]
+          },
+        ];
+        localStorage.setItem("@visionbuild:mock_seed_projects", JSON.stringify(projects));
+        localStorage.setItem("@visionbuild:blocks", JSON.stringify([]));
+        localStorage.setItem("@visionbuild:reports", JSON.stringify([]));
+        sessionStorage.setItem("__vb_seeded", "1");
+      }
     });
 
     await page.goto(`${BASE_URL}/(tabs)/explore`);
@@ -79,32 +82,35 @@ test.describe("VisionBuild Explore Report and Block", () => {
 
   test("cancel report shows no success message", async ({ page }: { page: Page }) => {
     await page.addInitScript(() => {
-      localStorage.setItem("@visionbuild:intro_seen", "true");
-      localStorage.setItem("@visionbuild:mock_seed_profile", JSON.stringify({
-        id: "test-user-123",
-        email: "viewer@visionbuild.app",
-        display_name: "Test Viewer",
-        photo_url: null,
-        created_at: new Date().toISOString(),
-        last_login_at: new Date().toISOString(),
-        xp: 0,
-        level: 1
-      }));
-      
-      localStorage.setItem("@visionbuild:mock_seed_projects", JSON.stringify([
-        {
-          id: "project-public-1",
-          user_id: "other-user-1",
-          title: "Modern Living Room",
-          selected_style: "modern",
-          is_public: true,
-          status: "generated",
-          original_image_url: "mock/original.jpg",
+      if (!sessionStorage.getItem("__vb_seeded")) {
+        localStorage.setItem("@visionbuild:intro_seen", "true");
+        localStorage.setItem("@visionbuild:mock_seed_profile", JSON.stringify({
+          id: "test-user-123",
+          email: "viewer@visionbuild.app",
+          display_name: "Test Viewer",
+          photo_url: null,
           created_at: new Date().toISOString(),
-          generated_image_urls: ["mock/gen1.jpg"]
-        },
-      ]));
-      localStorage.setItem("@visionbuild:blocks", JSON.stringify([]));
+          last_login_at: new Date().toISOString(),
+          xp: 0,
+          level: 1
+        }));
+        
+        localStorage.setItem("@visionbuild:mock_seed_projects", JSON.stringify([
+          {
+            id: "project-public-1",
+            user_id: "other-user-1",
+            title: "Modern Living Room",
+            selected_style: "modern",
+            is_public: true,
+            status: "generated",
+            original_image_url: "mock/original.jpg",
+            created_at: new Date().toISOString(),
+            generated_image_urls: ["mock/gen1.jpg"]
+          },
+        ]));
+        localStorage.setItem("@visionbuild:blocks", JSON.stringify([]));
+        sessionStorage.setItem("__vb_seeded", "1");
+      }
     });
 
     await page.goto(`${BASE_URL}/(tabs)/explore`);
@@ -127,44 +133,47 @@ test.describe("VisionBuild Explore Report and Block", () => {
 
   test("block user persists after reload", async ({ page }: { page: Page }) => {
     await page.addInitScript(() => {
-      localStorage.setItem("@visionbuild:intro_seen", "true");
-      localStorage.setItem("@visionbuild:mock_seed_profile", JSON.stringify({
-        id: "test-user-123",
-        email: "viewer@visionbuild.app",
-        display_name: "Test Viewer",
-        photo_url: null,
-        created_at: new Date().toISOString(),
-        last_login_at: new Date().toISOString(),
-        xp: 0,
-        level: 1
-      }));
-      
-      const projects = [
-        {
-          id: "project-public-1",
-          user_id: "other-user-1",
-          title: "Modern Living Room",
-          selected_style: "modern",
-          is_public: true,
-          status: "generated",
-          original_image_url: "mock/original.jpg",
+      if (!sessionStorage.getItem("__vb_seeded")) {
+        localStorage.setItem("@visionbuild:intro_seen", "true");
+        localStorage.setItem("@visionbuild:mock_seed_profile", JSON.stringify({
+          id: "test-user-123",
+          email: "viewer@visionbuild.app",
+          display_name: "Test Viewer",
+          photo_url: null,
           created_at: new Date().toISOString(),
-          generated_image_urls: ["mock/gen1.jpg"]
-        },
-        {
-          id: "project-public-2",
-          user_id: "other-user-2",
-          title: "Farmhouse Kitchen",
-          selected_style: "farmhouse",
-          is_public: true,
-          status: "generated",
-          original_image_url: "mock/original3.jpg",
-          created_at: new Date().toISOString(),
-          generated_image_urls: ["mock/gen3.jpg"]
-        },
-      ];
-      localStorage.setItem("@visionbuild:mock_seed_projects", JSON.stringify(projects));
-      localStorage.setItem("@visionbuild:blocks", JSON.stringify([]));
+          last_login_at: new Date().toISOString(),
+          xp: 0,
+          level: 1
+        }));
+        
+        const projects = [
+          {
+            id: "project-public-1",
+            user_id: "other-user-1",
+            title: "Modern Living Room",
+            selected_style: "modern",
+            is_public: true,
+            status: "generated",
+            original_image_url: "mock/original.jpg",
+            created_at: new Date().toISOString(),
+            generated_image_urls: ["mock/gen1.jpg"]
+          },
+          {
+            id: "project-public-2",
+            user_id: "other-user-2",
+            title: "Farmhouse Kitchen",
+            selected_style: "farmhouse",
+            is_public: true,
+            status: "generated",
+            original_image_url: "mock/original3.jpg",
+            created_at: new Date().toISOString(),
+            generated_image_urls: ["mock/gen3.jpg"]
+          },
+        ];
+        localStorage.setItem("@visionbuild:mock_seed_projects", JSON.stringify(projects));
+        localStorage.setItem("@visionbuild:blocks", JSON.stringify([]));
+        sessionStorage.setItem("__vb_seeded", "1");
+      }
     });
 
     await page.goto(`${BASE_URL}/(tabs)/explore`);

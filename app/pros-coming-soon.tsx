@@ -35,7 +35,7 @@ export default function ProsComingSoonScreen() {
     
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
       const key = projectId ? `@visionbuild:waitlist:${projectId}` : "@visionbuild:waitlist:general";
-      const stored = localStorage.getItem(key);
+      const stored = await AsyncStorage.getItem(key);
       setIsOnWaitlist(stored === "true");
       setChecking(false);
       return;
@@ -85,7 +85,7 @@ export default function ProsComingSoonScreen() {
       if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
         await new Promise((resolve) => setTimeout(resolve, 500));
         const key = projectId ? `@visionbuild:waitlist:${projectId}` : "@visionbuild:waitlist:general";
-        localStorage.setItem(key, "true");
+        await AsyncStorage.setItem(key, "true");
         setIsOnWaitlist(true);
         setLoading(false);
         return;

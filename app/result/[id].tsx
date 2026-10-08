@@ -51,7 +51,7 @@ export default function ResultScreen() {
       const userId = useAuthStore.getState().session?.user?.id;
       
       if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
-        const stored = localStorage.getItem(`@visionbuild:waitlist:${id}`);
+        const stored = await AsyncStorage.getItem(`@visionbuild:waitlist:${id}`);
         setIsOnWaitlist(stored === "true");
         return;
       }
@@ -124,12 +124,12 @@ export default function ResultScreen() {
       const userId = useAuthStore.getState().session?.user?.id;
       const email = profile?.email || "";
 
-      if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        localStorage.setItem(`@visionbuild:waitlist:${id}`, "true");
-        setIsOnWaitlist(true);
-        return;
-      }
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      await AsyncStorage.setItem(`@visionbuild:waitlist:${id}`, "true");
+      setIsOnWaitlist(true);
+      return;
+    }
 
       if (!userId) return;
 

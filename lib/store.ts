@@ -858,10 +858,11 @@ export const useReportStore = create<ReportState>(() => ({
 
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
       console.log("[Mock] User blocked:", { blockedId, userId: userId || "mock-user" });
-      // Store block in localStorage for e2e tests
-      const blocks = JSON.parse(localStorage.getItem("@visionbuild:blocks") || "[]");
+      // Store block in AsyncStorage for e2e tests (works as localStorage on web)
+      const blocksJson = await AsyncStorage.getItem("@visionbuild:blocks");
+      const blocks = blocksJson ? JSON.parse(blocksJson) : [];
       blocks.push({ blocker_id: userId || "mock-user", blocked_id: blockedId });
-      localStorage.setItem("@visionbuild:blocks", JSON.stringify(blocks));
+      await AsyncStorage.setItem("@visionbuild:blocks", JSON.stringify(blocks));
       return;
     }
 

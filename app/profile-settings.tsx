@@ -39,7 +39,7 @@ export default function ProfileSettingsScreen() {
     const userId = useAuthStore.getState().session?.user?.id;
     
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
-      const stored = localStorage.getItem("@visionbuild:waitlist:general");
+      const stored = await AsyncStorage.getItem("@visionbuild:waitlist:general");
       setProsWaitlist(stored === "true");
       setCheckingWaitlist(false);
       return;
@@ -82,15 +82,12 @@ export default function ProfileSettingsScreen() {
 
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
       if (enabled) {
-        localStorage.setItem("@visionbuild:waitlist:general", "true");
+        await AsyncStorage.setItem("@visionbuild:waitlist:general", "true");
       } else {
         // Delete all waitlist entries in mock mode
-        const keys = Object.keys(localStorage);
-        keys.forEach(key => {
-          if (key.startsWith("@visionbuild:waitlist:")) {
-            localStorage.removeItem(key);
-          }
-        });
+        const keys = await AsyncStorage.getAllKeys();
+        const waitlistKeys = keys.filter(key => key.startsWith("@visionbuild:waitlist:"));
+        await AsyncStorage.multiRemove(waitlistKeys);
       }
       setProsWaitlist(enabled);
       return;
