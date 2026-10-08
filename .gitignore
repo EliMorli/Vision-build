@@ -35,6 +35,11 @@ supabase-*
 # Screenshots and artifacts
 screenshots/
 artifacts/
-*.png
-*.jpg
-*.jpeg
+
+# But allow e2e test screenshots
+!e2e/screens/*.png
+!e2e/fixtures/*.jpg
+
+# Playwright
+playwright-report/
+test-results/
