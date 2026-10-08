@@ -31,11 +31,10 @@ DECLARE
 BEGIN
   SELECT * INTO rec FROM public.account_deletion_requests LIMIT 1;
   
-  IF rec IS NOT NULL THEN
-    RAISE EXCEPTION 'FAIL: Anon was able to SELECT from account_deletion_requests';
-  END IF;
-  
-  RAISE NOTICE 'PASS: Anon SELECT blocked (no rows returned)';
+  RAISE EXCEPTION 'FAIL: Anon was able to SELECT from account_deletion_requests';
+EXCEPTION
+  WHEN insufficient_privilege THEN
+    RAISE NOTICE 'PASS: Anon SELECT blocked';
 END;
 $$;
 
@@ -63,11 +62,14 @@ ROLLBACK;
 BEGIN;
 SET LOCAL ROLE service_role;
 
-INSERT INTO public.account_deletion_requests (email, token_hash, status)
-VALUES ('test@example.com', 'validhash123', 'pending')
-RETURNING id;
+DO $$
+BEGIN
+  INSERT INTO public.account_deletion_requests (email, token_hash, status)
+  VALUES ('test@example.com', 'validhash123', 'pending');
 
-RAISE NOTICE 'PASS: Service role INSERT allowed';
+  RAISE NOTICE 'PASS: Service role INSERT allowed';
+END;
+$$;
 
 ROLLBACK;
 
@@ -75,9 +77,13 @@ ROLLBACK;
 BEGIN;
 SET LOCAL ROLE service_role;
 
-SELECT auth.get_user_id_by_email('test@example.com');
-
-RAISE NOTICE 'PASS: Service role can call get_user_id_by_email';
+DO $$
+BEGIN
+  PERFORM auth.get_user_id_by_email('test@example.com');
+  
+  RAISE NOTICE 'PASS: Service role can call get_user_id_by_email';
+END;
+$$;
 
 ROLLBACK;
 

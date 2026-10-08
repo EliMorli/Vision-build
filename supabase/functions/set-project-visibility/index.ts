@@ -48,16 +48,16 @@ serve(async (req) => {
 
     // 6. Handle file copy/removal
     if (isPublic) {
-      // PRIVACY: Copy ONLY generated design images to public-designs, NEVER main_image (original room photo)
+      // PRIVACY: Copy ONLY generated design images to public-designs, NEVER original_image_url (original room photo)
       const filesToCopy = [];
       
-      // Add design_image (the final selected design)
-      if (project.design_image) {
-        // Skip if it's the main_image or contains 'original'
-        if (project.design_image !== project.main_image && !project.design_image.includes("original")) {
-          filesToCopy.push(project.design_image);
+      // Add selected_generation_url (the final selected design)
+      if (project.selected_generation_url) {
+        // Skip if it's the original_image_url or contains 'original'
+        if (project.selected_generation_url !== project.original_image_url && !project.selected_generation_url.includes("original")) {
+          filesToCopy.push(project.selected_generation_url);
         } else {
-          console.warn(`Skipping design_image copy (matches main_image or is original): ${project.design_image}`);
+          console.warn(`Skipping selected_generation_url copy (matches original_image_url or is original): ${project.selected_generation_url}`);
         }
       }
       
@@ -65,9 +65,9 @@ serve(async (req) => {
       if (project.generated_image_urls && Array.isArray(project.generated_image_urls)) {
         for (const url of project.generated_image_urls) {
           if (url && typeof url === "string") {
-            // Skip if it's the main_image or contains 'original'
-            if (url === project.main_image || url.includes("original")) {
-              console.warn(`Skipping generated image copy (matches main_image or is original): ${url}`);
+            // Skip if it's the original_image_url or contains 'original'
+            if (url === project.original_image_url || url.includes("original")) {
+              console.warn(`Skipping generated image copy (matches original_image_url or is original): ${url}`);
               continue;
             }
             
@@ -130,12 +130,12 @@ serve(async (req) => {
         }
       }
     } else {
-      // Remove from public-designs (generated designs + defensively remove main_image if it was copied)
+      // Remove from public-designs (generated designs + defensively remove original_image_url if it was copied)
       const filesToRemove = [];
       
-      // Add design_image (keep full path)
-      if (project.design_image) {
-        filesToRemove.push(project.design_image);
+      // Add selected_generation_url (keep full path)
+      if (project.selected_generation_url) {
+        filesToRemove.push(project.selected_generation_url);
       }
       
       // Add generated_image_urls (keep full paths, do NOT split)
@@ -147,9 +147,9 @@ serve(async (req) => {
         }
       }
       
-      // Defensively remove main_image in case it was copied before this fix
-      if (project.main_image) {
-        filesToRemove.push(project.main_image);
+      // Defensively remove original_image_url in case it was copied before this fix
+      if (project.original_image_url) {
+        filesToRemove.push(project.original_image_url);
       }
 
       if (filesToRemove.length > 0) {

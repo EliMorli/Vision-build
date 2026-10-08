@@ -28,12 +28,12 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
--- Create a test project with main_image and generated_image_urls
+-- Create a test project with original_image_url and generated_image_urls
 INSERT INTO public.projects (
   id,
   user_id,
-  main_image,
-  design_image,
+  original_image_url,
+  selected_generation_url,
   generated_image_urls,
   is_public
 )
@@ -53,7 +53,7 @@ ON CONFLICT (id) DO NOTHING;
 
 COMMIT;
 
--- Test 1: Verify main_image path contains full directory structure
+-- Test 1: Verify original_image_url path contains full directory structure
 BEGIN;
 
 DO $$
@@ -63,15 +63,15 @@ BEGIN
   SELECT * INTO project FROM public.projects 
   WHERE id = '10000000-0000-0000-0000-000000000001';
   
-  IF project.main_image NOT LIKE '%/%/%' THEN
-    RAISE EXCEPTION 'FAIL: main_image does not have full path structure: %', project.main_image;
+  IF project.original_image_url NOT LIKE '%/%/%' THEN
+    RAISE EXCEPTION 'FAIL: original_image_url does not have full path structure: %', project.original_image_url;
   END IF;
   
-  IF project.main_image NOT LIKE '%original%' THEN
-    RAISE EXCEPTION 'FAIL: main_image does not contain "original": %', project.main_image;
+  IF project.original_image_url NOT LIKE '%original%' THEN
+    RAISE EXCEPTION 'FAIL: original_image_url does not contain "original": %', project.original_image_url;
   END IF;
   
-  RAISE NOTICE 'PASS: main_image has full path: %', project.main_image;
+  RAISE NOTICE 'PASS: original_image_url has full path: %', project.original_image_url;
 END;
 $$;
 
@@ -101,7 +101,7 @@ $$;
 
 ROLLBACK;
 
--- Test 3: Verify we can identify which URLs are main_image or original
+-- Test 3: Verify we can identify which URLs are original_image_url or contain 'original'
 BEGIN;
 
 DO $$
@@ -114,19 +114,19 @@ BEGIN
   SELECT * INTO project FROM public.projects 
   WHERE id = '10000000-0000-0000-0000-000000000001';
   
-  -- Check design_image
-  IF project.design_image = project.main_image OR project.design_image LIKE '%original%' THEN
+  -- Check selected_generation_url
+  IF project.selected_generation_url = project.original_image_url OR project.selected_generation_url LIKE '%original%' THEN
     should_skip_count := should_skip_count + 1;
-    RAISE NOTICE 'Would skip design_image: %', project.design_image;
+    RAISE NOTICE 'Would skip selected_generation_url: %', project.selected_generation_url;
   ELSE
     should_copy_count := should_copy_count + 1;
-    RAISE NOTICE 'Would copy design_image: %', project.design_image;
+    RAISE NOTICE 'Would copy selected_generation_url: %', project.selected_generation_url;
   END IF;
   
   -- Check generated_image_urls
   FOREACH url IN ARRAY project.generated_image_urls
   LOOP
-    IF url = project.main_image OR url LIKE '%original%' THEN
+    IF url = project.original_image_url OR url LIKE '%original%' THEN
       should_skip_count := should_skip_count + 1;
       RAISE NOTICE 'Would skip generated image: %', url;
     ELSE
