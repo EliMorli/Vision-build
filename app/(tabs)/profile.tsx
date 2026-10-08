@@ -32,7 +32,7 @@ export default function ProfileScreen() {
   const roomsCount = projects.length;
   const designsCount = projects.reduce((sum, p) => {
     const designUrls = p.generated_image_urls || [];
-    return sum + designUrls.length + (p.design_image ? 1 : 0);
+    return sum + designUrls.length + (p.selected_generation_url ? 1 : 0);
   }, 0);
   const quotesCount = 0; // TODO: Will come from contractor_threads in Pass B
 

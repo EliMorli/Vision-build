@@ -35,14 +35,7 @@ export default function DeleteAccountConfirm() {
 
   const validateToken = async () => {
     try {
-      const { data: result, error } = await supabase.functions.invoke("confirm-account-deletion", {
-        method: "GET",
-        body: null,
-        // Pass token as query param via the function URL
-      });
-
-      // Since we can't easily pass query params via supabase.functions.invoke,
-      // we'll use fetch directly
+      // Use fetch directly to pass token as query param
       const baseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL?.replace("/rest/v1", "") || "";
       const response = await fetch(
         `${baseUrl}/functions/v1/confirm-account-deletion?token=${encodeURIComponent(token as string)}`,
@@ -54,17 +47,17 @@ export default function DeleteAccountConfirm() {
         }
       );
 
-      const result = await response.json();
+      const validationResult = await response.json();
 
-      if (response.ok && result.valid) {
+      if (response.ok && validationResult.valid) {
         setState("valid");
-        setData({ email: result.email });
+        setData({ email: validationResult.email });
       } else {
         setState("error");
         setData({
-          error: result.error || "Invalid confirmation link",
-          expired: result.expired,
-          used: result.used,
+          error: validationResult.error || "Invalid confirmation link",
+          expired: validationResult.expired,
+          used: validationResult.used,
         });
       }
     } catch (error: any) {

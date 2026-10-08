@@ -105,7 +105,7 @@ async function captureSimple(page, name, expectedText) {
     await page.goto(`${BASE_URL}/profile-settings`);
     await page.waitForLoadState('networkidle');
     // Scroll to bottom to show Sign out
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.evaluate(() => window.scrollTo(0, globalThis.document.body.scrollHeight));
     await page.waitForTimeout(1000);
     screenshots.push(await captureWithViewportCheck(page, 'settings', 'text=Sign out', 'Sign out'));
     

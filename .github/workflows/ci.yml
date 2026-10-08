@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main, develop, cursor/** ]
+  push:
+    branches: [ main, develop, cursor/** ]
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: visionbuild_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run lint
+        run: npm run lint
+      
+      - name: Run TypeScript check
+        run: npx tsc --noEmit
+      
+      - name: Check Zod/Database models
+        run: npm run check:models
+      
+      - name: Setup database for tests
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: visionbuild_test
+        run: |
+          # Apply shim
+          psql -f scripts/db/shim.sql -q
+          
+          # Apply migrations
+          for migration in supabase/migrations/*.sql; do
+            echo "Applying $(basename $migration)..."
+            psql -f "$migration" -q -v ON_ERROR_STOP=1
+          done
+          
+          # Apply service_role grants
+          psql -f scripts/db/post-migration-grants.sql -q
+      
+      - name: Run SQL tests
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: visionbuild_test
+        run: |
+          for test_file in scripts/sql-tests/*.sql; do
+            echo "Running $(basename $test_file)..."
+            psql -f "$test_file" -v ON_ERROR_STOP=1
+          done
+      
+      - name: Run function tests
+        run: npm run fn:test
