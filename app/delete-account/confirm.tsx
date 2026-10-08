@@ -5,6 +5,7 @@
 import { useState, useEffect } from "react";
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, Platform } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import * as AppleAuthentication from "expo-apple-authentication";
 
 type PageState = "loading" | "valid" | "error" | "deleting" | "deleted";
 
@@ -90,12 +91,10 @@ export default function DeleteAccountConfirm() {
       // On web/Android, this will be skipped (logged on server)
       if (data.isAppleUser && Platform.OS === "ios") {
         try {
-          const AppleAuth = await import("expo-apple-authentication");
-          
-          const isAvailable = await AppleAuth.isAvailableAsync();
+          const isAvailable = await AppleAuthentication.isAvailableAsync();
           
           if (isAvailable) {
-            const credential = await AppleAuth.signInAsync({
+            const credential = await AppleAuthentication.signInAsync({
               requestedScopes: [],
             });
             appleAuthCode = credential.authorizationCode || undefined;
