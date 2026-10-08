@@ -19,7 +19,9 @@ export default function AIConsentScreen() {
   const userId = useAuthStore((s) => s.session?.user?.id);
   
   // Parse re-consent mode parameters
-  const reason = (params.reason as string | undefined) || undefined;
+  // expo-router params can be string | string[] | undefined
+  const reasonParam = params.reason;
+  const reason = Array.isArray(reasonParam) ? reasonParam[0] : reasonParam;
   const isOutdated = reason === "outdated";
   const isNever = reason === "never";
   const isReconsent = isOutdated || isNever;
@@ -27,7 +29,8 @@ export default function AIConsentScreen() {
   console.log("[AIConsentScreen] params:", params, "reason:", reason, "isReconsent:", isReconsent, "isOutdated:", isOutdated);
   
   // Parse resume data (encoded as JSON string)
-  const resumeData = params.resumeData as string | undefined;
+  const resumeDataParam = params.resumeData;
+  const resumeData = Array.isArray(resumeDataParam) ? resumeDataParam[0] : resumeDataParam;
   const parsedResumeData = resumeData ? JSON.parse(resumeData) : null;
 
   const handleAccept = async () => {
