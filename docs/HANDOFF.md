@@ -283,6 +283,85 @@ npm run fn:test       # 3/3 passing
 
 ---
 
+## 🔐 Image URLs and Privacy (Updated October 8, 2026)
+
+### Storage Architecture
+
+**Private Storage (room-photos bucket):**
+- All user-uploaded images and AI-generated designs live here
+- Only accessible by the owning user
+- Paths follow format: `<userId>/<projectId>/<filename>`
+
+**Public Storage (public-designs bucket):**
+- Only generated designs are copied here when a project is set to public
+- Original room photos are NEVER copied to public storage
+- Same path structure as private storage
+
+### Database Columns
+
+The `projects` table stores **storage paths**, never signed URLs:
+
+- `original_image_url`: Path to original room photo (e.g., `user-123/proj-456/original.jpg`)
+- `generated_image_urls`: Array of paths to generated designs (e.g., `["user-123/proj-456/design-0.png", ...]`)
+- `selected_generation_url`: Path to the user's selected design
+
+**Migration `00010_fix_signed_urls_to_paths.sql`** converts any existing signed URLs to paths.
+
+### Edge Functions
+
+**`get-project-images`** (NEW)
+- **Purpose**: Generate short-lived signed URLs for a user's own project images
+- **Auth**: Requires valid JWT and verifies project ownership
+- **Request**: `POST /get-project-images` with `{ "projectId": "..." }`
+- **Response**: 
+  ```json
+  {
+    "success": true,
+    "projectId": "proj-456",
+    "images": {
+      "original_image_url": "https://...?token=...&expires=3600",
+      "generated_image_urls": ["https://...?token=...&expires=3600", ...],
+      "selected_generation_url": "https://...?token=...&expires=3600"
+    },
+    "expiresIn": 3600
+  }
+  ```
+- **Expiry**: Signed URLs are valid for exactly **1 hour** (3600 seconds)
+- **Ownership**: Non-owners receive `403 Forbidden`
+
+**`generate-design`**
+- Now stores paths in the database, not signed URLs
+- Paths follow format: `<userId>/<projectId>/design-<n>.png`
+- Works with Replicate, OpenRouter, or mock mode
+
+**`set-project-visibility`**
+- Copies only generated designs to `public-designs`, never originals
+- Skips any path containing "original"
+- Normalizes signed URLs to paths before storage operations
+- Returns 500 on download/upload failures (fails loudly)
+
+### App Integration
+
+**For private projects:**
+1. Call `get-project-images` to get short-lived signed URLs
+2. Display images in the app
+3. Refresh URLs after 1 hour if needed
+
+**For public projects (Explore feed):**
+1. Read directly from `public-designs` bucket (public URLs)
+2. No authentication needed
+3. Original room photos never exposed
+
+### Privacy Guarantees
+
+✅ Signed URLs expire in 1 hour (not 1 year)  
+✅ Database never stores tokens or full URLs  
+✅ Original room photos never copied to public storage  
+✅ Ownership verified before generating signed URLs  
+✅ set-project-visibility filters out paths containing "original"  
+
+---
+
 ## 📝 Notes
 
 - All code changes follow existing patterns in the codebase
@@ -293,5 +372,6 @@ npm run fn:test       # 3/3 passing
 - Camera route exists and looks complete
 - uploadAndAnalyze() function is well-structured
 - **Tests are now running in CI and all passing**
+- **Image privacy bug fixed with comprehensive tests**
 
 The main gap is **wiring** - connecting existing pieces together and adding mock mode for local testing.
