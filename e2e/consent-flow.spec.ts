@@ -15,6 +15,9 @@ test.describe("VisionBuild AI Consent Flow", () => {
     await page.goto(BASE_URL);
     await page.waitForLoadState("networkidle");
 
+    // Wait for home screen to load
+    await expect(page.getByText("No projects yet")).toBeInViewport({ timeout: 10000 });
+
     // Start a project
     await page.getByRole("button", { name: /start your first project/i }).click();
 
@@ -68,6 +71,9 @@ test.describe("VisionBuild AI Consent Flow", () => {
     await page.goto(BASE_URL);
     await page.waitForLoadState("networkidle");
 
+    // Wait for home screen to load
+    await expect(page.getByText("No projects yet")).toBeInViewport({ timeout: 10000 });
+
     // Start a project
     await page.getByRole("button", { name: /start your first project/i }).click();
 
@@ -116,6 +122,9 @@ test.describe("VisionBuild AI Consent Flow", () => {
     await page.goto(BASE_URL);
     await page.waitForLoadState("networkidle");
 
+    // Wait for home screen to load
+    await expect(page.getByText("No projects yet")).toBeInViewport({ timeout: 10000 });
+
     // Start a project
     await page.getByRole("button", { name: /start your first project/i }).click();
 
@@ -157,6 +166,9 @@ test.describe("VisionBuild AI Consent Flow", () => {
 
     await page.goto(BASE_URL);
     await page.waitForLoadState("networkidle");
+
+    // Wait for home screen to load
+    await expect(page.getByText("No projects yet")).toBeInViewport({ timeout: 10000 });
 
     // Start a project
     await page.getByRole("button", { name: /start your first project/i }).click();
