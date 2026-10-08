@@ -394,7 +394,35 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       .eq("user_id", userId)
       .order("updated_at", { ascending: false });
 
-    if (data) set({ projects: data });
+    if (data) {
+      set({ projects: data });
+      
+      // Cache projects for offline use
+      const { setOfflineCacheData, cacheImageFile } = await import("./offline-cache");
+      await setOfflineCacheData(userId, "projects", data).catch(() => {
+        // Silently fail offline cache
+      });
+      
+      // Cache project images in background
+      for (const project of data) {
+        if (project.original_image_url) {
+          const fileName = `project_${project.id}_original.jpg`;
+          cacheImageFile(userId, fileName, project.original_image_url).catch(() => {
+            // Silently fail individual image cache
+          });
+        }
+        if (project.selected_generation_url) {
+          const fileName = `project_${project.id}_selected.jpg`;
+          cacheImageFile(userId, fileName, project.selected_generation_url).catch(() => {});
+        }
+        if (project.generated_image_urls && Array.isArray(project.generated_image_urls)) {
+          project.generated_image_urls.forEach((url, idx) => {
+            const fileName = `project_${project.id}_gen_${idx}.jpg`;
+            cacheImageFile(userId, fileName, url).catch(() => {});
+          });
+        }
+      }
+    }
   },
 
   setCurrentProject: (project) => set({ currentProject: project }),
