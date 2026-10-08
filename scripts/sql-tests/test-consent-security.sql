@@ -7,11 +7,11 @@
 BEGIN;
 SET LOCAL ROLE service_role;
 
--- Create auth users (minimal required fields)
-INSERT INTO auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data)
+-- Create auth users (minimal required fields for shim)
+INSERT INTO auth.users (id, email, encrypted_password, created_at, updated_at)
 VALUES 
-  ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'user1@example.com', 'unused', now(), now(), now(), '{}', '{}'),
-  ('00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'user2@example.com', 'unused', now(), now(), now(), '{}', '{}')
+  ('00000000-0000-0000-0000-000000000001', 'user1@example.com', 'unused', now(), now()),
+  ('00000000-0000-0000-0000-000000000002', 'user2@example.com', 'unused', now(), now())
 ON CONFLICT (id) DO NOTHING;
 
 -- Create profiles
