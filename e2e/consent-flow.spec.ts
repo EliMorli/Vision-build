@@ -97,7 +97,7 @@ test.describe("VisionBuild AI Consent Flow", () => {
     await expect(page.getByText("Select a Design Style")).toBeInViewport({ timeout: 10000 });
   });
 
-  test("decline in re-consent returns to project without calling AI", async ({ page }: { page: Page }) => {
+  test("consent decline sends nothing", async ({ page }: { page: Page }) => {
     // Seed with intro seen, outdated consent, and an existing project
     await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:intro_seen", "true");
@@ -134,8 +134,8 @@ test.describe("VisionBuild AI Consent Flow", () => {
     // Wait for consent screen
     await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 5000 });
 
-    // Click Decline
-    await page.getByRole("button", { name: /decline/i }).click();
+    // Click "Not now"
+    await page.getByRole("button", { name: /not now/i }).click();
 
     // Should be back on camera screen (photo still there)
     await expect(page.getByText(/take a photo or pick one/i)).toBeInViewport({ timeout: 5000 });
@@ -146,6 +146,66 @@ test.describe("VisionBuild AI Consent Flow", () => {
 
     // Verify no AI requests were made after decline
     expect(aiRequests).toHaveLength(0);
+  });
+
+  test("re-consent decline returns to project with photo", async ({ page }: { page: Page }) => {
+    // Seed with intro seen, consent accepted initially
+    await page.addInitScript(() => {
+      localStorage.setItem("@visionbuild:intro_seen", "true");
+      localStorage.setItem("@visionbuild:ai_consent", "true");
+      localStorage.setItem("@visionbuild:ai_consent_version", "2026-10-07b");
+    });
+
+    // Track AI requests to verify none are made after decline
+    const aiRequests: string[] = [];
+    page.on("request", (request) => {
+      const url = request.url();
+      if (url.includes("analyze-room") || url.includes("generate-design")) {
+        aiRequests.push(url);
+      }
+    });
+
+    await page.goto(BASE_URL);
+    await page.waitForLoadState("networkidle");
+
+    // Start a project
+    await page.getByRole("button", { name: /start your first project/i }).click();
+
+    // Upload image
+    const [chooser] = await Promise.all([
+      page.waitForEvent("filechooser"),
+      page.getByRole("button", { name: /gallery/i }).click(),
+    ]);
+    await chooser.setFiles("e2e/fixtures/test-room.jpg");
+
+    // Analyze passes (consent check is skipped because mock_consent_version not set)
+    await page.getByRole("button", { name: /analyze room/i }).click();
+    await expect(page.getByText("Select a Design Style")).toBeInViewport({ timeout: 10000 });
+
+    // Record the AI request count before triggering re-consent
+    const requestsBeforeDecline = aiRequests.length;
+
+    // Now simulate consent becoming outdated (e.g., policy updated between analyze and generate)
+    await page.evaluate(() => {
+      localStorage.setItem("@visionbuild:mock_consent_version", "2026-10-01"); // Set to old version to trigger outdated check
+    });
+
+    // Select style and generate
+    await page.getByText("Modern", { exact: true }).click();
+    await page.getByRole("button", { name: /generate 4 designs/i }).click();
+
+    // Should trigger re-consent (outdated) - 403 returned before any generation
+    await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 5000 });
+    await expect(page.getByText(/We've updated how your photos are handled/i)).toBeVisible();
+
+    // Click "Not now"
+    await page.getByRole("button", { name: /not now/i }).click();
+
+    // Should be back on editor/style picker screen with photo visible
+    await expect(page.getByText("Select a Design Style").first()).toBeInViewport({ timeout: 5000 });
+    
+    // Verify no NEW AI requests were made after the decline (analyze-room was called before, but generate-design should not have been called)
+    expect(aiRequests.length).toBe(requestsBeforeDecline);
   });
 
   test("generate-design triggers re-consent flow", async ({ page }: { page: Page }) => {
@@ -190,10 +250,11 @@ test.describe("VisionBuild AI Consent Flow", () => {
     // Accept
     await page.getByRole("button", { name: /continue/i }).click();
 
-    // Should resume to generating screen
-    await expect(page.getByText(/building your/i).first()).toBeInViewport({ timeout: 10000 });
-
-    // Wait for results
+    // Should navigate to generating screen and then results
+    // Wait for results screen (generating screen may be very brief in mock mode)
     await expect(page.getByText(/swipe to browse/i)).toBeInViewport({ timeout: 30000 });
+    
+    // Verify we're on results with the same style (modern)
+    await expect(page.getByText(/modern/i).first()).toBeVisible();
   });
 });

@@ -421,8 +421,8 @@ All AI operations (`analyze-room`, `generate-design`, `assistant-chat`) enforce 
 - Reads `pendingConsent` from store (not URL params)
 - `reason=outdated`: Shows update notice "We've updated how your photos are handled. Please review before your next design."
 - `reason=never`: Normal consent screen, no update notice
-- On accept: Writes consent to DB, then directly calls uploadAndAnalyze/generateDesigns with saved context, clears pending consent
-- On decline: Clears pending consent, returns to project/camera with photo preserved, no AI call made
+- "Continue" button: Writes consent to DB, then directly calls uploadAndAnalyze/generateDesigns with saved context (same project, photo, style), clears pending consent
+- "Not now" button: Always visible (both first-time and re-consent), clears pending consent, returns to project/camera with photo preserved, no AI call made
 
 **Mock Mode:**
 - Set `@visionbuild:mock_consent_version` to simulate consent states:
@@ -445,23 +445,33 @@ All AI operations (`analyze-room`, `generate-design`, `assistant-chat`) enforce 
 **E2E Tests (Playwright):**
 - `e2e/consent-flow.spec.ts`
 - Tests:
-  1. Outdated consent → re-consent screen with update notice → accept → resumes with same photo/style
-  2. Never consent → normal consent screen (no update notice)
-  3. Decline → back to camera with photo, no AI request made
-  4. Generate-design triggers re-consent when consent becomes outdated mid-flow
+  1. Outdated consent → re-consent screen with update notice → accept → resumes with same photo/style, lands on Results
+  2. Never consent → normal consent screen (no update notice) → accept → resumes to style picker
+  3. Consent decline sends nothing → "Not now" → back to camera with photo, zero AI requests
+  4. Re-consent decline → generate triggers 403 → "Not now" → back to editor with style, zero new AI requests
+  5. Generate-design triggers re-consent → consent becomes outdated mid-flow → accept → resumes and completes
 
 **Screenshots:**
-- `e2e/screens/a7-reconsent-outdated.png` - Re-consent screen with update notice
-- `e2e/screens/a7-reconsent-never.png` - Normal consent screen (first-time)
-- `e2e/screens/a7-reconsent-declined-project.png` - Camera screen after decline, photo preserved
+- `e2e/screens/a7-reconsent-outdated.png` - Consent screen with blue info banner showing update notice
+- `e2e/screens/a7-reconsent-never.png` - Clean consent screen without update notice, standard privacy icons
+- `e2e/screens/a7-reconsent-declined-project.png` - Camera screen with test photo preserved after "Not now"
 
 ### Commits (Agent A7 - Server Enforcement)
 1. `33892ab` - feat: enforce AI consent on server
 2. `5d31cb5` - feat: handle consent_required errors in app
 
-### Commits (Agent A8 - Store-Based Flow)
+### Commits (Agent A8 - Store-Based Flow & "Not now" Button)
 1. `68b030d` - fix: use Zustand store for consent state instead of URL params
 2. `a464bfa` - fix: make PrivateImage retry test robust with explicit waits
 3. `1470b0f` - fix: remove fixed sleep from consent flow test
 4. `2a2f007` - fix: properly resume AI operations after consent acceptance
+5. `4357e22` - docs: update HANDOFF.md with store-based consent flow
+6. `f039bf9` - fix: distinguish between never and outdated in client consent check
+7. `16ff65a` - fix: resolve strict mode violation in generate-design test
+8. `938a8ab` - fix: use router.push instead of replace for generate resume flow
+9. `2889170` - test: skip generate-design re-consent test temporarily (REVERTED)
+10. `799edba` - feat: add 'Not now' button to consent screen for both cases
+11. `883f0bd` - fix: update create-loop test to use 'Not now' button
+12. `9c08d84` - fix: unskip and fix generate-design re-consent test, add re-consent decline test
+13. `9b9323b` - test: add e2e screenshots for AI consent flows
 
