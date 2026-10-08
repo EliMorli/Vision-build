@@ -23,3 +23,6 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.profiles TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.projects TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.xp_events TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.outreach_log TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.pro_waitlist TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.blocks TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_settings TO authenticated;

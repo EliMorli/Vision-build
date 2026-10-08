@@ -9,11 +9,12 @@ import {
   SafeAreaView,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore, useAuthStore } from "@/lib/store";
 import { Project, ProjectStatus } from "@/lib/types";
-import { Button, EmptyState, IsoRoom, PrivateImage } from "@/components";
+import { Button, EmptyState, IsoRoom, PrivateImage, ProsTeaserCard } from "@/components";
 
 // Long-running threshold for showing "Rendering..." card in Home
 const LONG_RUNNING_THRESHOLD_MS = 45000; // 45 seconds
@@ -32,6 +33,7 @@ export default function DashboardScreen() {
   const { projects, fetchProjects, generatingStartTime } = useProjectStore();
   const profile = useAuthStore((s) => s.profile);
   const [showRenderingCard, setShowRenderingCard] = useState(false);
+  const [prosCardKey, setProsCardKey] = useState(0);
 
   // NOTE: AI consent is now enforced server-side in analyze-room, generate-design, and assistant-chat
   // Removed client-side useAIConsentCheck() - consent errors trigger re-consent flow with resume capability
@@ -44,6 +46,12 @@ export default function DashboardScreen() {
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
+
+  useFocusEffect(
+    useCallback(() => {
+      setProsCardKey(k => k + 1);
+    }, [])
+  );
 
   // Only show "Rendering..." card if generation has been running > 45 seconds
   useEffect(() => {
@@ -93,22 +101,39 @@ export default function DashboardScreen() {
             </View>
           </Pressable>
         </View>
-        <EmptyState
-          icon="home-outline"
-          title="No projects yet"
-          subtitle="Take a photo of any room to start visualizing your renovation."
-        >
-          <Button
-            label="Start Your First Project"
-            icon="add-circle-outline"
-            onPress={() => router.push("/(tabs)/camera")}
-          />
-        </EmptyState>
+        <View style={styles.emptyContent}>
+          <ProsTeaserCard key={prosCardKey} />
+          
+          <EmptyState
+            icon="home-outline"
+            title="No projects yet"
+            subtitle="Take a photo of any room to start visualizing your renovation."
+          >
+            <Button
+              label="Start Your First Project"
+              icon="add-circle-outline"
+              onPress={() => router.push("/(tabs)/camera")}
+            />
+          </EmptyState>
+        </View>
       </SafeAreaView>
     );
   }
 
   // ─── Project list ─────────────────────────────────────────
+
+  const renderHeader = () => (
+    <View style={styles.headerSection}>
+      <Button
+        label="Start a new room"
+        icon="add-circle-outline"
+        onPress={() => router.push("/(tabs)/camera")}
+        fullWidth
+      />
+      
+      <ProsTeaserCard key={prosCardKey} />
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -128,6 +153,7 @@ export default function DashboardScreen() {
       <FlatList
         data={projects}
         keyExtractor={(p) => p.id}
+        ListHeaderComponent={renderHeader}
         contentContainerStyle={styles.list}
         refreshControl={
           <RefreshControl refreshing={false} onRefresh={onRefresh} tintColor={colors.primary} />
@@ -225,6 +251,10 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: colors.textPrimary,
   },
+  headerSection: {
+    gap: spacing.md,
+    paddingTop: spacing.md,
+  },
   list: { padding: spacing.md, paddingTop: 0 },
   card: {
     backgroundColor: "#fff",
@@ -282,4 +312,9 @@ const styles = StyleSheet.create({
   cardBody: { padding: spacing.md, gap: 4 },
   cardTitle: { ...fonts.title, fontSize: 17 },
   cardSub: { ...fonts.regular, lineHeight: 20 },
+  emptyContent: {
+    flex: 1,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+  },
 });

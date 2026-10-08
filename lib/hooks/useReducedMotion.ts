@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { AccessibilityInfo } from "react-native";
-import { usePrivacyStore } from "@/lib/store";
+import { useSettingsStore } from "@/lib/store";
 
 export function useReducedMotion(): boolean {
-  const reduceMotionSetting = usePrivacyStore((s) => s.reduceMotion);
+  const reduceMotionSetting = useSettingsStore((s) => s.reduceMotion);
   const [osReduceMotion, setOsReduceMotion] = useState(false);
 
   useEffect(() => {

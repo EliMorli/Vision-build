@@ -17,6 +17,15 @@ export default function Index() {
   const [introSeen, setIntroSeen] = useState<boolean | null>(null);
 
   useEffect(() => {
+    const checkIntroSeen = async () => {
+      try {
+        const seen = await AsyncStorage.getItem(INTRO_SEEN_KEY);
+        setIntroSeen(seen === "true");
+      } catch {
+        setIntroSeen(false);
+      }
+    };
+    
     checkIntroSeen();
   }, []);
   
@@ -41,15 +50,6 @@ export default function Index() {
       } as any);
     }
   }, [session, setSession]);
-
-  const checkIntroSeen = async () => {
-    try {
-      const seen = await AsyncStorage.getItem(INTRO_SEEN_KEY);
-      setIntroSeen(seen === "true");
-    } catch {
-      setIntroSeen(false);
-    }
-  };
 
   if (loading || introSeen === null) {
     return (

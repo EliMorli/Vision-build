@@ -9,3 +9,4 @@ export { MakePublicSheet } from "./MakePublicSheet";
 export { IsoRoom, PALETTES } from "./IsoRoom";
 export type { RoomPalette } from "./IsoRoom";
 export { PrivateImage } from "./PrivateImage";
+export { ProsTeaserCard } from "./ProsTeaserCard";

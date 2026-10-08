@@ -6,6 +6,13 @@
  * - Real Supabase implementation for production
  */
 
+export interface UserSettings {
+  pushNotifications: boolean;
+  marketingEmails: boolean;
+  publicProjectsDefault: boolean;
+  reduceMotion: boolean;
+}
+
 export interface DataLayer {
   /**
    * Get a signed URL for a private storage path
@@ -35,6 +42,20 @@ export interface DataLayer {
     stylePrompt: string,
     roomAnalysis: string
   ): Promise<string[]>;
+
+  /**
+   * Get user settings
+   * @param userId - User ID
+   * @returns User settings or null if not found
+   */
+  getUserSettings(userId: string): Promise<UserSettings | null>;
+
+  /**
+   * Save user settings
+   * @param userId - User ID
+   * @param settings - Settings to save
+   */
+  saveUserSettings(userId: string, settings: UserSettings): Promise<void>;
 }
 
 /**

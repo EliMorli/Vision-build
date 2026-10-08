@@ -103,7 +103,7 @@ export async function deleteUserData(params: DeleteUserDataParams): Promise<Dele
 
   // ─── Delete storage objects ────────────────────────────
   // All storage buckets in the system (from migrations)
-  const buckets = ['room-photos', 'public-designs'];
+  const buckets = ['room-photos', 'public-designs', 'profile-photos'];
   
   try {
     for (const bucketId of buckets) {
@@ -148,6 +148,8 @@ export async function deleteUserData(params: DeleteUserDataParams): Promise<Dele
     { table: "reports", column: "user_id" },
     { table: "consents", column: "user_id" },
     { table: "usage_events", column: "user_id" },
+    { table: "pro_waitlist", column: "user_id" },
+    { table: "user_settings", column: "user_id" },
     { table: "projects", column: "user_id" },
     { table: "profiles", column: "id" },
   ];
@@ -163,6 +165,30 @@ export async function deleteUserData(params: DeleteUserDataParams): Promise<Dele
       };
     }
   }
+
+  // Delete blocks where user is blocker
+  const { error: blockerError } = await supabase.from("blocks").delete().eq("blocker_id", userId);
+  if (blockerError) {
+    console.error(`Database deletion failed for user ${userId} in table blocks (blocker): ${blockerError.message}`);
+    return {
+      success: false,
+      stage: 'database',
+      error: `database:blocks`
+    };
+  }
+
+  // Delete blocks where user is blocked
+  const { error: blockedError } = await supabase.from("blocks").delete().eq("blocked_id", userId);
+  if (blockedError) {
+    console.error(`Database deletion failed for user ${userId} in table blocks (blocked): ${blockedError.message}`);
+    return {
+      success: false,
+      stage: 'database',
+      error: `database:blocks`
+    };
+  }
+
+  // Note: moderation_log.admin_id is set null automatically via FK constraint (on delete set null)
 
   // ─── Revoke Apple Sign-In token (if applicable) ────────
   // IMPORTANT: Apple revocation NEVER blocks deletion. The account is deleted regardless.

@@ -14,6 +14,7 @@ interface ButtonProps {
   disabled?: boolean;
   fullWidth?: boolean;
   style?: ViewStyle;
+  testID?: string;
 }
 
 export function Button({
@@ -25,6 +26,7 @@ export function Button({
   disabled = false,
   fullWidth = true,
   style,
+  testID,
 }: ButtonProps) {
   const isDisabled = disabled || loading;
   const bg = VARIANT_STYLES[variant];
@@ -45,6 +47,7 @@ export function Button({
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled: isDisabled, busy: loading }}
+      testID={testID}
     >
       {loading ? (
         <ActivityIndicator size="small" color={bg.textColor} />

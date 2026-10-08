@@ -16,7 +16,7 @@ const FAQ_ITEMS = [
   {
     question: "How does VisionBuild work?",
     answer:
-      "Upload a photo of your room, choose a style, and our AI generates design visualizations. Then connect with local contractors to bring your vision to life.",
+      "Upload a photo of your room, choose a style, and our AI generates design visualizations. Save your favorites and plan your renovation. Local pro connections coming soon.",
   },
   {
     question: "Is my data secure?",
@@ -24,9 +24,9 @@ const FAQ_ITEMS = [
       "Yes! Your photos and chats are sent through OpenRouter only to AI providers that don't keep or train on your data. We never share your personal information without your explicit permission.",
   },
   {
-    question: "How do I contact a contractor?",
+    question: "When will pros be available?",
     answer:
-      "After generating designs, tap 'Find Me a Pro' to match with local contractors. You control what information is shared at each step.",
+      "We're building connections with local pros now. Join the waitlist from the Home screen to be notified when they're ready in your area.",
   },
 ];
 
