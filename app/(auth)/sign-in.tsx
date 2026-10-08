@@ -130,11 +130,7 @@ export default function SignInScreen() {
           loading={loading}
           variant="primary"
           disabled={!ageConfirmed}
-          style={[
-            styles.appleButton,
-            !ageConfirmed && styles.appleButtonDisabled
-          ]}
-          labelStyle={{ color: "#fff" }}
+          style={ageConfirmed ? styles.appleButton : styles.appleButtonDisabled}
         />
         {error && <Text style={styles.errorText}>{error}</Text>}
       </View>

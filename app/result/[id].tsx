@@ -162,7 +162,7 @@ export default function ResultScreen() {
                 </View>
               ) : (
                 <View style={styles.placeholderCard}>
-                  <IsoRoom style={style as any} width={CARD_WIDTH} height={CARD_WIDTH} />
+                  <IsoRoom palette={style as any} size={CARD_WIDTH} />
                   <View style={styles.optionLabel}>
                     <Text style={styles.optionText}>Option {index + 1}</Text>
                   </View>

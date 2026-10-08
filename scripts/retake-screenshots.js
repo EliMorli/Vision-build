@@ -76,6 +76,7 @@ async function captureScreen(page, name, expectedText, options = {}) {
   
   // Set intro as seen so we skip onboarding
   await context.addInitScript(() => {
+    // eslint-disable-next-line no-undef
     localStorage.setItem('@visionbuild:intro_seen', 'true');
   });
   

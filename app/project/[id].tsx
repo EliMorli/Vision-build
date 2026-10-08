@@ -202,7 +202,7 @@ export default function ProjectDetailScreen() {
                 onPress={() => router.push(`/result/${id}`)}
               >
                 <View style={styles.designImage}>
-                  <IsoRoom style={design.style as any} width={180} height={180} />
+                  <IsoRoom palette={design.style as any} size={180} />
                 </View>
                 {design.isFavorite && (
                   <View style={styles.favoritebadge}>
