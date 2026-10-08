@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { IsoRoom } from "./IsoRoom";
@@ -45,10 +46,11 @@ export function ProsTeaserCard() {
     }
   }, []);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void checkWaitlistStatus();
-  }, [checkWaitlistStatus]);
+  useFocusEffect(
+    useCallback(() => {
+      void checkWaitlistStatus();
+    }, [checkWaitlistStatus])
+  );
 
   const handleJoinWaitlist = async () => {
     if (isOnWaitlist) return;
