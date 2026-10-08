@@ -29,13 +29,101 @@ export default function ProfileSettingsScreen() {
     updateSetting,
   } = useSettingsStore();
 
+  const [prosWaitlist, setProsWaitlist] = useState(false);
+  const [checkingWaitlist, setCheckingWaitlist] = useState(true);
+
   useEffect(() => {
     const load = async () => {
       await loadPrivacySettings();
       await loadSettings();
+      await checkProsWaitlist();
     };
     load();
   }, [loadPrivacySettings, loadSettings]);
+
+  const checkProsWaitlist = async () => {
+    const userId = useAuthStore.getState().session?.user?.id;
+    
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      const stored = localStorage.getItem("@visionbuild:waitlist:general");
+      setProsWaitlist(stored === "true");
+      setCheckingWaitlist(false);
+      return;
+    }
+
+    if (!userId) {
+      setCheckingWaitlist(false);
+      return;
+    }
+
+    try {
+      const { data } = await (supabase
+        .from("pro_waitlist") as any)
+        .select("id")
+        .eq("user_id", userId)
+        .is("project_id", null)
+        .single();
+
+      setProsWaitlist(!!data);
+    } catch (err) {
+      console.error("Error checking pros waitlist:", err);
+    } finally {
+      setCheckingWaitlist(false);
+    }
+  };
+
+  const handleProsWaitlist = async (enabled: boolean) => {
+    const userId = useAuthStore.getState().session?.user?.id;
+    const email = profile?.email || "";
+
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      if (enabled) {
+        localStorage.setItem("@visionbuild:waitlist:general", "true");
+      } else {
+        // Delete all entries in mock mode
+        localStorage.removeItem("@visionbuild:waitlist:general");
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+          if (key.startsWith("@visionbuild:waitlist:") && key !== "@visionbuild:waitlist:general") {
+            localStorage.removeItem(key);
+          }
+        });
+      }
+      setProsWaitlist(enabled);
+      return;
+    }
+
+    if (!userId) return;
+
+    try {
+      if (enabled) {
+        // Join general waitlist
+        const { error } = await (supabase
+          .from("pro_waitlist") as any)
+          .insert({
+            user_id: userId,
+            project_id: null,
+            email,
+          });
+
+        if (!error) {
+          setProsWaitlist(true);
+        }
+      } else {
+        // Delete ALL user's waitlist entries
+        const { error } = await (supabase
+          .from("pro_waitlist") as any)
+          .delete()
+          .eq("user_id", userId);
+
+        if (!error) {
+          setProsWaitlist(false);
+        }
+      }
+    } catch (err) {
+      console.error("Error updating pros waitlist:", err);
+    }
+  };
 
   const handleDeleteAccount = () => {
     Alert.alert(
@@ -147,6 +235,32 @@ export default function ProfileSettingsScreen() {
                 <View style={[
                   styles.switchThumb,
                   marketingEmails && styles.switchThumbOn,
+                ]} />
+              </View>
+            </Pressable>
+
+            <View style={styles.separator} />
+
+            <Pressable
+              style={styles.settingRow}
+              onPress={() => handleProsWaitlist(!prosWaitlist)}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: prosWaitlist }}
+              disabled={checkingWaitlist}
+            >
+              <View style={styles.settingInfo}>
+                <Text style={styles.settingLabel}>Pros Waitlist</Text>
+                <Text style={styles.settingDescription}>
+                  Get notified when local pros can quote your projects
+                </Text>
+              </View>
+              <View style={[
+                styles.switch,
+                prosWaitlist && styles.switchOn,
+              ]}>
+                <View style={[
+                  styles.switchThumb,
+                  prosWaitlist && styles.switchThumbOn,
                 ]} />
               </View>
             </Pressable>

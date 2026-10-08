@@ -287,3 +287,125 @@ EXPO_PUBLIC_DEV_MOCK_SESSION=true
 ### Server (Supabase Secrets)
 
 See Edge Function Secrets section above. All server secrets are set via `supabase secrets set` and never exposed to the client.
+
+## 🚀 Pre-Launch Plug-In Checklist
+
+Before deploying to production, fill in all required configuration. Run `npm run doctor` to validate.
+
+### 1. Business Configuration
+
+Edit `lib/config/business.ts` and `supabase/functions/_shared/business.ts`:
+
+- [ ] `LEGAL_NAME` - Your legal business name (e.g., "VisionBuild Inc.")
+- [ ] `ENTITY_TYPE` - Entity type (e.g., "Delaware C Corporation")
+- [ ] `MAILING_ADDRESS` - Complete mailing address (street, city, state, ZIP)
+- [ ] `SUPPORT_EMAIL` - Support email address
+- [ ] `WEBSITE_DOMAIN` - Your website domain (e.g., "visionbuild.com")
+- [ ] `EMAIL_FROM_NAME` - Display name for outgoing emails
+- [ ] `EMAIL_REPLY_TO` - Reply-to email address
+
+### 2. Environment Variables (.env)
+
+Required:
+
+- [ ] `EXPO_PUBLIC_SUPABASE_URL` - Your Supabase project URL
+- [ ] `EXPO_PUBLIC_SUPABASE_ANON_KEY` - Supabase anon key
+- [ ] `EXPO_PUBLIC_SUPPORT_EMAIL` - Support email (same as business config)
+
+Optional:
+
+- [ ] `GOOGLE_CLIENT_ID` - Google OAuth client ID
+- [ ] `APPLE_CLIENT_ID` - Apple Sign-In client ID
+
+### 3. Supabase Secrets
+
+Required (set via `npx supabase secrets set KEY=value`):
+
+- [ ] `AI_API_KEY` - OpenRouter API key
+- [ ] `RESEND_API_KEY` - Resend API key for emails
+- [ ] `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key (for edge functions)
+
+Optional:
+
+- [ ] `ADMIN_EMAILS` - Comma-separated admin emails (for moderation access)
+
+### 4. Storage Buckets
+
+Ensure these buckets exist in Supabase Storage:
+
+- [ ] `room-photos` (private) - User-uploaded room photos and generated designs
+- [ ] `profile-photos` (private) - User profile avatars
+- [ ] `public-designs` (public) - Public project designs for Explore feed
+
+### 5. Database Migrations
+
+Run all migrations:
+
+```bash
+npx supabase db push
+```
+
+Verify tables exist:
+- profiles, projects, contractors, user_settings, pro_waitlist
+- user_consents, reports, blocks, moderation_log
+- xp_events, account_deletion_requests
+
+### 6. Legal Pages
+
+Update content in:
+
+- [ ] `content/legal/terms-of-service.md` - Remove DRAFT marker, add your terms
+- [ ] `content/legal/privacy-policy.md` - Update with your company details
+
+### 7. App Store Submissions
+
+Use `docs/STORE_PRIVACY.md` to fill out:
+
+- [ ] Apple App Privacy questionnaire
+- [ ] Google Play Data Safety form
+
+### 8. Validate Configuration
+
+Run the doctor script to check everything:
+
+```bash
+npm run doctor
+```
+
+It will:
+- ✅ Check all required environment variables
+- ✅ Check all business config fields
+- ✅ Warn about missing optional config
+- ❌ Exit with error in production mode if anything is missing
+
+### 9. Testing
+
+Run all test suites:
+
+```bash
+npm run lint          # ESLint checks
+npx tsc --noEmit      # TypeScript checks
+npm run check:models  # Zod model validation
+npm run db:test       # SQL migration tests
+npm run fn:test       # Edge function tests
+npm run e2e:web       # End-to-end tests
+```
+
+### 10. Deploy
+
+Once all checks pass:
+
+1. Commit and push your changes
+2. Deploy edge functions: `npx supabase functions deploy`
+3. Build and submit your app to app stores
+4. Monitor edge function logs: `npx supabase functions logs`
+
+---
+
+## 📝 Notes
+
+- **Mock Mode**: Set `EXPO_PUBLIC_DEV_MOCK_SESSION=true` in .env for local development without backend
+- **Contractor Waitlist**: "Find me a pro" currently shows a coming-soon screen and collects waitlist signups
+- **Moderation**: Admin access is controlled by `ADMIN_EMAILS` environment variable
+- **Privacy**: We don't use analytics, tracking, or advertising SDKs. See `docs/STORE_PRIVACY.md` for details.
+

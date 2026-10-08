@@ -8,6 +8,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "eslint .",
+    "doctor": "tsx scripts/doctor.ts",
     "supabase:types": "npx supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > lib/database.types.ts",
     "check:models": "node scripts/check-zdr-models.mjs",
     "db:test": "bash scripts/db/run-tests.sh",

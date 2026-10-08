@@ -6,11 +6,11 @@
 create table public.pro_waitlist (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid references public.profiles(id) on delete cascade not null,
-  project_id uuid references public.projects(id) on delete cascade not null,
+  project_id uuid references public.projects(id) on delete cascade,
   email text not null,
   created_at timestamptz not null default now(),
   
-  -- One entry per user per project
+  -- One entry per user per project (including null project for general waitlist)
   unique(user_id, project_id)
 );
 

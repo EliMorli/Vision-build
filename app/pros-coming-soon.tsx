@@ -145,12 +145,38 @@ export default function ProsComingSoonScreen() {
 
         {/* Content */}
         <View style={styles.content}>
+          <View style={styles.comingSoonTag}>
+            <Text style={styles.comingSoonTagText}>Coming soon</Text>
+          </View>
+
           <Text style={styles.title}>Local pros are coming soon</Text>
           <Text style={styles.description}>
-            Tap Notify me and we'll email you when pros near you can quote this project.
+            Soon we'll send your design to pros near you and bring any quotes they send to your Inbox.
           </Text>
 
-          {/* Notify Me Button or On List State */}
+          {/* Steps Card */}
+          <View style={styles.stepsCard}>
+            <View style={styles.step}>
+              <View style={styles.stepNumber}>
+                <Text style={styles.stepNumberText}>1</Text>
+              </View>
+              <Text style={styles.stepText}>We write a brief from your design</Text>
+            </View>
+            <View style={styles.step}>
+              <View style={styles.stepNumber}>
+                <Text style={styles.stepNumberText}>2</Text>
+              </View>
+              <Text style={styles.stepText}>We reach out to local pros for you</Text>
+            </View>
+            <View style={styles.step}>
+              <View style={styles.stepNumber}>
+                <Text style={styles.stepNumberText}>3</Text>
+              </View>
+              <Text style={styles.stepText}>Quotes land in your Inbox when pros reply</Text>
+            </View>
+          </View>
+
+          {/* Join Waitlist Button or On List State */}
           {checking ? (
             <View style={styles.buttonContainer}>
               <Button
@@ -165,11 +191,14 @@ export default function ProsComingSoonScreen() {
                 <Ionicons name="checkmark" size={32} color="#fff" />
               </View>
               <Text style={styles.onListText}>You're on the list</Text>
+              <Text style={styles.onListSubtext}>
+                We'll email you when pros near you can quote this project.
+              </Text>
             </View>
           ) : (
             <View style={styles.buttonContainer}>
               <Button
-                label="Notify me"
+                label="Join the waitlist"
                 icon="notifications-outline"
                 onPress={handleNotifyMe}
                 loading={loading}
@@ -221,6 +250,20 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
     alignItems: "center",
   },
+  comingSoonTag: {
+    backgroundColor: "#FFFBEA",
+    borderRadius: radius.sm,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginBottom: spacing.md,
+  },
+  comingSoonTagText: {
+    color: "#F59E0B",
+    fontSize: 12,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
   title: {
     ...fonts.heading,
     fontSize: 26,
@@ -234,8 +277,42 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     textAlign: "center",
     color: colors.textSecondary,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
     paddingHorizontal: spacing.md,
+  },
+  stepsCard: {
+    width: "100%",
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
+    gap: spacing.md,
+  },
+  step: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+  },
+  stepNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.success,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  stepNumberText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  stepText: {
+    flex: 1,
+    ...fonts.body,
+    fontSize: 15,
+    lineHeight: 22,
+    color: colors.textPrimary,
+    paddingTop: 4,
   },
   buttonContainer: {
     width: "100%",
@@ -265,6 +342,14 @@ const styles = StyleSheet.create({
     ...fonts.heading,
     fontSize: 20,
     color: colors.success,
+    marginBottom: spacing.xs,
+  },
+  onListSubtext: {
+    ...fonts.regular,
+    fontSize: 14,
+    textAlign: "center",
+    color: colors.textSecondary,
+    paddingHorizontal: spacing.lg,
   },
   backLink: {
     paddingVertical: spacing.sm,
