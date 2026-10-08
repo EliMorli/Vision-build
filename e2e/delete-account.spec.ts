@@ -16,6 +16,12 @@ test.describe("Delete Account Flow", () => {
         xp: 0,
         level: 1
       }));
+      localStorage.setItem("@visionbuild:user_settings:mock-user", JSON.stringify({
+        push_notifications: true,
+        marketing_emails: false,
+        public_projects_default: false,
+        reduce_motion: true
+      }));
     });
 
     await page.goto(BASE_URL);

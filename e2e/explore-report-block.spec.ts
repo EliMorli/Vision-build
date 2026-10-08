@@ -18,6 +18,12 @@ test.describe("VisionBuild Explore Report and Block", () => {
           xp: 0,
           level: 1
         }));
+        localStorage.setItem("@visionbuild:user_settings:mock-user", JSON.stringify({
+          push_notifications: true,
+          marketing_emails: false,
+          public_projects_default: false,
+          reduce_motion: true
+        }));
         
         const projects = [
           {
@@ -97,6 +103,12 @@ test.describe("VisionBuild Explore Report and Block", () => {
           xp: 0,
           level: 1
         }));
+        localStorage.setItem("@visionbuild:user_settings:mock-user", JSON.stringify({
+          push_notifications: true,
+          marketing_emails: false,
+          public_projects_default: false,
+          reduce_motion: true
+        }));
         
         localStorage.setItem("@visionbuild:mock_seed_projects", JSON.stringify([
           {
@@ -157,6 +169,12 @@ test.describe("VisionBuild Explore Report and Block", () => {
           last_login_at: new Date().toISOString(),
           xp: 0,
           level: 1
+        }));
+        localStorage.setItem("@visionbuild:user_settings:mock-user", JSON.stringify({
+          push_notifications: true,
+          marketing_emails: false,
+          public_projects_default: false,
+          reduce_motion: true
         }));
         
         const projects = [

@@ -23,7 +23,7 @@ test.describe("Deleted Account Screen Preview", () => {
 
     // Should show the main message
     await expect(page.getByText("Your account has been deleted")).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText(/all your data has been permanently removed/i)).toBeVisible();
+    await expect(page.getByText(/We deleted your account and your projects, photos, designs, chats and pros waitlist signup/i)).toBeVisible();
 
     // Should show Done button (native action)
     const doneButton = page.getByTestId("delete-done-button");
@@ -42,7 +42,7 @@ test.describe("Deleted Account Screen Preview", () => {
 
     // Should show the main message
     await expect(page.getByText("Your account has been deleted")).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText(/all your data has been permanently removed/i)).toBeVisible();
+    await expect(page.getByText(/We deleted your account and your projects, photos, designs, chats and pros waitlist signup/i)).toBeVisible();
 
     // Should show Done button (native action)
     const doneButton = page.getByTestId("delete-done-button");
