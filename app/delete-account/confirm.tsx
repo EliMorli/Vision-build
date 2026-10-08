@@ -90,7 +90,7 @@ export default function DeleteAccountConfirm() {
       // On web/Android, this will be skipped (logged on server)
       if (data.isAppleUser && Platform.OS === "ios") {
         try {
-          // Dynamic import to avoid errors on non-iOS platforms
+          // eslint-disable-next-line import/no-unresolved
           const AppleAuth = await import("expo-apple-authentication").catch(() => null);
           
           if (AppleAuth) {

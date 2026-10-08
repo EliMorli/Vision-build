@@ -9,6 +9,7 @@
  * Usage: deno run --allow-net --allow-env --allow-read scripts/integration-tests/test-storage-deletion.ts
  */
 
+/* eslint-disable import/no-unresolved */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { deleteUserData } from "../../supabase/functions/_shared/delete-user-data.ts";
 
