@@ -6,6 +6,193 @@ interface SetVisibilityPayload {
   isPublic: boolean;
 }
 
+export interface SetVisibilityDeps {
+  supabase: any;
+  verifyAuth: (req: Request) => Promise<{ anonClient: any; userId: string } | Response>;
+  verifyOwnership: (client: any, userId: string, projectId: string) => Promise<{ project: any } | Response>;
+  logger: {
+    log: (message: string) => void;
+    error: (message: string, ...args: any[]) => void;
+    warn: (message: string) => void;
+  };
+}
+
+function normalizeToPath(value: string): string {
+  // If it's already a path (no protocol), return as-is
+  if (!value.startsWith('http://') && !value.startsWith('https://')) {
+    return value;
+  }
+  
+  // Parse URL and extract path
+  try {
+    const url = new URL(value);
+    // Remove leading slash and extract the object path
+    const pathMatch = url.pathname.match(/\/storage\/v1\/object\/(?:sign|public)\/[^/]+\/(.*)/);
+    if (pathMatch) {
+      return pathMatch[1];
+    }
+    // Fallback: just remove leading slash
+    return url.pathname.replace(/^\//, '');
+  } catch {
+    // If URL parsing fails, return as-is
+    return value;
+  }
+}
+
+export async function handleSetVisibility(
+  userId: string,
+  payload: SetVisibilityPayload,
+  project: any,
+  deps: SetVisibilityDeps
+): Promise<Response> {
+  const { projectId, isPublic } = payload;
+
+  // Update is_public in database
+  const { error: updateError } = await deps.supabase
+    .from("projects")
+    .update({ is_public: isPublic })
+    .eq("id", projectId);
+
+  if (updateError) {
+    deps.logger.error("Failed to update project visibility:", updateError);
+    return new Response(
+      JSON.stringify({ error: "Failed to update project", details: updateError.message }),
+      { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
+    );
+  }
+
+  // Handle file copy/removal
+  if (isPublic) {
+    // PRIVACY: Copy ONLY generated design images to public-designs, NEVER original_image_url (original room photo)
+    const filesToCopy = [];
+    
+    // Add selected_generation_url (the final selected design)
+    if (project.selected_generation_url) {
+      const normalized = normalizeToPath(project.selected_generation_url);
+      // Skip if it's the original_image_url or contains 'original'
+      if (normalized !== project.original_image_url && !normalized.includes("original")) {
+        filesToCopy.push(normalized);
+      } else {
+        deps.logger.warn(`Skipping selected_generation_url copy (matches original_image_url or is original): ${normalized}`);
+      }
+    }
+    
+    // Add any generated_image_urls (array of all generated designs)
+    if (project.generated_image_urls && Array.isArray(project.generated_image_urls)) {
+      for (const url of project.generated_image_urls) {
+        if (url && typeof url === "string") {
+          const normalized = normalizeToPath(url);
+          // Skip if it's the original_image_url or contains 'original'
+          if (normalized === project.original_image_url || normalized.includes("original")) {
+            deps.logger.warn(`Skipping generated image copy (matches original_image_url or is original): ${normalized}`);
+            continue;
+          }
+          
+          // Keep full storage path (do NOT split('/').pop())
+          // Paths should be like "userId/projectId/design-1.jpg"
+          filesToCopy.push(normalized);
+        }
+      }
+    }
+
+    for (const path of filesToCopy) {
+      try {
+        // Download from room-photos
+        const { data: fileData, error: downloadError } = await deps.supabase.storage
+          .from("room-photos")
+          .download(path);
+
+        if (downloadError) {
+          deps.logger.error(`Failed to download ${path}:`, downloadError);
+          return new Response(
+            JSON.stringify({ 
+              error: "Failed to make project public", 
+              details: `Could not download ${path}: ${downloadError.message}` 
+            }),
+            { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
+          );
+        }
+
+        // Upload to public-designs (same path)
+        const { error: uploadError } = await deps.supabase.storage
+          .from("public-designs")
+          .upload(path, fileData, {
+            contentType: fileData.type,
+            upsert: true,
+          });
+
+        if (uploadError) {
+          deps.logger.error(`Failed to upload ${path} to public-designs:`, uploadError);
+          return new Response(
+            JSON.stringify({ 
+              error: "Failed to make project public", 
+              details: `Could not upload ${path}: ${uploadError.message}` 
+            }),
+            { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
+          );
+        }
+        
+        deps.logger.log(`Successfully copied ${path} to public-designs`);
+      } catch (err: any) {
+        deps.logger.error(`Error copying ${path}:`, err);
+        return new Response(
+          JSON.stringify({ 
+            error: "Failed to make project public", 
+            details: `Error copying ${path}: ${err.message}` 
+          }),
+          { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
+        );
+      }
+    }
+  } else {
+    // Remove from public-designs (generated designs + defensively remove original_image_url if it was copied)
+    const filesToRemove = [];
+    
+    // Add selected_generation_url (normalize and keep full path)
+    if (project.selected_generation_url) {
+      filesToRemove.push(normalizeToPath(project.selected_generation_url));
+    }
+    
+    // Add generated_image_urls (normalize and keep full paths)
+    if (project.generated_image_urls && Array.isArray(project.generated_image_urls)) {
+      for (const url of project.generated_image_urls) {
+        if (url && typeof url === "string") {
+          filesToRemove.push(normalizeToPath(url));
+        }
+      }
+    }
+    
+    // Defensively remove original_image_url in case it was copied before this fix
+    if (project.original_image_url) {
+      filesToRemove.push(normalizeToPath(project.original_image_url));
+    }
+
+    if (filesToRemove.length > 0) {
+      const { error: removeError } = await deps.supabase.storage
+        .from("public-designs")
+        .remove(filesToRemove);
+
+      if (removeError) {
+        deps.logger.error("Failed to remove files from public-designs:", removeError);
+        return new Response(
+          JSON.stringify({ 
+            error: "Failed to make project private", 
+            details: `Could not remove files: ${removeError.message}` 
+          }),
+          { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
+        );
+      }
+      
+      deps.logger.log(`Successfully removed ${filesToRemove.length} files from public-designs`);
+    }
+  }
+
+  return new Response(
+    JSON.stringify({ success: true, projectId, isPublic }),
+    { status: 200, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
+  );
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" } });
@@ -37,153 +224,18 @@ serve(async (req) => {
     }
     const { project } = projectResult;
 
-    // 4. Get service role client (admin)
-    const adminClient = getServiceRoleClient();
+    const deps: SetVisibilityDeps = {
+      supabase: getServiceRoleClient(),
+      verifyAuth,
+      verifyOwnership: verifyProjectOwnership,
+      logger: {
+        log: (message: string) => console.log(message),
+        error: (message: string, ...args: any[]) => console.error(message, ...args),
+        warn: (message: string) => console.warn(message),
+      },
+    };
 
-    // 5. Update is_public in database
-    const { error: updateError } = await adminClient
-      .from("projects")
-      .update({ is_public: isPublic })
-      .eq("id", projectId);
-
-    if (updateError) {
-      console.error("Failed to update project visibility:", updateError);
-      return new Response(
-        JSON.stringify({ error: "Failed to update project", details: updateError.message }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // 6. Handle file copy/removal
-    if (isPublic) {
-      // PRIVACY: Copy ONLY generated design images to public-designs, NEVER original_image_url (original room photo)
-      const filesToCopy = [];
-      
-      // Add selected_generation_url (the final selected design)
-      if (project.selected_generation_url) {
-        // Skip if it's the original_image_url or contains 'original'
-        if (project.selected_generation_url !== project.original_image_url && !project.selected_generation_url.includes("original")) {
-          filesToCopy.push(project.selected_generation_url);
-        } else {
-          console.warn(`Skipping selected_generation_url copy (matches original_image_url or is original): ${project.selected_generation_url}`);
-        }
-      }
-      
-      // Add any generated_image_urls (array of all generated designs)
-      if (project.generated_image_urls && Array.isArray(project.generated_image_urls)) {
-        for (const url of project.generated_image_urls) {
-          if (url && typeof url === "string") {
-            // Skip if it's the original_image_url or contains 'original'
-            if (url === project.original_image_url || url.includes("original")) {
-              console.warn(`Skipping generated image copy (matches original_image_url or is original): ${url}`);
-              continue;
-            }
-            
-            // Keep full storage path (do NOT split('/').pop())
-            // Paths should be like "userId/projectId/design-1.jpg"
-            filesToCopy.push(url);
-          }
-        }
-      }
-
-      for (const path of filesToCopy) {
-        try {
-          // Download from room-photos
-          const { data: fileData, error: downloadError } = await adminClient.storage
-            .from("room-photos")
-            .download(path);
-
-          if (downloadError) {
-            console.error(`Failed to download ${path}:`, downloadError);
-            // Log error and fail instead of silently continuing
-            return new Response(
-              JSON.stringify({ 
-                error: "Failed to make project public", 
-                details: `Could not download ${path}: ${downloadError.message}` 
-              }),
-              { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
-            );
-          }
-
-          // Upload to public-designs (same path)
-          const { error: uploadError } = await adminClient.storage
-            .from("public-designs")
-            .upload(path, fileData, {
-              contentType: fileData.type,
-              upsert: true,
-            });
-
-          if (uploadError) {
-            console.error(`Failed to upload ${path} to public-designs:`, uploadError);
-            // Log error and fail instead of silently continuing
-            return new Response(
-              JSON.stringify({ 
-                error: "Failed to make project public", 
-                details: `Could not upload ${path}: ${uploadError.message}` 
-              }),
-              { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
-            );
-          }
-          
-          console.log(`Successfully copied ${path} to public-designs`);
-        } catch (err: any) {
-          console.error(`Error copying ${path}:`, err);
-          return new Response(
-            JSON.stringify({ 
-              error: "Failed to make project public", 
-              details: `Error copying ${path}: ${err.message}` 
-            }),
-            { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
-          );
-        }
-      }
-    } else {
-      // Remove from public-designs (generated designs + defensively remove original_image_url if it was copied)
-      const filesToRemove = [];
-      
-      // Add selected_generation_url (keep full path)
-      if (project.selected_generation_url) {
-        filesToRemove.push(project.selected_generation_url);
-      }
-      
-      // Add generated_image_urls (keep full paths, do NOT split)
-      if (project.generated_image_urls && Array.isArray(project.generated_image_urls)) {
-        for (const url of project.generated_image_urls) {
-          if (url && typeof url === "string") {
-            filesToRemove.push(url);
-          }
-        }
-      }
-      
-      // Defensively remove original_image_url in case it was copied before this fix
-      if (project.original_image_url) {
-        filesToRemove.push(project.original_image_url);
-      }
-
-      if (filesToRemove.length > 0) {
-        const { error: removeError } = await adminClient.storage
-          .from("public-designs")
-          .remove(filesToRemove);
-
-        if (removeError) {
-          console.error("Failed to remove files from public-designs:", removeError);
-          return new Response(
-            JSON.stringify({ 
-              error: "Failed to make project private", 
-              details: `Could not remove files: ${removeError.message}` 
-            }),
-            { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
-          );
-        }
-        
-        console.log(`Successfully removed ${filesToRemove.length} files from public-designs`);
-      }
-    }
-
-    return new Response(
-      JSON.stringify({ success: true, projectId, isPublic }),
-      { status: 200, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
-    );
+    return await handleSetVisibility(userId, payload, project, deps);
   } catch (error: unknown) {
     console.error("set-project-visibility error:", error);
     const message = error instanceof Error ? error.message : String(error);

@@ -3,7 +3,7 @@
 
 import { SignJWT } from "https://deno.land/x/jose@v5.2.0/index.ts";
 
-interface DeleteUserDataParams {
+export interface DeleteUserDataParams {
   userId: string;
   userEmail: string;
   userAppMetadata: any;

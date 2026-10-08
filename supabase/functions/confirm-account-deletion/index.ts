@@ -5,7 +5,16 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { getServiceRoleClient } from "../_shared/auth.ts";
-import { deleteUserData } from "../_shared/delete-user-data.ts";
+import { deleteUserData, DeleteUserDataParams } from "../_shared/delete-user-data.ts";
+
+export interface ConfirmDeletionDeps {
+  supabase: any;
+  clock: { now: () => Date };
+  deleteUser: (params: DeleteUserDataParams) => Promise<boolean>;
+  crypto: {
+    sha256: (data: Uint8Array) => Promise<Uint8Array>;
+  };
+}
 
 interface TokenValidationResult {
   valid: boolean;
@@ -16,7 +25,18 @@ interface TokenValidationResult {
   used?: boolean;
 }
 
-async function validateToken(token: string): Promise<TokenValidationResult> {
+export function maskEmail(email: string): string {
+  const [local, domain] = email.split("@");
+  if (local.length <= 2) {
+    return `${local[0]}•••@${domain}`;
+  }
+  return `${local[0]}•••@${domain}`;
+}
+
+async function validateToken(
+  token: string,
+  deps: ConfirmDeletionDeps
+): Promise<TokenValidationResult> {
   if (!token || token.length !== 64) {
     return {
       valid: false,
@@ -26,18 +46,16 @@ async function validateToken(token: string): Promise<TokenValidationResult> {
     };
   }
 
-  const supabase = getServiceRoleClient();
-
   // Hash the provided token
   const encoder = new TextEncoder();
   const tokenData = encoder.encode(token);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", tokenData);
+  const hashBuffer = await deps.crypto.sha256(tokenData);
   const tokenHash = Array.from(new Uint8Array(hashBuffer))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 
   // Find the deletion request
-  const { data: request, error: fetchError } = await supabase
+  const { data: request, error: fetchError } = await deps.supabase
     .from("account_deletion_requests")
     .select("*")
     .eq("token_hash", tokenHash)
@@ -63,11 +81,11 @@ async function validateToken(token: string): Promise<TokenValidationResult> {
   }
 
   // Check if expired
-  const now = new Date();
+  const now = deps.clock.now();
   const expiresAt = new Date(request.expires_at);
   if (now > expiresAt) {
     // Mark as expired in DB
-    await supabase
+    await deps.supabase
       .from("account_deletion_requests")
       .update({ status: "expired" })
       .eq("id", request.id);
@@ -88,47 +106,106 @@ async function validateToken(token: string): Promise<TokenValidationResult> {
   };
 }
 
-async function executeDeleteion(requestId: string, email: string): Promise<{ success: boolean; error?: string }> {
-  const supabase = getServiceRoleClient();
+export async function handleConfirmGet(
+  token: string,
+  deps: ConfirmDeletionDeps
+): Promise<Response> {
+  const validation = await validateToken(token, deps);
+
+  if (!validation.valid) {
+    return new Response(
+      JSON.stringify({
+        valid: false,
+        error: validation.error,
+        expired: validation.expired,
+        used: validation.used,
+      }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  // Return masked email for confirmation page
+  return new Response(
+    JSON.stringify({
+      valid: true,
+      email: maskEmail(validation.email!),
+    }),
+    { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+}
+
+export async function handleConfirmPost(
+  token: string,
+  deps: ConfirmDeletionDeps
+): Promise<Response> {
+  // Re-validate token
+  const validation = await validateToken(token, deps);
+
+  if (!validation.valid) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: validation.error,
+        expired: validation.expired,
+        used: validation.used,
+      }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const requestId = validation.requestId!;
+  const email = validation.email!;
 
   // Mark as confirmed (idempotent)
-  await supabase
+  await deps.supabase
     .from("account_deletion_requests")
     .update({
       status: "confirmed",
-      confirmed_at: new Date().toISOString(),
+      confirmed_at: deps.clock.now().toISOString(),
     })
     .eq("id", requestId);
 
   // Look up user by email using the SECURITY DEFINER function
-  const { data: userIdResult, error: lookupError } = await supabase.rpc(
+  const { data: userIdResult, error: lookupError } = await deps.supabase.rpc(
     "get_user_id_by_email",
     { user_email: email }
   );
 
   if (lookupError) {
     console.error(`Failed to lookup user by email ${email}:`, lookupError);
-    throw new Error(`User lookup failed: ${lookupError.message}`);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: `User lookup failed: ${lookupError.message}`,
+      }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 
   const userId = userIdResult;
 
   if (!userId) {
     // No account found - mark as completed anyway
-    await supabase
+    await deps.supabase
       .from("account_deletion_requests")
       .update({
         status: "completed",
-        completed_at: new Date().toISOString(),
+        completed_at: deps.clock.now().toISOString(),
       })
       .eq("id", requestId);
 
     console.log(`Deletion request completed for ${email} - no account found`);
-    return { success: true };
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: "Your account has been permanently deleted.",
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 
   // Get user details for Apple token revocation
-  const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(userId);
+  const { data: { user }, error: userError } = await deps.supabase.auth.admin.getUserById(userId);
 
   if (userError || !user) {
     console.error(`Failed to get user details for ${userId}:`, userError);
@@ -137,36 +214,40 @@ async function executeDeleteion(requestId: string, email: string): Promise<{ suc
 
   // Execute deletion using shared module
   try {
-    await deleteUserData({
+    await deps.deleteUser({
       userId,
       userEmail: email,
       userAppMetadata: user?.app_metadata || {},
       userIdentities: user?.identities || [],
-      supabase,
+      supabase: deps.supabase,
     });
 
     // Mark deletion request as completed
-    await supabase
+    await deps.supabase
       .from("account_deletion_requests")
       .update({
         status: "completed",
-        completed_at: new Date().toISOString(),
+        completed_at: deps.clock.now().toISOString(),
       })
       .eq("id", requestId);
 
-    return { success: true };
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: "Your account has been permanently deleted.",
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   } catch (deleteError: any) {
     console.error(`Deletion failed for ${email} (${userId}):`, deleteError);
-    return { success: false, error: deleteError.message };
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: deleteError.message,
+      }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
-}
-
-function maskEmail(email: string): string {
-  const [local, domain] = email.split("@");
-  if (local.length <= 2) {
-    return `${local[0]}•••@${domain}`;
-  }
-  return `${local[0]}•••@${domain}`;
 }
 
 serve(async (req: Request) => {
@@ -184,90 +265,39 @@ serve(async (req: Request) => {
     );
   }
 
-  // GET: Validate token and return page data (does NOT delete anything)
-  if (req.method === "GET") {
-    try {
-      const validation = await validateToken(token);
+  const deps: ConfirmDeletionDeps = {
+    supabase: getServiceRoleClient(),
+    clock: { now: () => new Date() },
+    deleteUser: deleteUserData,
+    crypto: {
+      sha256: async (data: Uint8Array) => {
+        const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+        return new Uint8Array(hashBuffer);
+      },
+    },
+  };
 
-      if (!validation.valid) {
-        return new Response(
-          JSON.stringify({
-            valid: false,
-            error: validation.error,
-            expired: validation.expired,
-            used: validation.used,
-          }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      // Return masked email for confirmation page
-      return new Response(
-        JSON.stringify({
-          valid: true,
-          email: maskEmail(validation.email!),
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    } catch (error: any) {
-      console.error("Token validation error:", error);
-      return new Response(
-        JSON.stringify({ error: "Failed to validate token" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+  try {
+    // GET: Validate token and return page data (does NOT delete anything)
+    if (req.method === "GET") {
+      return await handleConfirmGet(token, deps);
     }
-  }
 
-  // POST: Execute actual deletion
-  if (req.method === "POST") {
-    try {
-      // Re-validate token
-      const validation = await validateToken(token);
-
-      if (!validation.valid) {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: validation.error,
-            expired: validation.expired,
-            used: validation.used,
-          }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      // Execute deletion
-      const result = await executeDeleteion(validation.requestId!, validation.email!);
-
-      if (!result.success) {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: result.error || "Failed to delete account",
-          }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: "Your account has been permanently deleted.",
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    } catch (error: any) {
-      console.error("Account deletion error:", error);
-      return new Response(
-        JSON.stringify({ error: error.message || "Failed to process deletion" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // POST: Execute actual deletion
+    if (req.method === "POST") {
+      return await handleConfirmPost(token, deps);
     }
-  }
 
-  // Method not allowed
-  return new Response(
-    JSON.stringify({ error: "Method not allowed" }),
-    { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-  );
+    // Method not allowed
+    return new Response(
+      JSON.stringify({ error: "Method not allowed" }),
+      { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (error: any) {
+    console.error("confirm-account-deletion error:", error);
+    return new Response(
+      JSON.stringify({ error: error.message || "Failed to process request" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
 });
