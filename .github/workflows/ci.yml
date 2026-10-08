@@ -61,6 +61,9 @@ jobs:
       - name: Check launch copy compliance
         run: npm run check:launch-copy
       
+      - name: Validate legal pages for release
+        run: node scripts/strip-legal-drafts.js
+      
       - name: Install pg_cron and pg_net in PostgreSQL container
         env:
           PGHOST: localhost

@@ -152,8 +152,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
+    const userId = get().session?.user?.id;
+    
     // Clear Supabase session
     await supabase.auth.signOut();
+    
+    // Wipe offline cache for this user
+    if (userId) {
+      const { wipeOfflineCache } = await import("./offline-cache");
+      try {
+        await wipeOfflineCache(userId);
+      } catch (error) {
+        console.error("Failed to wipe offline cache on sign-out:", error);
+      }
+    }
     
     // Clear all stores
     set({ session: null, profile: null, loading: false, error: null });
@@ -1106,6 +1118,69 @@ export const usePrivacyStore = create<PrivacyState>((set, get) => ({
 
     if (!error) {
       set({ privacyOptOut: optOut });
+    }
+  },
+}));
+
+// ─── Inbox Store ───────────────────────────────────────────
+
+interface InboxState {
+  unreadCount: number;
+  fetchUnreadCount: () => Promise<void>;
+  markAsRead: (messageId: string) => Promise<void>;
+}
+
+export const useInboxStore = create<InboxState>((set, get) => ({
+  unreadCount: 0,
+
+  fetchUnreadCount: async () => {
+    const userId = useAuthStore.getState().session?.user?.id;
+
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      // Mock mode: check for seeded unread count
+      try {
+        const seedJson = await AsyncStorage.getItem("@visionbuild:mock_unread_count");
+        if (seedJson) {
+          set({ unreadCount: parseInt(seedJson, 10) });
+        }
+      } catch (e) {
+        console.warn("Failed to load mock unread count:", e);
+      }
+      return;
+    }
+
+    if (!userId) {
+      set({ unreadCount: 0 });
+      return;
+    }
+
+    const { count } = await supabase
+      .from("chat_messages")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("is_read", false);
+
+    set({ unreadCount: count || 0 });
+  },
+
+  markAsRead: async (messageId: string) => {
+    const userId = useAuthStore.getState().session?.user?.id;
+
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      return;
+    }
+
+    if (!userId) return;
+
+    const { error } = await supabase
+      .from("chat_messages")
+      .update({ is_read: true })
+      .eq("id", messageId)
+      .eq("user_id", userId);
+
+    if (!error) {
+      // Refresh unread count
+      get().fetchUnreadCount();
     }
   },
 }));

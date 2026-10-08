@@ -14,7 +14,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore, useAuthStore } from "@/lib/store";
 import { Project, ProjectStatus } from "@/lib/types";
-import { Button, IsoRoom, PrivateImage, ProsTeaserCard } from "@/components";
+import { Button, IsoRoom, PrivateImage, ProsTeaserCard, LoadingSkeleton, ErrorState, OfflineBanner } from "@/components";
+import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
 import { getDisplayName, getFirstName } from "@/lib/helpers/user";
 
 // Long-running threshold for showing "Rendering..." card in Home
@@ -34,11 +35,13 @@ const SHOW_DEV_BUTTON =
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { projects, fetchProjects, generatingStartTime } = useProjectStore();
+  const { projects, fetchProjects, generatingStartTime, loading, error } = useProjectStore();
   const profile = useAuthStore((s) => s.profile);
   const session = useAuthStore((s) => s.session);
   const [showRenderingCard, setShowRenderingCard] = useState(false);
   const [prosCardKey, setProsCardKey] = useState(0);
+  const networkStatus = useNetworkStatus();
+  const isOffline = !networkStatus.isConnected;
 
   // NOTE: AI consent is now enforced server-side in analyze-room, generate-design, and assistant-chat
   // Removed client-side useAIConsentCheck() - consent errors trigger re-consent flow with resume capability
@@ -91,11 +94,52 @@ export default function DashboardScreen() {
     router.push(`/project/${project.id}`);
   };
 
+  // ─── Loading state ────────────────────────────────────────
+
+  if (loading && projects.length === 0) {
+    return (
+      <SafeAreaView style={styles.container} testID="home-screen">
+        {isOffline && <OfflineBanner testID="offline-banner" />}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.greeting} testID="home-greeting">{greeting}</Text>
+            <Text style={fonts.heading}>Ready to redesign?</Text>
+          </View>
+          <View style={styles.headerRight}>
+            <Pressable onPress={() => router.push("/profile-settings")} hitSlop={12}>
+              <View style={styles.xpChip}>
+                <Ionicons name="star" size={14} color={colors.accent} />
+                <Text style={styles.xpText}>{xp} XP</Text>
+              </View>
+            </Pressable>
+          </View>
+        </View>
+        <LoadingSkeleton variant="card" count={3} testID="home-loading" />
+      </SafeAreaView>
+    );
+  }
+
+  // ─── Error state ──────────────────────────────────────────
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container} testID="home-screen">
+        {isOffline && <OfflineBanner testID="offline-banner" />}
+        <ErrorState
+          message="Failed to load projects"
+          onRetry={() => fetchProjects()}
+          testID="home-error"
+        />
+      </SafeAreaView>
+    );
+  }
+
   // ─── Empty state ──────────────────────────────────────────
 
   if (projects.length === 0) {
     return (
       <SafeAreaView style={styles.container} testID="home-screen">
+        {isOffline && <OfflineBanner testID="offline-banner" />}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Text style={styles.greeting} testID="home-greeting">{greeting}</Text>
@@ -168,6 +212,7 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={styles.container} testID="home-screen">
+      {isOffline && <OfflineBanner testID="offline-banner" />}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={styles.greeting} testID="home-greeting">{greeting}</Text>
