@@ -25,13 +25,13 @@ test.describe("Delete Account Flow", () => {
       (window as any).__deleteCalled = false;
       const originalFetch = window.fetch;
       window.fetch = function(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.href : (input as Request).url;
         if (url && url.includes('/functions/v1/delete-account')) {
           (window as any).__deleteCalled = true;
           // Return success
           return Promise.resolve(new Response(JSON.stringify({}), { status: 200 }));
         }
-        return originalFetch.call(this, input, init);
+        return originalFetch.call(this, input as RequestInfo, init);
       };
     });
 
