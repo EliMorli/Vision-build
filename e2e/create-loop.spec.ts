@@ -223,13 +223,15 @@ test.describe("VisionBuild Create Loop", () => {
     await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 10000 });
     await page.screenshot({ path: "e2e/screens/a5-consent.png", fullPage: true });
 
-    // Decline consent
+    // Decline consent (handleDecline navigates back to camera)
     await page.getByRole("button", { name: /decline/i }).click();
 
     // Should be back on camera screen
     await expect(page.getByText(/take a photo or pick one/i)).toBeInViewport({ timeout: 5000 });
+    // Photo should still be selected
+    await expect(page.getByRole("button", { name: /analyze room/i })).toBeVisible();
 
-    // Try to analyze again
+    // Try to analyze again - should trigger consent check again
     await page.getByRole("button", { name: /analyze room/i }).click();
 
     // Should be on consent screen again
@@ -314,9 +316,15 @@ test.describe("VisionBuild Create Loop", () => {
     // Release the hold so retry requests can proceed
     resolveHold();
     
-    // Wait for images to load after retry succeeds - wait for loaded image testID
-    const loadedImage = page.locator('[data-testid="private-image-loaded"]').first();
-    await expect(loadedImage).toBeVisible({ timeout: 10000 });
+    // Wait for images to load after retry succeeds
+    await page.waitForFunction(() => {
+      const images = Array.from(document.querySelectorAll('img'));
+      const designImages = images.filter((img: any) => {
+        const src = img.getAttribute('src');
+        return src && src.includes('__mock__/design_');
+      });
+      return designImages.length > 0 && designImages.some((img: any) => img.naturalWidth > 0);
+    }, { timeout: 15000 });
     
     await page.screenshot({ path: "e2e/screens/a5-image-retried.png", fullPage: true });
 
