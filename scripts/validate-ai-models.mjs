@@ -79,13 +79,24 @@ console.log();
 const providerDisplayNames = Array.from(vendors)
   .map(vendor => aiModelsConfig.vendorDisplayNames[vendor])
   .filter(name => name !== undefined)
-  .sort();
+  .sort(); // Alphabetical order
 
 const providerList = providerDisplayNames.join(' and ');
 const disclosureText = `Your photos and chats go to ${providerList} through OpenRouter.`;
 
-console.log('Generated provider disclosure text:');
+console.log('Generated provider disclosure text (alphabetical order):');
 console.log(`  "${disclosureText}"`);
+console.log();
+
+// Validate exact expected disclosure for current config
+const expectedDisclosure = "Your photos and chats go to Anthropic (Claude) and Google (Gemini) through OpenRouter.";
+if (disclosureText !== expectedDisclosure) {
+  console.error('❌ ERROR: Provider disclosure does not match expected value');
+  console.error(`  Expected: "${expectedDisclosure}"`);
+  console.error(`  Got:      "${disclosureText}"`);
+  process.exit(1);
+}
+console.log('✓ Provider disclosure matches expected string');
 console.log();
 
 // Validate against Deno ai.ts defaults

@@ -37,9 +37,12 @@ test.describe("VisionBuild AI Consent Flow", () => {
     // Verify the change note is visible
     await expect(page.getByText(/We now name the AI providers that see your photos/i)).toBeVisible();
     
-    // Verify provider disclosure is shown
-    await expect(page.getByText(/Google \(Gemini\)/i)).toBeVisible();
-    await expect(page.getByText(/Anthropic \(Claude\)/i)).toBeVisible();
+    // Verify provider disclosure is shown with exact string (alphabetical order)
+    const expectedDisclosure = "Your photos and chats go to Anthropic (Claude) and Google (Gemini) through OpenRouter.";
+    await expect(page.getByText(expectedDisclosure, { exact: true })).toBeVisible();
+    
+    // Verify provider disclosure is fully in viewport (ratio: 1 means 100% visible)
+    await expect(page.getByTestId("consent-provider-disclosure")).toBeInViewport({ ratio: 1 });
     
     // Verify old checklist items are NOT present
     await expect(page.getByText(/Data encrypted in transit/i)).not.toBeVisible();
@@ -116,9 +119,12 @@ test.describe("VisionBuild AI Consent Flow", () => {
     await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 5000 });
     await expect(page.getByText(/We've updated how your photos are handled/i)).not.toBeVisible();
     
-    // Verify provider disclosure is shown
-    await expect(page.getByText(/Google \(Gemini\)/i)).toBeVisible();
-    await expect(page.getByText(/Anthropic \(Claude\)/i)).toBeVisible();
+    // Verify provider disclosure is shown with exact string (alphabetical order)
+    const expectedDisclosure = "Your photos and chats go to Anthropic (Claude) and Google (Gemini) through OpenRouter.";
+    await expect(page.getByText(expectedDisclosure, { exact: true })).toBeVisible();
+    
+    // Verify provider disclosure is fully in viewport (ratio: 1 means 100% visible)
+    await expect(page.getByTestId("consent-provider-disclosure")).toBeInViewport({ ratio: 1 });
     
     // Verify old checklist items are NOT present
     await expect(page.getByText(/Data encrypted in transit/i)).not.toBeVisible();

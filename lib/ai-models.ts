@@ -38,7 +38,8 @@ const VENDOR_DISPLAY_NAMES: Record<string, string> = aiModelsConfig.vendorDispla
 
 /**
  * Get unique AI providers from the configured models
- * Returns an array of display names like ["Google (Gemini)", "Anthropic (Claude)"]
+ * Returns an array of display names sorted alphabetically
+ * e.g. ["Anthropic (Claude)", "Google (Gemini)"]
  */
 export function getAIProviders(): string[] {
   const vendors = new Set<string>();
@@ -50,11 +51,11 @@ export function getAIProviders(): string[] {
   vendors.add(getVendor(AI_MODELS.renderPreview));
   vendors.add(getVendor(AI_MODELS.renderFinal));
   
-  // Map to display names, filter out unknown vendors
+  // Map to display names, filter out unknown vendors, sort alphabetically
   return Array.from(vendors)
     .map(vendor => VENDOR_DISPLAY_NAMES[vendor])
     .filter((name): name is string => name !== undefined)
-    .sort(); // Sort alphabetically for consistency
+    .sort(); // Alphabetical: "Anthropic (Claude)" before "Google (Gemini)"
 }
 
 /**
