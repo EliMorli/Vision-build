@@ -34,6 +34,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const userId = get().session?.user?.id;
     if (!userId) return;
 
+    // In mock mode, use hardcoded profile and skip Supabase calls
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      set({
+        profile: {
+          id: userId,
+          email: "demo@visionbuild.app",
+          display_name: "Elimar",
+          photo_url: null,
+          created_at: new Date().toISOString(),
+          last_login_at: new Date().toISOString(),
+          xp: 120,
+          level: 1,
+        } as Profile,
+      });
+      return;
+    }
+
     // Fetch profile
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
@@ -50,19 +67,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     let xp = 0;
     let level = 1;
 
-    // In mock mode, use hardcoded values
-    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
-      xp = 120;
-      level = 1;
-    } else {
-      // Call the get_user_xp function - cast to any to work around Supabase typing issues
-      const { data: xpData, error: xpError } = await (supabase as any)
-        .rpc("get_user_xp", { target_user_id: userId });
+    // Call the get_user_xp function - cast to any to work around Supabase typing issues
+    const { data: xpData, error: xpError } = await (supabase as any)
+      .rpc("get_user_xp", { target_user_id: userId });
 
-      if (!xpError && xpData && Array.isArray(xpData) && xpData.length > 0) {
-        xp = parseInt(String(xpData[0].total_xp)) || 0;
-        level = xpData[0].level || 1;
-      }
+    if (!xpError && xpData && Array.isArray(xpData) && xpData.length > 0) {
+      xp = parseInt(String(xpData[0].total_xp)) || 0;
+      level = xpData[0].level || 1;
     }
 
     // Merge XP data into profile

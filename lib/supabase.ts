@@ -4,8 +4,14 @@ import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 import { Database } from "./types";
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
+// In mock mode, use dummy values for Supabase URL and key
+const isMockMode = __DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true";
+const supabaseUrl = isMockMode 
+  ? "https://mock.supabase.co" 
+  : process.env.EXPO_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = isMockMode
+  ? "mock-anon-key"
+  : process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 
 // Secure token persistence for React Native.
 // Falls back to no-op on web where localStorage is used automatically.
