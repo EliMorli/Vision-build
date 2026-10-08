@@ -997,11 +997,12 @@ export const useExploreStore = create<ExploreState>((set, get) => ({
           
           // Check blocks
           const blocksJson = await AsyncStorage.getItem("@visionbuild:blocks");
-          const blocks: string[] = blocksJson ? JSON.parse(blocksJson) : [];
+          const blocksData: Array<{ blocked_id: string }> = blocksJson ? JSON.parse(blocksJson) : [];
+          const blockedIds = blocksData.map(b => b.blocked_id);
           
           // Filter out blocked users
           const filtered = publicOnly.filter((p: Project) => 
-            !blocks.includes(p.user_id || "")
+            !blockedIds.includes(p.user_id || "")
           );
           
           set({ publicDesigns: filtered });
