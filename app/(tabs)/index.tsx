@@ -93,17 +93,21 @@ export default function DashboardScreen() {
             </View>
           </Pressable>
         </View>
-        <EmptyState
-          icon="home-outline"
-          title="No projects yet"
-          subtitle="Take a photo of any room to start visualizing your renovation."
-        >
-          <Button
-            label="Start Your First Project"
-            icon="add-circle-outline"
-            onPress={() => router.push("/(tabs)/camera")}
-          />
-        </EmptyState>
+        <View style={styles.emptyContent}>
+          <ProsTeaserCard />
+          
+          <EmptyState
+            icon="home-outline"
+            title="No projects yet"
+            subtitle="Take a photo of any room to start visualizing your renovation."
+          >
+            <Button
+              label="Start Your First Project"
+              icon="add-circle-outline"
+              onPress={() => router.push("/(tabs)/camera")}
+            />
+          </EmptyState>
+        </View>
       </SafeAreaView>
     );
   }
@@ -300,4 +304,9 @@ const styles = StyleSheet.create({
   cardBody: { padding: spacing.md, gap: 4 },
   cardTitle: { ...fonts.title, fontSize: 17 },
   cardSub: { ...fonts.regular, lineHeight: 20 },
+  emptyContent: {
+    flex: 1,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+  },
 });

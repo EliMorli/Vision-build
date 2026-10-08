@@ -16,7 +16,7 @@ test.describe("Pros Waitlist", () => {
     await page.goto(BASE_URL);
     await page.waitForLoadState("networkidle");
 
-    // Assert Home screen using stable element
+    // Assert the pros-teaser card is visible on Home (empty state)
     await expect(page.getByTestId("pros-teaser")).toBeVisible({ timeout: 10000 });
 
     // Screenshot before joining
