@@ -21,6 +21,34 @@ interface ConsentError extends Error {
   currentVersion: string;
 }
 
+// Track AI calls for test assertions (only in mock mode)
+interface MockAICall {
+  fn: 'analyze-room' | 'generate-design' | 'assistant-chat';
+  projectId?: string;
+  stylePrompt?: string;
+  imageRef?: string;
+  at: number;
+}
+
+// Extend window type for TypeScript
+declare global {
+  interface Window {
+    __VB_MOCK_AI_CALLS__?: MockAICall[];
+  }
+}
+
+function recordMockAICall(call: Omit<MockAICall, 'at'>) {
+  if (typeof window !== 'undefined') {
+    if (!window.__VB_MOCK_AI_CALLS__) {
+      window.__VB_MOCK_AI_CALLS__ = [];
+    }
+    window.__VB_MOCK_AI_CALLS__.push({
+      ...call,
+      at: Date.now(),
+    });
+  }
+}
+
 /**
  * Check mock consent status (simulated for testing)
  * Only checks if mock consent version is explicitly set
@@ -104,6 +132,12 @@ export class InMemoryDataLayer implements DataLayer {
     // Check mock consent
     await checkMockConsent();
     
+    // Record the AI call (after consent check passes)
+    recordMockAICall({
+      fn: 'analyze-room',
+      imageRef: imageUrl,
+    });
+    
     // Simulate network delay
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -127,6 +161,13 @@ export class InMemoryDataLayer implements DataLayer {
   ): Promise<string[]> {
     // Check mock consent
     await checkMockConsent();
+    
+    // Record the AI call (after consent check passes)
+    recordMockAICall({
+      fn: 'generate-design',
+      projectId,
+      stylePrompt,
+    });
     
     // Simulate realistic generation time for testing
     // Long enough to see the generating screen with countdown (needs at least 2-3 seconds)
