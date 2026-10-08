@@ -26,13 +26,28 @@ export default function ProfileScreen() {
   const router = useRouter();
   const profile = useAuthStore((s) => s.profile);
   const signOut = useAuthStore((s) => s.signOut);
+  const projects = useProjectStore((s) => s.projects);
+
+  // Calculate real counts
+  const roomsCount = projects.length;
+  const designsCount = projects.reduce((sum, p) => {
+    const designUrls = p.generated_image_urls || [];
+    return sum + designUrls.length + (p.design_image ? 1 : 0);
+  }, 0);
+  const quotesCount = 0; // TODO: Will come from contractor_threads in Pass B
+
+  // Calculate XP and level
+  const xp = profile?.xp ?? 120;
+  const level = profile?.level ?? Math.floor(xp / 200) + 1;
+  const xpForNextLevel = level * 200;
+  const xpProgress = (xp / xpForNextLevel) * 100;
+  const earnedBadges = ALL_BADGES.filter((b) => b.earned);
 
   const menuItems = [
     { icon: "person-outline" as const, label: "Edit Profile", badge: null, route: null },
     { icon: "settings-outline" as const, label: "Settings & Privacy", badge: null, route: "/profile-settings" },
-    { icon: "card-outline" as const, label: "Payment Methods", badge: null, route: null },
-    { icon: "home-outline" as const, label: "My Properties", badge: "3", route: null },
-    { icon: "heart-outline" as const, label: "Saved Designs", badge: "12", route: null },
+    { icon: "home-outline" as const, label: "My Properties", badge: roomsCount > 0 ? String(roomsCount) : null, route: null },
+    { icon: "heart-outline" as const, label: "Saved Designs", badge: null, route: null }, // Will wire in Pass B
     { icon: "help-circle-outline" as const, label: "Help & Contact", badge: null, route: "/help-contact" },
   ];
 
@@ -42,16 +57,82 @@ export default function ProfileScreen() {
         {/* Profile header */}
         <View style={styles.header}>
           <View style={styles.avatar}>
-            <Ionicons name="person" size={48} color={colors.primary} />
+            <Text style={styles.avatarText}>
+              {profile?.display_name?.[0]?.toUpperCase() ?? "U"}
+            </Text>
           </View>
           <Text style={styles.name}>{profile?.display_name ?? "User"}</Text>
-          <Text style={styles.email}>{profile?.email ?? "user@example.com"}</Text>
+          <View style={styles.levelBadge}>
+            <Text style={styles.levelBadgeText}>
+              Level {level} · Rookie Designer
+            </Text>
+          </View>
+        </View>
+
+        {/* XP Progress Card */}
+        <View style={styles.xpCard}>
+          <View style={styles.xpHeader}>
+            <Text style={styles.xpLabel}>Next: Level {level + 1}</Text>
+            <Text style={styles.xpCount}>
+              {xp}/{xpForNextLevel} XP
+            </Text>
+          </View>
+          <View style={styles.xpBarContainer}>
+            <View style={[styles.xpBarFill, { width: `${xpProgress}%` }]} />
+          </View>
+        </View>
+
+        {/* Stats Row */}
+        <View style={styles.statsRow}>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{roomsCount}</Text>
+            <Text style={styles.statLabel}>Rooms</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{designsCount}</Text>
+            <Text style={styles.statLabel}>Designs</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{quotesCount}</Text>
+            <Text style={styles.statLabel}>Quotes</Text>
+          </View>
+        </View>
+
+        {/* Badges Section */}
+        <View style={styles.badgesSection}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Badges</Text>
+            <Text style={styles.badgeCount}>
+              {earnedBadges.length} of {ALL_BADGES.length}
+            </Text>
+          </View>
+          <View style={styles.badgeGrid}>
+            {ALL_BADGES.map((badge) => (
+              <View key={badge.id} style={styles.badgeItem}>
+                <View
+                  style={[
+                    styles.badgeIcon,
+                    {
+                      backgroundColor: badge.earned ? badge.color : "#D7DCEB",
+                      shadowColor: badge.earned ? badge.color : "#BCC3D8",
+                      opacity: badge.earned ? 1 : 0.45,
+                    },
+                  ]}
+                >
+                  <View style={styles.badgeIconInner}>
+                    <Ionicons name="star" size={26} color="#fff" />
+                  </View>
+                </View>
+                <Text style={styles.badgeName}>{badge.name}</Text>
+              </View>
+            ))}
+          </View>
         </View>
 
         {/* Menu items */}
         <View style={styles.section}>
           {menuItems.map((item, index) => (
-              <Pressable
+            <Pressable
               key={item.label}
               style={[
                 styles.menuItem,
@@ -97,26 +178,163 @@ const styles = StyleSheet.create({
   content: { paddingBottom: spacing.xl },
   header: {
     alignItems: "center",
-    paddingVertical: spacing.xl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xl,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: colors.primary + "12",
+    width: 84,
+    height: 84,
+    borderRadius: 28,
+    backgroundColor: "#FFD66B",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+    transform: [{ rotate: "-4deg" }],
+  },
+  avatarText: {
+    fontSize: 36,
+    fontWeight: "900",
+    color: "#1B2140",
   },
   name: {
     ...fonts.heading,
-    marginBottom: 4,
+    fontSize: 21,
+    marginBottom: spacing.sm,
   },
-  email: {
-    ...fonts.body,
+  levelBadge: {
+    backgroundColor: "#E8F0FE",
+    borderRadius: radius.full,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  levelBadgeText: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  xpCard: {
+    backgroundColor: colors.surface,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  xpHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: spacing.sm,
+  },
+  xpLabel: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: colors.textPrimary,
+  },
+  xpCount: {
+    fontSize: 13,
+    fontWeight: "900",
     color: colors.textSecondary,
+  },
+  xpBarContainer: {
+    height: 12,
+    borderRadius: radius.full,
+    backgroundColor: "#E3E8F8",
+    overflow: "hidden",
+  },
+  xpBarFill: {
+    height: "100%",
+    borderRadius: radius.full,
+    backgroundColor: "#FBBC04",
+  },
+  statsRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.sm,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  statNumber: {
+    fontSize: 22,
+    fontWeight: "900",
+    color: colors.textPrimary,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  badgesSection: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.md,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: colors.textPrimary,
+  },
+  badgeCount: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: colors.textSecondary,
+  },
+  badgeGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  badgeItem: {
+    width: "30%",
+    alignItems: "center",
+    gap: 6,
+  },
+  badgeIcon: {
+    width: 62,
+    height: 62,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    transform: [{ rotate: "45deg" }],
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  badgeIconInner: {
+    transform: [{ rotate: "-45deg" }],
+  },
+  badgeName: {
+    fontSize: 11.5,
+    fontWeight: "800",
+    textAlign: "center",
+    color: colors.textPrimary,
   },
   section: {
     marginTop: spacing.lg,
