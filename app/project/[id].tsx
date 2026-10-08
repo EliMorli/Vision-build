@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Image,
   Pressable,
   SafeAreaView,
 } from "react-native";
@@ -12,7 +11,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore, useAuthStore } from "@/lib/store";
-import { IsoRoom, MakePublicSheet } from "@/components";
+import { IsoRoom, MakePublicSheet, PrivateImage } from "@/components";
 
 // Placeholder timeline data
 const TIMELINE_EVENTS = [
@@ -153,9 +152,13 @@ export default function ProjectDetailScreen() {
         {/* Original photo */}
         <View style={styles.originalSection}>
           <Text style={styles.sectionTitle}>Original Photo</Text>
-          <Image
-            source={{ uri: "https://placehold.co/800x500/E0E0E0/808080?text=Original+Kitchen" }}
+          <PrivateImage
+            bucket="room-photos"
+            path={project?.original_image_url}
+            palette={project?.selected_style || "modern"}
+            placeholderSize={200}
             style={styles.originalImage}
+            containerStyle={styles.originalImage}
             accessibilityLabel="Original kitchen photo before renovation"
           />
           <View style={styles.analysisChips}>

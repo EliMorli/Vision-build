@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  Image,
   Dimensions,
   FlatList,
   Modal,
@@ -17,7 +16,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore } from "@/lib/store";
-import { Button, ReportModal, IsoRoom } from "@/components";
+import { Button, ReportModal, IsoRoom, PrivateImage } from "@/components";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 
 const { width } = Dimensions.get("window");
@@ -145,7 +144,15 @@ export default function ResultScreen() {
             >
               {url ? (
                 <>
-                  <Image source={{ uri: url }} style={styles.cardImage} />
+                  <PrivateImage
+                    bucket="room-photos"
+                    path={url}
+                    palette={style}
+                    placeholderSize={CARD_WIDTH}
+                    style={styles.cardImage}
+                    containerStyle={styles.cardImage}
+                    accessibilityLabel={`Design option ${index + 1}`}
+                  />
                   {isSelected && (
                     <View style={styles.checkBadge}>
                       <Ionicons name="checkmark" size={18} color="#fff" />
@@ -201,14 +208,27 @@ export default function ResultScreen() {
             <Text style={styles.modalTitle}>Before & After</Text>
             <View style={styles.compareRow}>
               <View style={styles.compareCol}>
-                <Image
-                  source={{ uri: currentProject?.original_image_url }}
+                <PrivateImage
+                  bucket="room-photos"
+                  path={currentProject?.original_image_url}
+                  palette={currentProject?.selected_style || "modern"}
+                  placeholderSize={180}
                   style={styles.compareImg}
+                  containerStyle={styles.compareImg}
+                  accessibilityLabel="Original room photo"
                 />
                 <Text style={styles.compareLabel}>Original</Text>
               </View>
               <View style={styles.compareCol}>
-                <Image source={{ uri: compareUrl }} style={styles.compareImg} />
+                <PrivateImage
+                  bucket="room-photos"
+                  path={compareUrl}
+                  palette={currentProject?.selected_style || "modern"}
+                  placeholderSize={180}
+                  style={styles.compareImg}
+                  containerStyle={styles.compareImg}
+                  accessibilityLabel="Redesigned room"
+                />
                 <Text style={styles.compareLabel}>Redesign</Text>
               </View>
             </View>

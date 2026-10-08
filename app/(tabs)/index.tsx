@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   Pressable,
-  Image,
   RefreshControl,
   SafeAreaView,
 } from "react-native";
@@ -14,7 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore, useAuthStore } from "@/lib/store";
 import { Project, ProjectStatus } from "@/lib/types";
-import { Button, EmptyState, IsoRoom } from "@/components";
+import { Button, EmptyState, IsoRoom, PrivateImage } from "@/components";
 import { useAIConsentCheck } from "@/lib/hooks/useAIConsentCheck";
 
 // Long-running threshold for showing "Rendering..." card in Home
@@ -144,7 +143,17 @@ export default function DashboardScreen() {
           
           return (
             <Pressable style={styles.card} onPress={() => openProject(item)}>
-              {item.selected_style ? (
+              {item.selected_generation_url || item.original_image_url ? (
+                <PrivateImage
+                  bucket="room-photos"
+                  path={item.selected_generation_url ?? item.original_image_url}
+                  palette={item.selected_style || "modern"}
+                  placeholderSize={170}
+                  style={styles.cardImage}
+                  containerStyle={styles.cardImage}
+                  accessibilityLabel={`${item.title} thumbnail`}
+                />
+              ) : item.selected_style ? (
                 <View style={styles.cardIsoWrapper}>
                   <IsoRoom 
                     palette={item.selected_style}
@@ -152,12 +161,7 @@ export default function DashboardScreen() {
                     accessibilityLabel={`${item.title} design`}
                   />
                 </View>
-              ) : (
-                <Image
-                  source={{ uri: item.selected_generation_url ?? item.original_image_url }}
-                  style={styles.cardImage}
-                />
-              )}
+              ) : null}
               <View style={[styles.statusChip, { backgroundColor: status.color + "E6" }]}>
                 <Ionicons name={status.icon} size={12} color="#fff" />
                 <Text style={styles.statusText}>{status.label}</Text>
