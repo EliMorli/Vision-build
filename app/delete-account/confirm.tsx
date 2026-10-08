@@ -2,10 +2,10 @@
 // GET: Validates token and shows confirmation page (does NOT delete)
 // POST: Executes actual deletion when user presses button
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, Platform } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { supabase } from "@/lib/supabase";
+import * as AppleAuthentication from "expo-apple-authentication";
 
 type PageState = "loading" | "valid" | "error" | "deleting" | "deleted";
 
@@ -14,6 +14,8 @@ interface PageData {
   error?: string;
   expired?: boolean;
   used?: boolean;
+  isAppleUser?: boolean;
+  needsManualDisconnect?: boolean;
 }
 
 export default function DeleteAccountConfirm() {
@@ -52,7 +54,10 @@ export default function DeleteAccountConfirm() {
 
         if (response.ok && validationResult.valid) {
           setState("valid");
-          setData({ email: validationResult.email });
+          setData({ 
+            email: validationResult.email,
+            isAppleUser: validationResult.isAppleUser,
+          });
         } else {
           setState("error");
           setData({
@@ -80,6 +85,26 @@ export default function DeleteAccountConfirm() {
     setState("deleting");
 
     try {
+      let appleAuthCode: string | undefined;
+
+      // Try to get Apple authorization code if this is an Apple user
+      // On web/Android, this will be skipped (logged on server)
+      if (data.isAppleUser && Platform.OS === "ios") {
+        try {
+          const isAvailable = await AppleAuthentication.isAvailableAsync();
+          
+          if (isAvailable) {
+            const credential = await AppleAuthentication.signInAsync({
+              requestedScopes: [],
+            });
+            appleAuthCode = credential.authorizationCode || undefined;
+          }
+        } catch (appleError: any) {
+          console.log("Apple authorization cancelled or failed:", appleError.code);
+          // Continue with deletion even if Apple auth fails
+        }
+      }
+
       const baseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL?.replace("/rest/v1", "") || "";
       const response = await fetch(
         `${baseUrl}/functions/v1/confirm-account-deletion?token=${encodeURIComponent(token as string)}`,
@@ -89,6 +114,7 @@ export default function DeleteAccountConfirm() {
             Authorization: `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
             "Content-Type": "application/json",
           },
+          body: JSON.stringify({ appleAuthCode }),
         }
       );
 
@@ -96,6 +122,9 @@ export default function DeleteAccountConfirm() {
 
       if (response.ok && result.success) {
         setState("deleted");
+        setData({ 
+          needsManualDisconnect: result.needsManualDisconnect 
+        });
       } else {
         setState("error");
         setData({
@@ -140,6 +169,11 @@ export default function DeleteAccountConfirm() {
           <Text style={styles.body}>
             All your data has been permanently removed. Thank you for using VisionBuild.
           </Text>
+          {data.needsManualDisconnect && Platform.OS === "ios" && (
+            <Text style={styles.bodySmall}>
+              To fully disconnect, remove VisionBuild under Sign in with Apple in your iPhone settings.
+            </Text>
+          )}
         </View>
       </View>
     );
@@ -193,6 +227,11 @@ export default function DeleteAccountConfirm() {
           Your projects, designs, chats and quotes will be deleted, including your posts on Explore. Remixes other
           people made stay with them.
         </Text>
+        {data.isAppleUser && Platform.OS === "ios" && (
+          <Text style={styles.appleNote}>
+            Apple may ask you to confirm. Your account gets deleted either way.
+          </Text>
+        )}
 
         <Pressable
           style={styles.buttonDanger}
@@ -262,7 +301,15 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     color: "#1B2140",
     textAlign: "center",
-    marginBottom: 32,
+    marginBottom: 16,
+  },
+  appleNote: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: "#6B7396",
+    textAlign: "center",
+    marginBottom: 24,
+    fontStyle: "italic",
   },
   loadingText: {
     fontSize: 16,

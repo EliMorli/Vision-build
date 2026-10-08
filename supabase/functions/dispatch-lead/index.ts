@@ -23,6 +23,18 @@ serve(async (req: Request) => {
   }
 
   try {
+    // Check if contractor outreach is enabled
+    const CONTRACTOR_OUTREACH_ENABLED = Deno.env.get("CONTRACTOR_OUTREACH_ENABLED");
+    if (CONTRACTOR_OUTREACH_ENABLED !== "true") {
+      return new Response(
+        JSON.stringify({ 
+          error: "feature_disabled",
+          message: "Contractor outreach is currently disabled. Set CONTRACTOR_OUTREACH_ENABLED=true to enable."
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Verify authentication
     const authResult = await verifyAuth(req);
     if (authResult instanceof Response) {

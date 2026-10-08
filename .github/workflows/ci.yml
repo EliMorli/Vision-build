@@ -88,6 +88,33 @@ jobs:
       - name: Run function tests
         run: npm run fn:test
       
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+      
+      - name: Start Supabase local stack
+        env:
+          SUPABASE_AUTH_EXTERNAL_APPLE_CLIENT_ID: "dummy-client-id"
+          SUPABASE_AUTH_EXTERNAL_APPLE_SECRET: "dummy-secret"
+          SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: "dummy-client-id"
+          SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET: "dummy-secret"
+        run: |
+          supabase start
+          # Wait for services to be ready
+          timeout 60 bash -c 'until curl -s http://127.0.0.1:54321/rest/v1/ > /dev/null; do sleep 2; done' || echo "Supabase may not be fully ready"
+      
+      - name: Run storage integration test
+        env:
+          SUPABASE_URL: http://127.0.0.1:54321
+          SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+        run: |
+          deno run --allow-net --allow-env --allow-read scripts/integration-tests/test-storage-deletion.ts
+      
+      - name: Stop Supabase
+        if: always()
+        run: supabase stop || true
+      
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
       
