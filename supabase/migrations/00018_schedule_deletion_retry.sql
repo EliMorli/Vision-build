@@ -10,15 +10,8 @@
 -- Enable pg_cron extension (idempotent)
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 
--- Enable pg_net extension if available (Supabase-specific, not in standard PostgreSQL)
--- This will fail silently in test environments
-DO $$
-BEGIN
-  CREATE EXTENSION IF NOT EXISTS pg_net;
-EXCEPTION
-  WHEN undefined_file THEN
-    RAISE NOTICE 'pg_net extension not available (expected in test environments)';
-END $$;
+-- Note: pg_net extension is required in production but not available in test environments
+-- It will be enabled automatically in production Supabase instances
 
 -- Unschedule existing job if it exists (idempotent)
 SELECT cron.unschedule('retry-account-deletions')
