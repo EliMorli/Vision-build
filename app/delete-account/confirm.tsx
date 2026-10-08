@@ -2,10 +2,9 @@
 // GET: Validates token and shows confirmation page (does NOT delete)
 // POST: Executes actual deletion when user presses button
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, Platform } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { supabase } from "@/lib/supabase";
 
 type PageState = "loading" | "valid" | "error" | "deleting" | "deleted";
 
@@ -92,16 +91,18 @@ export default function DeleteAccountConfirm() {
       if (data.isAppleUser && Platform.OS === "ios") {
         try {
           // Dynamic import to avoid errors on non-iOS platforms
-          const AppleAuthentication = await import("expo-apple-authentication");
+          const AppleAuth = await import("expo-apple-authentication").catch(() => null);
           
-          // Check if Apple auth is available
-          const isAvailable = await AppleAuthentication.isAvailableAsync();
-          
-          if (isAvailable) {
-            const credential = await AppleAuthentication.signInAsync({
-              requestedScopes: [],
-            });
-            appleAuthCode = credential.authorizationCode || undefined;
+          if (AppleAuth) {
+            // Check if Apple auth is available
+            const isAvailable = await AppleAuth.isAvailableAsync();
+            
+            if (isAvailable) {
+              const credential = await AppleAuth.signInAsync({
+                requestedScopes: [],
+              });
+              appleAuthCode = credential.authorizationCode || undefined;
+            }
           }
         } catch (appleError: any) {
           console.log("Apple authorization cancelled or failed:", appleError.code);
