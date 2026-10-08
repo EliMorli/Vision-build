@@ -43,8 +43,9 @@ export class InMemoryDataLayer implements DataLayer {
     if (path.includes('design_')) {
       // Return a URL with a version parameter that changes on each request
       // This allows tests to track retries and force failures on specific requests
+      // Use relative path so it works regardless of the dev server port
       const designNumber = path.match(/design_(\d+)/)?.[1] || '1';
-      return `http://localhost:19006/__mock__/design_${designNumber}.png?v=${requestCount}`;
+      return `/__mock__/design_${designNumber}.png?v=${requestCount}`;
     }
     
     // Default: return the placeholder
