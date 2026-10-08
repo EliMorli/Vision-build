@@ -191,7 +191,7 @@ test.describe("VisionBuild AI Consent Flow", () => {
     await page.getByRole("button", { name: /continue/i }).click();
 
     // Should resume to generating screen
-    await expect(page.getByText(/building your/i)).toBeInViewport({ timeout: 10000 });
+    await expect(page.getByText(/building your/i).first()).toBeInViewport({ timeout: 10000 });
 
     // Wait for results
     await expect(page.getByText(/swipe to browse/i)).toBeInViewport({ timeout: 30000 });
