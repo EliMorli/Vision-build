@@ -1,14 +1,6 @@
 import { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  Pressable,
-  ScrollView,
-  SafeAreaView,
-} from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, SafeAreaView } from "react-native";
+import { useRouter, useLocalSearchParams, Redirect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { BUDGET_RANGES } from "@/lib/types";
@@ -18,16 +10,9 @@ import { Button, Banner, EmptyState, FullScreenLoader } from "@/components";
 // Feature flag for contractor outreach
 const CONTRACTOR_OUTREACH_ENABLED = false;
 
-export default function HandoffScreen() {
+function HandoffScreenInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  
-  // Redirect if feature is disabled
-  if (!CONTRACTOR_OUTREACH_ENABLED) {
-    router.replace(`/pros-coming-soon?projectId=${id}`);
-    return null;
-  }
-  
   const { currentProject } = useProjectStore();
   const {
     emailPreview,
@@ -302,3 +287,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 });
+
+export default function HandoffScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  
+  if (!CONTRACTOR_OUTREACH_ENABLED) {
+    return <Redirect href={`/pros-coming-soon?projectId=${id}`} />;
+  }
+  
+  return <HandoffScreenInner />;
+}

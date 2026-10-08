@@ -24,7 +24,7 @@ const STATUS_MAP: Record<ProjectStatus, { label: string; color: string; icon: ke
   analyzed: { label: "Ready for design", color: colors.accent, icon: "search-outline" },
   rendering: { label: "Rendering...", color: colors.accent, icon: "hourglass-outline" },
   generated: { label: "Designs ready", color: colors.primary, icon: "color-palette-outline" },
-  connected: { label: "Completed", color: colors.secondary, icon: "checkmark-circle-outline" },
+  connected: { label: "Designs ready", color: colors.primary, icon: "color-palette-outline" }, // Hidden at launch
   completed: { label: "Completed", color: colors.secondary, icon: "checkmark-circle-outline" },
 };
 

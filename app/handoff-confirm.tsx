@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable, SafeAreaView } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, Redirect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { Button } from "@/components";
@@ -16,15 +16,9 @@ interface PrivacyToggle {
   enabled: boolean;
 }
 
-export default function HandoffConfirmScreen() {
+function HandoffConfirmScreenInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  
-  // Redirect if feature is disabled
-  if (!CONTRACTOR_OUTREACH_ENABLED) {
-    router.replace(`/pros-coming-soon?projectId=${id}`);
-    return null;
-  }
   
   const [toggles, setToggles] = useState<PrivacyToggle[]>([
     {
@@ -285,3 +279,13 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
   },
 });
+
+export default function HandoffConfirmScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  
+  if (!CONTRACTOR_OUTREACH_ENABLED) {
+    return <Redirect href={`/pros-coming-soon?projectId=${id}`} />;
+  }
+  
+  return <HandoffConfirmScreenInner />;
+}

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -57,23 +57,24 @@ function BeforeAfterSlider() {
   const showBeforeLabel = dividerX > 60;
   const showAfterLabel = dividerX < imageWidth - 60;
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderMove: (_, gesture) => {
-        const offset = (width - imageWidth) / 2;
-        const relativeX = gesture.moveX - offset;
-        const clampedX = Math.max(0, Math.min(imageWidth, relativeX));
-        const newPosition = clampedX / imageWidth;
-        sliderPosition.setValue(newPosition);
-        setDividerX(clampedX);
-      },
-    })
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderMove: (_, gesture) => {
+          const offset = (width - imageWidth) / 2;
+          const relativeX = gesture.moveX - offset;
+          const clampedX = Math.max(0, Math.min(imageWidth, relativeX));
+          const newPosition = clampedX / imageWidth;
+          sliderPosition.setValue(newPosition);
+          setDividerX(clampedX);
+        },
+      }),
+    [imageWidth, sliderPosition]
   );
   
-  // Extract stable reference for spread operator
-  const panHandlers = panResponder.current.panHandlers;
+  const panHandlers = panResponder.panHandlers;
 
   const handleButtonSlide = (direction: "left" | "right") => {
     const newX = direction === "left"
@@ -153,12 +154,8 @@ export default function IntroScreen() {
     }
   );
 
-  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 });
+  const viewabilityConfig = useMemo(() => ({ viewAreaCoveragePercentThreshold: 50 }), []);
   
-  // Extract stable references for FlatList props
-  const onViewableItemsChangedRef = onViewableItemsChanged.current;
-  const viewabilityConfigValue = viewabilityConfig.current;
-
   const handleGetStarted = async () => {
     await AsyncStorage.setItem(INTRO_SEEN_KEY, "true");
     if (session) {
@@ -182,8 +179,8 @@ export default function IntroScreen() {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onViewableItemsChanged={onViewableItemsChangedRef}
-        viewabilityConfig={viewabilityConfigValue}
+        onViewableItemsChanged={onViewableItemsChanged.current}
+        viewabilityConfig={viewabilityConfig}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => {
           if (item.type === "slider") {
