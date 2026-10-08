@@ -104,6 +104,7 @@ export function PrivateImage({
   }, []);
 
   // Update imageUrl when signedUrl changes
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (signedUrl) {
       setImageUrl(signedUrl);
