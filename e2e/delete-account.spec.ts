@@ -3,6 +3,8 @@ import { test, expect, type Page } from "@playwright/test";
 const BASE_URL = process.env.BASE_URL || "http://localhost:19006";
 
 test.describe("Delete Account Flow", () => {
+  test.use({ reducedMotion: "no-preference" });
+  
   test("delete account confirmation: cancel, reopen, confirm", async ({ page }: { page: Page }) => {
     await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:intro_seen", "true");
@@ -41,10 +43,18 @@ test.describe("Delete Account Flow", () => {
     const confirmSheet = page.getByTestId("delete-account-confirm");
     await expect(confirmSheet).toBeVisible({ timeout: 3000 });
     
-    // Verify reduced motion works: sheet should be at full opacity immediately
-    await expect.poll(async () => {
-      return await confirmSheet.evaluate((el) => getComputedStyle(el).opacity);
-    }).toBe('1');
+    // Verify reduced motion works: sheet and all ancestors should be at full opacity immediately
+    const combinedOpacity = await confirmSheet.evaluate((el) => {
+      let opacity = 1;
+      let current: Element | null = el;
+      while (current) {
+        const style = getComputedStyle(current);
+        opacity *= parseFloat(style.opacity) || 1;
+        current = current.parentElement;
+      }
+      return opacity;
+    });
+    expect(combinedOpacity).toBe(1);
     
     // Verify message contains deletion summary (from DELETED_DATA_SUMMARY)
     await expect(page.getByText(/This will permanently delete your account and your projects/i)).toBeVisible();

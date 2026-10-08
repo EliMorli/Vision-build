@@ -184,7 +184,9 @@ jobs:
           echo "✓ Test discovery validation passed"
       
       - name: Run E2E Web Tests
-        run: npm run e2e:web
+        run: |
+          touch $RUNNER_TEMP/e2e-start
+          npm run e2e:web
         env:
           EXPO_PUBLIC_DEV_MOCK_SESSION: "true"
           CI: "true"
@@ -199,7 +201,11 @@ jobs:
             sudo apt-get install -y imagemagick
           fi
           
-          PLAYWRIGHT_START=$(date -r playwright-report +%s 2>/dev/null || date -r e2e/screens +%s)
+          MARKER="$RUNNER_TEMP/e2e-start"
+          if [ ! -f "$MARKER" ]; then
+            echo "❌ E2E start marker not found"
+            exit 1
+          fi
           
           FAIL=0
           for screenshot in e2e/screens/ui-*.png; do
@@ -212,8 +218,8 @@ jobs:
               continue
             fi
             
-            # Check if file was modified in this run (within last 10 minutes)
-            if [ $(find "$screenshot" -mmin -10 2>/dev/null | wc -l) -eq 0 ]; then
+            # Check if file is newer than e2e start marker
+            if [ ! "$screenshot" -nt "$MARKER" ]; then
               echo "❌ $screenshot was not regenerated in this test run"
               FAIL=1
               continue
@@ -251,6 +257,17 @@ jobs:
               echo "✓ $CONTACT_SHEET (composite, verified)"
             fi
           fi
+          
+          # Check that all screenshot paths referenced in specs exist
+          echo ""
+          echo "Checking for missing screenshots referenced in specs..."
+          REFERENCED_SCREENSHOTS=$(grep -roh "e2e/screens/[^\"']*\.png" e2e/*.spec.ts | sort -u)
+          for ref_screenshot in $REFERENCED_SCREENSHOTS; do
+            if [ ! -f "$ref_screenshot" ]; then
+              echo "❌ $ref_screenshot referenced in spec but missing"
+              FAIL=1
+            fi
+          done
           
           if [ $FAIL -eq 1 ]; then
             echo ""

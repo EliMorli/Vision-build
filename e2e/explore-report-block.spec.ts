@@ -3,6 +3,8 @@ import { test, expect, type Page } from "@playwright/test";
 const BASE_URL = process.env.BASE_URL || "http://localhost:19006";
 
 test.describe("VisionBuild Explore Report and Block", () => {
+  test.use({ reducedMotion: "no-preference" });
+  
   test("report a design - mock call recorded", async ({ page }: { page: Page }) => {
     // Seed test data (guard with sessionStorage to prevent re-seeding on navigation/reload)
     await page.addInitScript(() => {
@@ -49,7 +51,24 @@ test.describe("VisionBuild Explore Report and Block", () => {
 
     // Click report button
     await page.getByTestId("explore-report-button").first().click();
-    await expect(page.getByTestId("report-block-menu")).toBeVisible({ timeout: 3000 });
+    const menuSheet = page.getByTestId("report-block-menu");
+    await expect(menuSheet).toBeVisible({ timeout: 3000 });
+    
+    // Verify reduced motion works: menu and all ancestors should be at full opacity immediately
+    const combinedOpacity = await menuSheet.evaluate((el) => {
+      let opacity = 1;
+      let current: Element | null = el;
+      while (current) {
+        const style = getComputedStyle(current);
+        opacity *= parseFloat(style.opacity) || 1;
+        current = current.parentElement;
+      }
+      return opacity;
+    });
+    expect(combinedOpacity).toBe(1);
+    
+    // Take screenshot of the menu
+    await page.screenshot({ path: "e2e/screens/ui-explore-menu.png", fullPage: false });
 
     // Click "Report this design"
     await page.getByTestId("menu-report-option").click();

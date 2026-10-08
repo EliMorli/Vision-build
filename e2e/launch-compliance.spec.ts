@@ -220,7 +220,7 @@ test.describe("Launch Compliance Tests", () => {
     await expect(page.getByTestId("project-brief-waitlist")).toBeVisible();
     await expect(page.getByTestId("project-brief-waitlist")).toContainText("Join the pros waitlist");
     
-    await page.screenshot({ path: "e2e/screens/ui-project-brief.png", fullPage: false });
+    await page.screenshot({ path: "e2e/screens/ui-project-brief-waitlist.png", fullPage: false });
   });
 
   test("profile badges: locked badge with lock icon and hint", async ({ page }: { page: Page }) => {

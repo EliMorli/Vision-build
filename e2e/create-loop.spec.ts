@@ -24,7 +24,7 @@ test.describe("VisionBuild Create Loop", () => {
 
     // After intro, if not signed in, may go to sign-in; in mock mode with session, should reach tabs
     // Wait for either Home screen or sign-in
-    await page.waitForTimeout(2000);
+    await expect(page.getByTestId("home-screen").or(page.getByTestId("sign-in-screen"))).toBeVisible({ timeout: 5000 });
     
     // If on Home, try to start a project - this should trigger consent flow
     const startButton = page.getByRole("button", { name: /start your first project/i });
@@ -93,10 +93,8 @@ test.describe("VisionBuild Create Loop", () => {
     // Click "Generate 4 Designs"
     await page.getByRole("button", { name: /generate 4 designs/i }).click();
 
-    // Wait a moment for navigation to generating screen
-    await page.waitForTimeout(500);
-
     // Assert Generating screen (with countdown text), then screenshot
+    await expect(page.getByTestId("generating-screen")).toBeVisible({ timeout: 10000 });
     await expect(page.getByText(/building your/i)).toBeInViewport({ timeout: 10000 });
     await expect(page.getByText(/sec left/i)).toBeVisible({ timeout: 2000 });
     await page.screenshot({ path: "e2e/screens/a5-generating.png", fullPage: true });

@@ -122,10 +122,32 @@ test.describe("UI Screenshots", () => {
     await expect(page.getByText(/your designs/i)).toBeVisible({ timeout: 10000 });
     await page.screenshot({ path: "e2e/screens/ui-results.png", fullPage: false });
 
-    // 7. Project detail
+    // 7. Project detail - seed the project with designs first
+    await page.evaluate(() => {
+      const projectWithDesigns = {
+        id: "mock-project-id",
+        user_id: "mock-user",
+        title: "Modern Living Room",
+        status: "generated",
+        selected_style: "modern",
+        room_analysis: { roomType: "living_room" },
+        original_image_url: "mock/original.jpg",
+        generated_image_urls: ["mock/gen1.jpg", "mock/gen2.jpg", "mock/gen3.jpg", "mock/gen4.jpg"],
+        is_public: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      localStorage.setItem("@visionbuild:mock_seed_projects", JSON.stringify([projectWithDesigns]));
+    });
+    
     await page.goto(`${BASE_URL}/project/mock-project-id`);
     await page.waitForLoadState("networkidle");
     await expect(page.getByText(/original photo/i)).toBeVisible({ timeout: 10000 });
+    
+    // Verify designs are shown
+    await expect(page.getByText(/designs \([1-9]\d*\)/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('[data-testid="design-card"]').first()).toBeVisible({ timeout: 5000 });
+    
     await page.screenshot({ path: "e2e/screens/ui-project-detail.png", fullPage: false });
 
     // 8. Home with project - seed a project now for this screenshot
