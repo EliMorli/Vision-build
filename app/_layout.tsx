@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as WebBrowser from "expo-web-browser";
@@ -13,6 +13,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore, useSettingsStore } from "@/lib/store";
+import { MOCK_USER_ID } from "@/lib/constants/mock";
 
 // Complete any pending auth sessions (handles redirect back from browser)
 WebBrowser.maybeCompleteAuthSession();
@@ -26,6 +27,7 @@ export default function RootLayout() {
   const loadSettings = useSettingsStore((s) => s.loadSettings);
   const router = useRouter();
   const segments = useSegments();
+  const [mockSignedOut, setMockSignedOut] = useState<string | null>(null);
 
   const [fontsLoaded, fontError] = useFonts({
     Nunito_600SemiBold,
@@ -36,11 +38,34 @@ export default function RootLayout() {
 
   useEffect(() => {
     // Hydrate existing session on cold start
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       
-      // In mock mode, fetch profile immediately since there's no real session
+      // In mock mode, create mock session if not signed out
       if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+        const signedOut = await AsyncStorage.getItem("@visionbuild:mock_signed_out");
+        setMockSignedOut(signedOut);
+        
+        if (!session && signedOut !== "true") {
+          const now = Date.now();
+          setSession({
+            user: {
+              id: MOCK_USER_ID,
+              email: "demo@visionbuild.app",
+              app_metadata: {},
+              user_metadata: {},
+              aud: "authenticated",
+              created_at: new Date().toISOString(),
+            },
+            access_token: "mock-token",
+            refresh_token: "mock-refresh",
+            expires_in: 3600,
+            expires_at: now / 1000 + 3600,
+            token_type: "bearer",
+          } as any);
+        }
+        
+        // Fetch profile immediately since there's no real session
         useAuthStore.getState().fetchProfile();
       }
     });

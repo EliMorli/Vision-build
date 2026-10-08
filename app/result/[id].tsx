@@ -226,6 +226,7 @@ export default function ResultScreen() {
               accessibilityRole="button"
               accessibilityState={{ selected: isSelected }}
               accessibilityLabel={`Design option ${index + 1}${isSelected ? ", selected" : ""}`}
+              testID={url ? "result-design-card" : undefined}
             >
               {url ? (
                 <>

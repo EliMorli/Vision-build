@@ -4,7 +4,6 @@ import { ActivityIndicator, View } from "react-native";
 import { colors } from "@/lib/theme";
 import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { MOCK_USER_ID } from "@/lib/constants/mock";
 
 const INTRO_SEEN_KEY = "@visionbuild:intro_seen";
 
@@ -14,7 +13,6 @@ const DEV_MOCK_ENABLED =
 export default function Index() {
   const session = useAuthStore((s) => s.session);
   const loading = useAuthStore((s) => s.loading);
-  const setSession = useAuthStore((s) => s.setSession);
   const [introSeen, setIntroSeen] = useState<boolean | null>(null);
   const [mockSignedOut, setMockSignedOut] = useState<boolean | null>(null);
 
@@ -40,27 +38,7 @@ export default function Index() {
     checkIntroSeen();
   }, []);
   
-  // Set mock session in dev mode (but not if user signed out)
-  useEffect(() => {
-    if (DEV_MOCK_ENABLED && !session && mockSignedOut === false) {
-      const now = Date.now();
-      setSession({
-        user: {
-          id: MOCK_USER_ID,
-          email: "demo@visionbuild.app",
-          app_metadata: {},
-          user_metadata: {},
-          aud: "authenticated",
-          created_at: new Date().toISOString(),
-        },
-        access_token: "mock-token",
-        refresh_token: "mock-refresh",
-        expires_in: 3600,
-        expires_at: now / 1000 + 3600,
-        token_type: "bearer",
-      } as any);
-    }
-  }, [session, setSession, mockSignedOut]);
+  // Mock session is now created in _layout.tsx so it works on all routes
 
   if (loading || introSeen === null || (DEV_MOCK_ENABLED && mockSignedOut === null)) {
     return (

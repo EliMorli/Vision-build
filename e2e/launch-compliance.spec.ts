@@ -222,7 +222,7 @@ test.describe("Launch Compliance Tests", () => {
     await expect(waitlistButton).toContainText("Join the pros waitlist");
     
     // Scroll button into view and verify it's in viewport
-    await waitlistButton.evaluate((el) => el.scrollIntoViewIfNeeded());
+    await waitlistButton.scrollIntoViewIfNeeded();
     await expect(waitlistButton).toBeInViewport();
     
     await page.screenshot({ path: "e2e/screens/ui-project-brief-waitlist.png", fullPage: false });

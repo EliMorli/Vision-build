@@ -131,8 +131,8 @@ test.describe("Pros Waitlist", () => {
     await expect(page.getByText(/swipe to browse/i)).toBeVisible({ timeout: 15000 });
     
     // Select a design by clicking on it (not on the disabled Save button)
-    const designCards = page.locator('[data-testid*="design"], .card, img[alt*="Design"]').first();
-    await designCards.click();
+    const designCard = page.getByTestId("result-design-card").first();
+    await designCard.click();
     
     // Now save design
     await page.getByRole("button", { name: /save/i }).click();
