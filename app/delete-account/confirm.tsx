@@ -3,9 +3,10 @@
 // POST: Executes actual deletion when user presses button
 
 import { useState, useEffect } from "react";
-import { View, Text, Pressable, StyleSheet, ActivityIndicator, Platform } from "react-native";
+import { View, Text, Pressable, StyleSheet, ActivityIndicator, Platform, Linking } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as AppleAuthentication from "expo-apple-authentication";
+import { SUPPORT_EMAIL } from "../../lib/config";
 
 type PageState = "loading" | "valid" | "error" | "deleting" | "deleted";
 
@@ -84,6 +85,20 @@ export default function DeleteAccountConfirm() {
 
   const executeDelete = async () => {
     setState("deleting");
+
+    // Check for mock failure flag (E2E testing only)
+    if (Platform.OS === "web" && typeof localStorage !== "undefined") {
+      const mockFailure = localStorage.getItem("@visionbuild:mock_deletion_failure");
+      if (mockFailure === "true") {
+        console.log("Mock deletion failure triggered");
+        setState("error");
+        setData({
+          error: "We couldn't finish deleting your account. Some of your data may already be removed. Please try again.",
+          canRetry: true,
+        });
+        return;
+      }
+    }
 
     try {
       let appleAuthCode: string | undefined;
@@ -208,14 +223,10 @@ export default function DeleteAccountConfirm() {
                 <Text style={styles.buttonText}>Try again</Text>
               </Pressable>
               <Pressable onPress={() => {
-                // Open support URL or email
-                const supportUrl = "mailto:support@visionbuild.app";
-                if (Platform.OS === "web") {
-                  window.open(supportUrl, "_blank");
-                } else {
-                  // On native, would use Linking.openURL
-                  console.log("Open support:", supportUrl);
-                }
+                const supportUrl = `mailto:${SUPPORT_EMAIL || "support@visionbuild.app"}`;
+                Linking.openURL(supportUrl).catch((err) => {
+                  console.error("Failed to open support link:", err);
+                });
               }}>
                 <Text style={styles.linkText}>Contact support</Text>
               </Pressable>

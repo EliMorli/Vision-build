@@ -240,7 +240,6 @@ export async function handleConfirmPost(
     // Deletion failed - persist for retry
     const now = deps.clock.now();
     const nextRetryAt = new Date(now.getTime() + 15 * 60 * 1000).toISOString(); // 15 minutes
-    const errorCode = `${result.stage}:${result.error.substring(0, 50)}`;
 
     await deps.supabase
       .from("account_deletion_requests")
@@ -248,8 +247,9 @@ export async function handleConfirmPost(
         status: "failed_pending_retry",
         retry_attempts: 0,
         next_retry_at: nextRetryAt,
-        last_error_code: errorCode,
+        last_error_code: result.error,
         first_failed_at: now.toISOString(),
+        user_id: userId,
       })
       .eq("id", requestId);
 
@@ -264,7 +264,7 @@ export async function handleConfirmPost(
     );
   }
 
-  // Deletion succeeded - mark as completed
+  // Deletion succeeded - mark as completed and log for compliance
   await deps.supabase
     .from("account_deletion_requests")
     .update({
@@ -272,6 +272,13 @@ export async function handleConfirmPost(
       completed_at: deps.clock.now().toISOString(),
     })
     .eq("id", requestId);
+  
+  // Log completion (survives CASCADE delete for 45-day compliance proof)
+  await deps.supabase.from("deletion_completion_log").insert({
+    user_id: userId,
+    request_id: requestId,
+    retry_attempts: 0,
+  });
 
   const isAppleUser = user?.app_metadata?.provider === "apple";
   const needsManualDisconnect = isAppleUser && result.appleRevokeStatus.status !== 'success';

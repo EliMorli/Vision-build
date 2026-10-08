@@ -8,7 +8,8 @@ ADD COLUMN IF NOT EXISTS retry_attempts int NOT NULL DEFAULT 0,
 ADD COLUMN IF NOT EXISTS next_retry_at timestamptz,
 ADD COLUMN IF NOT EXISTS last_error_code text,
 ADD COLUMN IF NOT EXISTS first_failed_at timestamptz,
-ADD COLUMN IF NOT EXISTS completed_at timestamptz;
+ADD COLUMN IF NOT EXISTS completed_at timestamptz,
+ADD COLUMN IF NOT EXISTS alerted_at timestamptz;
 
 -- Add constraint for valid statuses
 ALTER TABLE public.account_deletion_requests

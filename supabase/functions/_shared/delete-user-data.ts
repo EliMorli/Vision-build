@@ -45,7 +45,7 @@ async function deleteStoragePrefix(
       .list(prefix, { limit: pageSize, offset: 0 });
 
     if (error) {
-      throw new Error(`Storage list error in ${bucketId}/${prefix}: ${error.message}`);
+      throw new Error(`storage:list_failed`);
     }
 
     if (!files || files.length === 0) {
@@ -71,7 +71,7 @@ async function deleteStoragePrefix(
         .remove(filePaths);
 
       if (removeError) {
-        throw new Error(`Storage remove error in ${bucketId}: ${removeError.message}`);
+        throw new Error(`storage:remove_failed`);
       }
       
       totalDeleted += filePaths.length;
@@ -85,7 +85,7 @@ async function deleteStoragePrefix(
   }
 
   if (attempts >= maxAttempts) {
-    throw new Error(`Storage deletion exceeded max attempts (${maxAttempts}) in ${bucketId}/${prefix}`);
+    throw new Error(`storage:max_attempts_exceeded`);
   }
 
   return totalDeleted;
@@ -128,39 +128,40 @@ export async function deleteUserData(params: DeleteUserDataParams): Promise<Dele
       }
     }
   } catch (storageError: any) {
-    // Extract bucket name from error if present
-    const bucketMatch = storageError.message?.match(/in ([^/]+)\//);
-    const bucket = bucketMatch ? bucketMatch[1] : undefined;
-    
     console.error(`Storage deletion failed for user ${userId}: ${storageError.message}`);
     return {
       success: false,
       stage: 'storage',
-      bucket,
-      error: storageError.message
+      error: storageError.message || 'storage:unknown_error'
     };
   }
 
   // ─── Delete database rows ──────────────────────────────
   // RLS + cascade delete handles most of these automatically,
   // but we delete explicitly for clarity and logging
+  // NOTE: account_deletion_requests NOT deleted here - FK cascade handles it,
+  // and we need to preserve retry state if auth deletion fails
 
-  try {
-    await supabase.from("xp_events").delete().eq("user_id", userId);
-    await supabase.from("leads").delete().eq("user_id", userId);
-    await supabase.from("reports").delete().eq("user_id", userId);
-    await supabase.from("consents").delete().eq("user_id", userId);
-    await supabase.from("usage_events").delete().eq("user_id", userId);
-    await supabase.from("account_deletion_requests").delete().eq("user_id", userId);
-    await supabase.from("projects").delete().eq("user_id", userId);
-    await supabase.from("profiles").delete().eq("id", userId);
-  } catch (dbError: any) {
-    console.error(`Database deletion failed for user ${userId}: ${dbError.message}`);
-    return {
-      success: false,
-      stage: 'database',
-      error: dbError.message
-    };
+  const tablesToDelete = [
+    { table: "xp_events", column: "user_id" },
+    { table: "leads", column: "user_id" },
+    { table: "reports", column: "user_id" },
+    { table: "consents", column: "user_id" },
+    { table: "usage_events", column: "user_id" },
+    { table: "projects", column: "user_id" },
+    { table: "profiles", column: "id" },
+  ];
+
+  for (const { table, column } of tablesToDelete) {
+    const { error } = await supabase.from(table).delete().eq(column, userId);
+    if (error) {
+      console.error(`Database deletion failed for user ${userId} in table ${table}: ${error.message}`);
+      return {
+        success: false,
+        stage: 'database',
+        error: `database:${table}`
+      };
+    }
   }
 
   // ─── Revoke Apple Sign-In token (if applicable) ────────
@@ -268,9 +269,16 @@ export async function deleteUserData(params: DeleteUserDataParams): Promise<Dele
     return {
       success: false,
       stage: 'auth',
-      error: deleteError.message
+      error: 'auth:delete_failed'
     };
   }
+
+  // Auth deletion succeeded - account_deletion_requests row CASCADE deleted
+  // Log completion for compliance (45-day CCPA proof) without PII
+  await supabase.from("deletion_completion_log").insert({
+    user_id: userId,
+    retry_attempts: 0, // Will be updated by retry function if applicable
+  });
 
   console.log(`Successfully deleted account for user ${userId}`);
   return { success: true, appleRevokeStatus };

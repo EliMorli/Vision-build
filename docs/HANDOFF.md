@@ -32,6 +32,23 @@ All 6 security issues from review of commit d93632a have been fixed:
 - ✅ `docs/BUTTONS.md` - Status tracking for all 42 buttons (7 working, 4 deferred, 30 broken)
 - ✅ `docs/HANDOFF.md` - This file
 
+### Environment Variables / Fill-ins Required
+
+**Account Deletion Ops Alerts** (for `retry-account-deletions` edge function):
+- `OPS_ALERT_EMAIL` - Email address to receive ops alerts when deletions fail repeatedly
+- `ALERT_FROM_EMAIL` - From email address for ops alerts (e.g., `alerts@yourdomain.com`)
+- `CRON_SECRET` - Secret for authenticating cron job calls to retry-account-deletions
+
+**Apple Sign-In Revocation** (if using Apple authentication):
+- `APPLE_TEAM_ID` - Apple Developer Team ID
+- `APPLE_KEY_ID` - Apple Sign In Key ID
+- `APPLE_PRIVATE_KEY` - Apple Sign In private key (PEM format)
+
+**Client Configuration**:
+- `EXPO_PUBLIC_SUPPORT_EMAIL` - Support email address shown in app (used in Contact support links)
+
+Note: If OPS_ALERT_EMAIL or ALERT_FROM_EMAIL are unset, the retry function will log a warning and skip sending alerts instead of sending to a default address.
+
 ### Legal Routes
 - ✅ `/terms` - Renders `content/legal/terms-of-service.md` (including DRAFT line)
 - ✅ `/privacy` - Renders `content/legal/privacy-policy.md`

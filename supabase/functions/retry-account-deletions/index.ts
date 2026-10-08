@@ -7,7 +7,7 @@ import { deleteUserData } from "../_shared/delete-user-data.ts";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const OPS_ALERT_EMAIL = Deno.env.get("OPS_ALERT_EMAIL") || "ops@visionbuild.app";
+const OPS_ALERT_EMAIL = Deno.env.get("OPS_ALERT_EMAIL");
 
 // Backoff schedule: 15min, 1h, 6h, 24h, then daily
 const RETRY_DELAYS_MS = [
@@ -26,8 +26,15 @@ function getNextRetryDelay(attempts: number): number {
 }
 
 async function sendOpsAlert(userId: string, attempts: number, errorCode: string, firstFailedAt: string) {
+  const ALERT_FROM = Deno.env.get("ALERT_FROM_EMAIL");
+  
   if (!RESEND_API_KEY) {
-    console.warn(`Ops alert needed for user ${userId} but RESEND_API_KEY not set`);
+    console.warn(`Ops alert needed for user ${userId} but RESEND_API_KEY not set - skipping`);
+    return;
+  }
+
+  if (!OPS_ALERT_EMAIL || !ALERT_FROM) {
+    console.warn(`Ops alert needed for user ${userId} but OPS_ALERT_EMAIL or ALERT_FROM_EMAIL not set - skipping`);
     return;
   }
 
@@ -39,7 +46,7 @@ async function sendOpsAlert(userId: string, attempts: number, errorCode: string,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "VisionBuild Alerts <alerts@visionbuild.app>",
+        from: `VisionBuild Alerts <${ALERT_FROM}>`,
         to: [OPS_ALERT_EMAIL],
         subject: `[ALERT] Account deletion retry threshold exceeded`,
         html: `
@@ -66,7 +73,22 @@ async function sendOpsAlert(userId: string, attempts: number, errorCode: string,
   }
 }
 
-Deno.serve(async (_req) => {
+Deno.serve(async (req) => {
+  // Require service role key or CRON_SECRET
+  const authHeader = req.headers.get("Authorization");
+  const cronSecret = req.headers.get("X-Cron-Secret");
+  const expectedCronSecret = Deno.env.get("CRON_SECRET");
+
+  const hasServiceRole = authHeader?.includes(SUPABASE_SERVICE_ROLE_KEY);
+  const hasValidCronSecret = expectedCronSecret && cronSecret === expectedCronSecret;
+
+  if (!hasServiceRole && !hasValidCronSecret) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized" }),
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   try {
@@ -139,6 +161,8 @@ Deno.serve(async (_req) => {
 
       if (deleteResult.success) {
         console.log(`Successfully deleted user ${request.user_id} on retry`);
+        
+        // Mark request as completed
         await supabase
           .from("account_deletion_requests")
           .update({
@@ -146,20 +170,27 @@ Deno.serve(async (_req) => {
             completed_at: new Date().toISOString(),
           })
           .eq("id", request.id);
+        
+        // Log completion for compliance (account_deletion_requests will CASCADE delete, this survives)
+        await supabase.from("deletion_completion_log").insert({
+          user_id: request.user_id,
+          request_id: request.id,
+          retry_attempts: request.retry_attempts + 1,
+        });
+        
         results.succeeded++;
       } else {
         const newAttempts = request.retry_attempts + 1;
         const nextRetryAt = new Date(Date.now() + getNextRetryDelay(newAttempts)).toISOString();
-        const errorCode = `${deleteResult.stage}:${deleteResult.error.substring(0, 50)}`;
 
-        console.log(`Deletion failed for user ${request.user_id} (attempt ${newAttempts}): ${errorCode}`);
+        console.log(`Deletion failed for user ${request.user_id} (attempt ${newAttempts}): ${deleteResult.error}`);
 
         await supabase
           .from("account_deletion_requests")
           .update({
             retry_attempts: newAttempts,
             next_retry_at: nextRetryAt,
-            last_error_code: errorCode,
+            last_error_code: deleteResult.error,
             first_failed_at: request.first_failed_at || new Date().toISOString(),
           })
           .eq("id", request.id);
@@ -173,8 +204,15 @@ Deno.serve(async (_req) => {
 
         // Alert if attempts >= 5 OR first failure > 7 days ago
         // Only alert once per request (check if we haven't alerted before)
-        if ((newAttempts >= 5 || daysSinceFirstFailed > 7) && request.retry_attempts < 5) {
-          await sendOpsAlert(request.user_id, newAttempts, errorCode, request.first_failed_at || new Date().toISOString());
+        if ((newAttempts >= 5 || daysSinceFirstFailed > 7) && !request.alerted_at) {
+          await sendOpsAlert(request.user_id, newAttempts, deleteResult.error, request.first_failed_at || new Date().toISOString());
+          
+          // Mark as alerted
+          await supabase
+            .from("account_deletion_requests")
+            .update({ alerted_at: new Date().toISOString() })
+            .eq("id", request.id);
+          
           results.alerted++;
         }
       }
