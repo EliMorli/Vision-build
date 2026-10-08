@@ -28,6 +28,9 @@ const STATUS_MAP: Record<ProjectStatus, { label: string; color: string; icon: ke
   completed: { label: "Completed", color: colors.secondary, icon: "checkmark-circle-outline" },
 };
 
+const SHOW_DEV_BUTTON = 
+  (typeof __DEV__ !== 'undefined' && __DEV__) || process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === 'true';
+
 export default function DashboardScreen() {
   const router = useRouter();
   const { projects, fetchProjects, generatingStartTime } = useProjectStore();
@@ -90,31 +93,51 @@ export default function DashboardScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <View>
+          <View style={styles.headerLeft}>
             <Text style={styles.greeting}>Hey {profile?.display_name?.split(" ")[0] || "there"}</Text>
             <Text style={fonts.heading}>Ready to redesign?</Text>
           </View>
-          <Pressable onPress={() => router.push("/profile-settings")} hitSlop={12}>
-            <View style={styles.xpChip}>
-              <Ionicons name="star" size={14} color={colors.accent} />
-              <Text style={styles.xpText}>{xp} XP</Text>
-            </View>
-          </Pressable>
+          <View style={styles.headerRight}>
+            <Pressable 
+              onPress={() => router.push("/profile-settings")} 
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel={`${xp} experience points, tap to view profile`}
+            >
+              <View style={styles.xpChip}>
+                <Ionicons name="star" size={14} color={colors.accent} />
+                <Text style={styles.xpText}>{xp} XP</Text>
+              </View>
+            </Pressable>
+            {SHOW_DEV_BUTTON && (
+              <Pressable 
+                onPress={() => router.push("/profile-settings")} 
+                hitSlop={12}
+                style={styles.devButton} // SHOW_DEV_BUTTON && gated
+                accessibilityLabel="Developer tools"
+              >
+                <Ionicons name="flash" size={18} color={colors.accent} />
+              </Pressable>
+            )}
+          </View>
         </View>
         <View style={styles.emptyContent}>
           <ProsTeaserCard key={prosCardKey} />
           
-          <EmptyState
-            icon="home-outline"
-            title="No projects yet"
-            subtitle="Take a photo of any room to start visualizing your renovation."
-          >
+          <View style={styles.emptyContainer}>
+            <View style={styles.emptyIllustration}>
+              <IsoRoom palette="modern" size={220} spark />
+            </View>
+            <Text style={styles.emptyTitle}>No projects yet</Text>
+            <Text style={styles.emptySubtitle}>
+              Take a photo of any room to start visualizing your renovation.
+            </Text>
             <Button
               label="Start Your First Project"
-              icon="add-circle-outline"
               onPress={() => router.push("/(tabs)/camera")}
+              icon="add-circle-outline"
             />
-          </EmptyState>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -138,16 +161,28 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerLeft}>
           <Text style={styles.greeting}>Hey {profile?.display_name?.split(" ")[0] || "there"}</Text>
           <Text style={fonts.heading}>Ready to redesign?</Text>
         </View>
-        <Pressable onPress={() => router.push("/profile-settings")} hitSlop={12}>
-          <View style={styles.xpChip}>
-            <Ionicons name="star" size={14} color={colors.accent} />
-            <Text style={styles.xpText}>{xp} XP</Text>
-          </View>
-        </Pressable>
+        <View style={styles.headerRight}>
+          <Pressable onPress={() => router.push("/profile-settings")} hitSlop={12}>
+            <View style={styles.xpChip}>
+              <Ionicons name="star" size={14} color={colors.accent} />
+              <Text style={styles.xpText}>{xp} XP</Text>
+            </View>
+          </Pressable>
+          {SHOW_DEV_BUTTON && (
+            <Pressable 
+              onPress={() => router.push("/profile-settings")} 
+              hitSlop={12}
+              style={styles.devButton} // SHOW_DEV_BUTTON && gated
+              accessibilityLabel="Developer tools"
+            >
+              <Ionicons name="flash" size={18} color={colors.accent} />
+            </Pressable>
+          )}
+        </View>
       </View>
 
       <FlatList
@@ -168,7 +203,13 @@ export default function DashboardScreen() {
           const designCount = item.generated_image_urls?.length || 0;
           
           return (
-            <Pressable style={styles.card} onPress={() => openProject(item)}>
+            <Pressable 
+              style={styles.card} 
+              onPress={() => openProject(item)}
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${item.title} project`}
+              testID="home-project-card"
+            >
               {item.selected_generation_url || item.original_image_url ? (
                 <PrivateImage
                   bucket="room-photos"
@@ -219,10 +260,18 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
   greeting: { 
     ...fonts.regular, 
@@ -248,8 +297,16 @@ const styles = StyleSheet.create({
   },
   xpText: {
     fontSize: 12,
-    fontWeight: "800",
+    fontFamily: "Nunito_900Black",
     color: colors.textPrimary,
+  },
+  devButton: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.full,
+    backgroundColor: colors.accent + "15",
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerSection: {
     gap: spacing.md,
@@ -286,7 +343,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: radius.full,
   },
-  statusText: { color: "#fff", fontSize: 11, fontWeight: "600" },
+  statusText: { color: "#fff", fontSize: 11, fontFamily: "Nunito_700Bold" },
   designCountBadge: {
     position: "absolute",
     top: 10,
@@ -306,12 +363,40 @@ const styles = StyleSheet.create({
   },
   designCountText: {
     fontSize: 11,
-    fontWeight: "600",
+    fontFamily: "Nunito_700Bold",
     color: colors.primary,
   },
   cardBody: { padding: spacing.md, gap: 4 },
   cardTitle: { ...fonts.title, fontSize: 17 },
   cardSub: { ...fonts.regular, lineHeight: 20 },
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xxl,
+  },
+  emptyIllustration: {
+    marginBottom: spacing.lg,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  emptyTitle: {
+    ...fonts.heading,
+    fontSize: 24,
+    marginBottom: spacing.xs,
+    textAlign: "center",
+  },
+  emptySubtitle: {
+    ...fonts.regular,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginBottom: spacing.xl,
+    lineHeight: 22,
+  },
   emptyContent: {
     flex: 1,
     paddingHorizontal: spacing.lg,

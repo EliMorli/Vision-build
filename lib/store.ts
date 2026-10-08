@@ -3,6 +3,7 @@ import { Session } from "@supabase/supabase-js";
 import * as WebBrowser from "expo-web-browser";
 import { makeRedirectUri } from "expo-auth-session";
 import * as ImageManipulator from "expo-image-manipulator";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "./supabase";
 import { Project, Profile, Contractor } from "./types";
 import { getDataLayer } from "./data";
@@ -225,7 +226,21 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   fetchProjects: async () => {
     const userId = useAuthStore.getState().session?.user?.id;
     
-    // Dev mode: Use mock projects if explicitly enabled
+    // Dev mode: Check for seeded mock projects first (for E2E testing)
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      try {
+        const seedJson = await AsyncStorage.getItem("@visionbuild:mock_seed_projects");
+        if (seedJson) {
+          const seedProjects = JSON.parse(seedJson);
+          set({ projects: seedProjects });
+          return;
+        }
+      } catch (e) {
+        console.warn("Failed to load mock seed projects:", e);
+      }
+    }
+    
+    // Dev mode: Use default mock projects if explicitly enabled and no userId
     if (!userId && __DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
       const mockProjects: Project[] = [
         {

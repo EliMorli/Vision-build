@@ -116,14 +116,6 @@ export default function ProsComingSoonScreen() {
     }
   };
 
-  const handleBackToProject = () => {
-    if (projectId) {
-      router.push(`/project/${projectId}` as any);
-    } else {
-      router.back();
-    }
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -215,11 +207,6 @@ export default function ProsComingSoonScreen() {
               />
             </View>
           )}
-
-          {/* Back Link */}
-          <Pressable onPress={handleBackToProject} style={styles.backLink}>
-            <Text style={styles.backLinkText}>Back to my project</Text>
-          </Pressable>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -359,15 +346,5 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: colors.textSecondary,
     paddingHorizontal: spacing.lg,
-  },
-  backLink: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-  },
-  backLinkText: {
-    ...fonts.body,
-    fontSize: 16,
-    color: colors.primary,
-    textAlign: "center",
   },
 });

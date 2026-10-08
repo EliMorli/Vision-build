@@ -21,7 +21,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "VisionBuild",
+          headerShown: false,
           tabBarLabel: "Home",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home-outline" size={size} color={color} />
@@ -81,6 +81,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="camera"
         options={{
+          title: "New design",
           href: null,
         }}
       />
