@@ -137,6 +137,7 @@ interface ProjectState {
   progress: number;
   progressMessage: string;
   error: string | null;
+  generatingStartTime: number | null; // Timestamp when generation started
 
   fetchProjects: () => Promise<void>;
   setCurrentProject: (project: Project) => void;
@@ -155,6 +156,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   progress: 0,
   progressMessage: "",
   error: null,
+  generatingStartTime: null,
 
   fetchProjects: async () => {
     const userId = useAuthStore.getState().session?.user?.id;
@@ -383,7 +385,14 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
 
   generateDesigns: async (projectId: string, stylePrompt: string) => {
-    set({ loading: true, progress: 0, progressMessage: "Creating designs...", error: null });
+    const startTime = Date.now();
+    set({ 
+      loading: true, 
+      progress: 0, 
+      progressMessage: "Creating designs...", 
+      error: null,
+      generatingStartTime: startTime,
+    });
 
     try {
       set({ progress: 0.3, progressMessage: "Rendering images..." });
@@ -408,13 +417,18 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         .single();
 
       if (updated) {
-        set({ currentProject: updated, loading: false, progress: 1 });
+        set({ 
+          currentProject: updated, 
+          loading: false, 
+          progress: 1,
+          generatingStartTime: null,
+        });
         get().fetchProjects();
         return updated;
       }
       return null;
     } catch (e: any) {
-      set({ error: e.message, loading: false });
+      set({ error: e.message, loading: false, generatingStartTime: null });
       return null;
     }
   },

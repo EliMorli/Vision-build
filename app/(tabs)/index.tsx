@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -17,9 +17,12 @@ import { Project, ProjectStatus } from "@/lib/types";
 import { Button, EmptyState } from "@/components";
 import { useAIConsentCheck } from "@/lib/hooks/useAIConsentCheck";
 
+// Long-running threshold for showing "Rendering..." card in Home
+const LONG_RUNNING_THRESHOLD_MS = 45000; // 45 seconds
+
 const STATUS_MAP: Record<ProjectStatus, { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }> = {
   draft: { label: "Draft", color: colors.textSecondary, icon: "document-outline" },
-  analyzed: { label: "Analyzed", color: colors.accent, icon: "search-outline" },
+  analyzed: { label: "Ready for Design", color: colors.accent, icon: "search-outline" },
   rendering: { label: "Rendering...", color: colors.accent, icon: "hourglass-outline" },
   generated: { label: "Designs Ready", color: colors.primary, icon: "color-palette-outline" },
   connected: { label: "Contractors Matched", color: colors.secondary, icon: "people-outline" },
@@ -28,15 +31,33 @@ const STATUS_MAP: Record<ProjectStatus, { label: string; color: string; icon: ke
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { projects, fetchProjects } = useProjectStore();
+  const { projects, fetchProjects, generatingStartTime } = useProjectStore();
   const signOut = useAuthStore((s) => s.signOut);
   const profile = useAuthStore((s) => s.profile);
+  const [showRenderingCard, setShowRenderingCard] = useState(false);
 
   useAIConsentCheck();
 
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
+
+  // Only show "Rendering..." card if generation has been running > 45 seconds
+  useEffect(() => {
+    if (!generatingStartTime) {
+      setShowRenderingCard(false);
+      return;
+    }
+
+    const checkLongRunning = () => {
+      const elapsed = Date.now() - generatingStartTime;
+      setShowRenderingCard(elapsed > LONG_RUNNING_THRESHOLD_MS);
+    };
+
+    checkLongRunning();
+    const interval = setInterval(checkLongRunning, 5000);
+    return () => clearInterval(interval);
+  }, [generatingStartTime]);
 
   const onRefresh = useCallback(() => {
     fetchProjects();
@@ -100,8 +121,15 @@ export default function DashboardScreen() {
           <RefreshControl refreshing={false} onRefresh={onRefresh} tintColor={colors.primary} />
         }
         renderItem={({ item }) => {
-          const status = STATUS_MAP[item.status];
+          // Hide "rendering" status unless it's been long-running
+          const shouldShowRendering = item.status === "rendering" && showRenderingCard;
+          const displayStatus = (item.status === "rendering" && !shouldShowRendering) 
+            ? "analyzed" 
+            : item.status;
+          
+          const status = STATUS_MAP[displayStatus];
           const designCount = item.generated_image_urls?.length || 0;
+          
           return (
             <Pressable style={styles.card} onPress={() => openProject(item)}>
               <Image

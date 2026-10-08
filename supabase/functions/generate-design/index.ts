@@ -279,8 +279,10 @@ Professional interior design rendering, photorealistic, well-lit, high detail.`;
 
     // Determine which provider to use
     // In production, only OpenRouter or mock are allowed (Replicate retains data for 1 hour)
-    const appEnv = Deno.env.get("APP_ENV") || "development";
-    const isProduction = appEnv === "production";
+    // Fail-closed: treat missing/unknown APP_ENV as production
+    const appEnvRaw = Deno.env.get("APP_ENV") || "";
+    const appEnv = appEnvRaw.toLowerCase();
+    const isProduction = appEnv !== "development" && appEnv !== "staging";
     const renderProvider = (Deno.env.get("RENDER_PROVIDER") || "replicate").toLowerCase();
     
     // Enforce production restrictions

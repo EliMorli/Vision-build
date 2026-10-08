@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -14,14 +14,48 @@ import { STYLE_OPTIONS, StyleOption } from "@/lib/types";
 import { useProjectStore } from "@/lib/store";
 import { Button, ProgressBar, Banner } from "@/components";
 
+// Threshold for showing "long-running" UI: Go to Home option and Home Rendering card
+const LONG_RUNNING_THRESHOLD_MS = 45000; // 45 seconds
+
 export default function EditorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [selectedStyle, setSelectedStyle] = useState<StyleOption | null>(null);
-  const { currentProject, loading, progress, progressMessage, generateDesigns } =
-    useProjectStore();
+  const [countdown, setCountdown] = useState(20); // Estimated time in seconds
+  const [showLongRunning, setShowLongRunning] = useState(false);
+  
+  const { 
+    currentProject, 
+    loading, 
+    progress, 
+    progressMessage, 
+    generateDesigns,
+    generatingStartTime,
+  } = useProjectStore();
 
   const analysis = currentProject?.room_analysis;
+
+  // Countdown timer and long-running detection
+  useEffect(() => {
+    if (!loading || !generatingStartTime) {
+      setCountdown(20);
+      setShowLongRunning(false);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - generatingStartTime;
+      const remaining = Math.max(0, Math.ceil((20000 - elapsed) / 1000));
+      setCountdown(remaining);
+
+      // Check if we've crossed the long-running threshold
+      if (elapsed > LONG_RUNNING_THRESHOLD_MS) {
+        setShowLongRunning(true);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [loading, generatingStartTime]);
 
   const handleGenerate = async () => {
     if (!selectedStyle || !id) return;
@@ -29,6 +63,10 @@ export default function EditorScreen() {
     if (result) {
       router.push(`/result/${id}`);
     }
+  };
+
+  const handleGoHome = () => {
+    router.push("/(tabs)/");
   };
 
   const capitalize = (s: string) =>
@@ -102,7 +140,32 @@ export default function EditorScreen() {
       {/* Footer */}
       <View style={styles.footer}>
         {loading ? (
-          <ProgressBar progress={progress} message={progressMessage} />
+          <>
+            <ProgressBar progress={progress} message={progressMessage} />
+            
+            {/* Countdown for normal fast renders (< 45s) */}
+            {!showLongRunning && countdown > 0 && (
+              <Text style={styles.countdown}>About {countdown} sec remaining</Text>
+            )}
+            
+            {/* Long-running UI (>45s): show notification message and Go Home option */}
+            {showLongRunning && (
+              <>
+                <View style={styles.longRunningBox}>
+                  <Ionicons name="time-outline" size={20} color={colors.textSecondary} />
+                  <Text style={styles.longRunningText}>
+                    This is taking longer than usual. We'll notify you when your designs are ready.
+                  </Text>
+                </View>
+                <Button
+                  label="Go to Home"
+                  icon="home-outline"
+                  onPress={handleGoHome}
+                  variant="secondary"
+                />
+              </>
+            )}
+          </>
         ) : (
           <Button
             label="Generate 4 Designs"
@@ -165,5 +228,27 @@ const styles = StyleSheet.create({
   },
   styleName: { fontSize: 14, fontWeight: "600", color: colors.textPrimary },
   styleDesc: { ...fonts.regular, textAlign: "center", fontSize: 12 },
-  footer: { padding: spacing.md },
+  footer: { padding: spacing.md, gap: spacing.sm },
+  countdown: {
+    ...fonts.regular,
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginTop: spacing.xs,
+  },
+  longRunningBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    marginTop: spacing.sm,
+  },
+  longRunningText: {
+    ...fonts.regular,
+    fontSize: 14,
+    color: colors.textSecondary,
+    flex: 1,
+  },
 });

@@ -256,8 +256,10 @@ npx supabase secrets set APPLE_CLIENT_ID=com.yourapp.service
 # Backward compatibility (dev/staging only, use AI_API_KEY instead)
 npx supabase secrets set OPENAI_API_KEY=sk-...
 
-# IMPORTANT: Set APP_ENV for production deployment
-npx supabase secrets set APP_ENV=production
+# Environment (fail-closed security: missing/unknown → production)
+# Only "development" or "staging" (case-insensitive) unlock non-prod features
+# Production enforces OpenRouter-only and blocks Replicate/OpenAI-direct
+npx supabase secrets set APP_ENV=production  # or omit (defaults to production)
 ```
 
 ### Generate Types

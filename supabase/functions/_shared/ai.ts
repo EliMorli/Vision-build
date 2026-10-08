@@ -24,13 +24,34 @@ interface ChatCompletionResponse {
 /**
  * Get AI configuration from environment
  * Enforces OpenRouter-only in production for data privacy compliance
+ * 
+ * APP_ENV handling (fail-closed):
+ * - "development" (case-insensitive) → allows Replicate/OpenAI direct
+ * - "staging" (case-insensitive) → allows Replicate/OpenAI direct
+ * - missing, "production", or any other value → production mode (OpenRouter only)
+ * 
+ * Test cases:
+ * - undefined → production ✓
+ * - "" → production ✓
+ * - "production" → production ✓
+ * - "PRODUCTION" → production ✓
+ * - "development" → development ✓
+ * - "DEVELOPMENT" → development ✓
+ * - "staging" → staging ✓
+ * - "STAGING" → staging ✓
+ * - "garbage" → production ✓
+ * - "prod" → production ✓
  */
 function getAIConfig() {
-  const appEnv = Deno.env.get("APP_ENV") || "development";
+  const appEnvRaw = Deno.env.get("APP_ENV") || "";
+  const appEnv = appEnvRaw.toLowerCase();
+  
+  // Fail closed: only explicit "development" or "staging" unlock non-prod behavior
+  const isProduction = appEnv !== "development" && appEnv !== "staging";
+  
   const baseUrl = Deno.env.get("AI_BASE_URL") || "https://openrouter.ai/api/v1";
   const apiKey = Deno.env.get("AI_API_KEY") || Deno.env.get("OPENAI_API_KEY") || "";
   
-  const isProduction = appEnv === "production";
   const isOpenRouter = baseUrl.includes("openrouter.ai");
   
   // In production, only OpenRouter is allowed (for data privacy compliance)
