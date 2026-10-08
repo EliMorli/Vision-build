@@ -45,6 +45,7 @@ export default function DashboardScreen() {
 
   const displayName = getDisplayName(profile, session?.user);
   const firstName = getFirstName(displayName);
+  const greeting = firstName === "User" ? "Hey there" : `Hey ${firstName}`;
 
   const xp = profile?.xp || 0;
   const level = profile?.level || 1;
@@ -99,7 +100,7 @@ export default function DashboardScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.greeting} testID="home-greeting">Hey {firstName}</Text>
+            <Text style={styles.greeting} testID="home-greeting">{greeting}</Text>
             <Text style={fonts.heading}>Ready to redesign?</Text>
           </View>
           <View style={styles.headerRight}>
@@ -171,7 +172,7 @@ export default function DashboardScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.greeting} testID="home-greeting">Hey {firstName}</Text>
+          <Text style={styles.greeting} testID="home-greeting">{greeting}</Text>
           <Text style={fonts.heading}>Ready to redesign?</Text>
         </View>
         <View style={styles.headerRight}>
