@@ -5,6 +5,7 @@ import { makeRedirectUri } from "expo-auth-session";
 import * as ImageManipulator from "expo-image-manipulator";
 import { supabase } from "./supabase";
 import { Project, Profile, Contractor } from "./types";
+import { getDataLayer } from "./data";
 
 // ─── Auth Store ────────────────────────────────────────────
 
@@ -352,68 +353,114 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
     set({ loading: true, progress: 0, progressMessage: "Uploading photo...", error: null });
 
+    const dataLayer = getDataLayer();
+    const isMockMode = __DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true";
+
     try {
-      // 1. Strip EXIF/GPS data by re-encoding (client-side privacy)
-      set({ progress: 0.1, progressMessage: "Processing image..." });
-      const manipResult = await ImageManipulator.manipulateAsync(
-        imageUri,
-        [{ resize: { width: 2048 } }], // Resize if needed, strips EXIF
-        { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG }
-      );
+      let fileName: string;
+      let signedUrl: string | null;
 
-      // 2. Upload to Supabase Storage
-      set({ progress: 0.15, progressMessage: "Uploading photo..." });
-      const fileName = `${userId}/${Date.now()}.jpg`;
-      const fileResponse = await fetch(manipResult.uri);
-      const arrayBuffer = await fileResponse.arrayBuffer();
+      if (isMockMode) {
+        // Mock mode: skip actual upload
+        set({ progress: 0.3, progressMessage: "Processing image..." });
+        fileName = `mock/${userId}/${Date.now()}.jpg`;
+        signedUrl = await dataLayer.getSignedUrl("room-photos", fileName);
+      } else {
+        // 1. Strip EXIF/GPS data by re-encoding (client-side privacy)
+        set({ progress: 0.1, progressMessage: "Processing image..." });
+        const manipResult = await ImageManipulator.manipulateAsync(
+          imageUri,
+          [{ resize: { width: 2048 } }], // Resize if needed, strips EXIF
+          { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG }
+        );
 
-      const { error: uploadError } = await supabase.storage
-        .from("room-photos")
-        .upload(fileName, arrayBuffer, { contentType: "image/jpeg" });
+        // 2. Upload to Supabase Storage
+        set({ progress: 0.15, progressMessage: "Uploading photo..." });
+        fileName = `${userId}/${Date.now()}.jpg`;
+        const fileResponse = await fetch(manipResult.uri);
+        const arrayBuffer = await fileResponse.arrayBuffer();
 
-      if (uploadError) throw uploadError;
+        const { error: uploadError } = await supabase.storage
+          .from("room-photos")
+          .upload(fileName, arrayBuffer, { contentType: "image/jpeg" });
 
-      // 3. Generate signed URL (1 hour expiry)
-      const signedUrl = await getSignedUrl("room-photos", fileName);
-      if (!signedUrl) throw new Error("Failed to create signed URL");
+        if (uploadError) throw uploadError;
 
-      // 4. Call analyze-room Edge Function
+        // 3. Generate signed URL (1 hour expiry) for analysis
+        const { data: signedData } = await supabase.storage
+          .from("room-photos")
+          .createSignedUrl(fileName, 3600);
+        
+        signedUrl = signedData?.signedUrl || null;
+        if (!signedUrl) throw new Error("Failed to create signed URL");
+      }
+
+      // 4. Call analyze-room Edge Function (or mock)
       set({ progress: 0.5, progressMessage: "Analyzing your room..." });
 
-      const { data: analysisData, error: fnError } = await supabase.functions.invoke(
-        "analyze-room",
-        { body: { imageUrl: signedUrl } }
-      );
-
-      if (fnError) throw fnError;
+      const analysisData = await dataLayer.analyzeRoom(signedUrl!);
 
       // 5. Create project row (store path, not signed URL)
       set({ progress: 0.8, progressMessage: "Creating project..." });
 
       const roomType = analysisData?.analysis?.roomType ?? "room";
-      const { data: project, error: insertError } = await supabase
-        .from("projects")
-        .insert([{
+      
+      if (isMockMode) {
+        // Mock mode: create project in memory
+        const mockProject: Project = {
+          id: `mock-project-${Date.now()}`,
           user_id: userId,
           title: `${roomType.charAt(0).toUpperCase() + roomType.slice(1)} Renovation`,
-          original_image_url: fileName, // Store path instead of signed URL
+          original_image_url: fileName,
           room_analysis: analysisData?.analysis ?? null,
-          status: "analyzed" as const,
+          status: "analyzed",
           generated_image_urls: [],
-        }] as any)
-        .select()
-        .single();
+          selected_generation_url: null,
+          selected_style: null,
+          lead_info: null,
+          is_public: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
 
-      if (insertError) throw insertError;
+        set({
+          currentProject: mockProject,
+          loading: false,
+          progress: 1,
+          progressMessage: "Done!",
+        });
+        
+        // Add to projects list
+        set((state) => ({
+          projects: [mockProject, ...state.projects],
+        }));
 
-      set({
-        currentProject: project,
-        loading: false,
-        progress: 1,
-        progressMessage: "Done!",
-      });
-      get().fetchProjects();
-      return project;
+        return mockProject;
+      } else {
+        const { data: project, error: insertError } = await supabase
+          .from("projects")
+          .insert([{
+            user_id: userId,
+            title: `${roomType.charAt(0).toUpperCase() + roomType.slice(1)} Renovation`,
+            original_image_url: fileName, // Store path instead of signed URL
+            room_analysis: analysisData?.analysis ?? null,
+            status: "analyzed" as const,
+            generated_image_urls: [],
+          }] as any)
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+
+        set({
+          currentProject: project,
+          loading: false,
+          progress: 1,
+          progressMessage: "Done!",
+        });
+        get().fetchProjects();
+        return project;
+      }
     } catch (e: any) {
       set({ error: e.message, loading: false });
       return null;
@@ -430,39 +477,65 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       generatingStartTime: startTime,
     });
 
+    const dataLayer = getDataLayer();
+    const isMockMode = __DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true";
+
     try {
       set({ progress: 0.3, progressMessage: "Rendering images..." });
 
-      const { error } = await supabase.functions.invoke("generate-design", {
-        body: {
-          projectId,
-          stylePrompt,
-          roomAnalysis: get().currentProject?.room_analysis?.rawAnalysis ?? "",
-        },
-      });
-
-      if (error) throw error;
+      const roomAnalysis = get().currentProject?.room_analysis?.rawAnalysis ?? "";
+      const generatedPaths = await dataLayer.generateDesigns(projectId, stylePrompt, roomAnalysis);
 
       set({ progress: 0.9, progressMessage: "Finishing up..." });
 
-      // Refresh the project from DB
-      const { data: updated } = await supabase
-        .from("projects")
-        .select("*")
-        .eq("id", projectId)
-        .single();
+      if (isMockMode) {
+        // Mock mode: update project in memory
+        const current = get().currentProject;
+        if (current && current.id === projectId) {
+          const updatedProject = {
+            ...current,
+            generated_image_urls: generatedPaths,
+            selected_style: stylePrompt,
+            status: "generated" as const,
+          };
 
-      if (updated) {
-        set({ 
-          currentProject: updated, 
-          loading: false, 
-          progress: 1,
-          generatingStartTime: null,
-        });
-        get().fetchProjects();
-        return updated;
+          set({
+            currentProject: updatedProject,
+            loading: false,
+            progress: 1,
+            generatingStartTime: null,
+          });
+
+          // Update in projects list
+          set((state) => ({
+            projects: state.projects.map((p) =>
+              p.id === projectId ? updatedProject : p
+            ),
+          }));
+
+          return updatedProject;
+        }
+        return null;
+      } else {
+        // Refresh the project from DB
+        const { data: updated } = await supabase
+          .from("projects")
+          .select("*")
+          .eq("id", projectId)
+          .single();
+
+        if (updated) {
+          set({ 
+            currentProject: updated, 
+            loading: false, 
+            progress: 1,
+            generatingStartTime: null,
+          });
+          get().fetchProjects();
+          return updated;
+        }
+        return null;
       }
-      return null;
     } catch (e: any) {
       set({ error: e.message, loading: false, generatingStartTime: null });
       return null;
@@ -470,6 +543,25 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
 
   selectDesign: async (projectId: string, url: string) => {
+    const isMockMode = __DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true";
+
+    if (isMockMode) {
+      // Mock mode: update project in memory
+      const current = get().currentProject;
+      if (current && current.id === projectId) {
+        const updated = { ...current, selected_generation_url: url };
+        set({ currentProject: updated });
+        
+        // Update in projects list
+        set((state) => ({
+          projects: state.projects.map((p) =>
+            p.id === projectId ? updated : p
+          ),
+        }));
+      }
+      return;
+    }
+
     const { error } = await (supabase
       .from("projects") as any)
       .update({ selected_generation_url: url })
@@ -480,6 +572,13 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       if (current) {
         set({ currentProject: { ...current, selected_generation_url: url } });
       }
+      
+      // Update in projects list
+      set((state) => ({
+        projects: state.projects.map((p) =>
+          p.id === projectId ? { ...p, selected_generation_url: url } : p
+        ),
+      }));
     }
   },
 

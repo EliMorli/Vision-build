@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,21 +6,56 @@ import {
   Pressable,
   Image,
   SafeAreaView,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
-import { useProjectStore } from "@/lib/store";
+import { useProjectStore, useAuthStore } from "@/lib/store";
 import { Button, ProgressBar } from "@/components";
+import { AI_CONSENT_VERSION } from "@/lib/config";
+
+const AI_CONSENT_VERSION_KEY = "@visionbuild:ai_consent_version";
 
 export default function CameraScreen() {
   const router = useRouter();
   const [imageUri, setImageUri] = useState<string | null>(null);
   const { loading, progress, progressMessage, error, uploadAndAnalyze } =
     useProjectStore();
+  const session = useAuthStore((s) => s.session);
+
+  const checkAIConsent = async (): Promise<boolean> => {
+    try {
+      const storedVersion = await AsyncStorage.getItem(AI_CONSENT_VERSION_KEY);
+      return storedVersion === AI_CONSENT_VERSION;
+    } catch {
+      return false;
+    }
+  };
 
   const pickImage = async (useCamera: boolean) => {
+    // Request permissions
+    let permissionResult;
+    
+    if (useCamera) {
+      permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+    } else {
+      permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    }
+
+    if (!permissionResult.granted) {
+      Alert.alert(
+        "Permission Required",
+        useCamera
+          ? "Camera permission is required to take photos. Please enable it in your device settings."
+          : "Photo library permission is required to select photos. Please enable it in your device settings.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
     const method = useCamera
       ? ImagePicker.launchCameraAsync
       : ImagePicker.launchImageLibraryAsync;
@@ -38,7 +73,16 @@ export default function CameraScreen() {
   };
 
   const handleAnalyze = async () => {
-    if (!imageUri) return;
+    if (!imageUri || !session) return;
+
+    // Check AI consent before proceeding
+    const hasConsent = await checkAIConsent();
+    if (!hasConsent) {
+      // Navigate to consent screen, then return here
+      router.push("/ai-consent");
+      return;
+    }
+
     const project = await uploadAndAnalyze(imageUri);
     if (project) {
       router.push(`/editor/${project.id}`);

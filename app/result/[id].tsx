@@ -28,6 +28,7 @@ export default function ResultScreen() {
   const { currentProject, selectDesign, loading } = useProjectStore();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const reduceMotion = useReducedMotion();
   const [showCompare, setShowCompare] = useState(false);
   const [compareUrl, setCompareUrl] = useState("");
@@ -67,9 +68,17 @@ export default function ResultScreen() {
   };
 
   const handleContinue = async () => {
-    if (!selectedUrl || !id) return;
-    await selectDesign(id, selectedUrl);
-    router.push(`/handoff/${id}`);
+    if (!selectedUrl || !id || isSaving) return;
+    
+    setIsSaving(true);
+    try {
+      await selectDesign(id, selectedUrl);
+      router.push(`/project/${id}`);
+    } catch (error) {
+      console.error("Error saving design:", error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -193,10 +202,11 @@ export default function ResultScreen() {
       {/* CTA */}
       <View style={styles.cta}>
         <Button
-          label="Get Estimates"
-          icon="briefcase-outline"
+          label="Save Design"
+          icon="checkmark-circle"
           onPress={handleContinue}
-          disabled={!selectedUrl}
+          disabled={!selectedUrl || isSaving}
+          loading={isSaving}
           variant="secondary"
         />
       </View>

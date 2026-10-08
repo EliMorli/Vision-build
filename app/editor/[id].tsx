@@ -21,6 +21,7 @@ export default function EditorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [selectedStyle, setSelectedStyle] = useState<StyleOption | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [countdown, setCountdown] = useState(20); // Estimated time in seconds
   const [showLongRunning, setShowLongRunning] = useState(false);
   
@@ -56,10 +57,18 @@ export default function EditorScreen() {
   }, [loading, generatingStartTime]);
 
   const handleGenerate = async () => {
-    if (!selectedStyle || !id) return;
-    // Start generation and immediately navigate to the generating screen
-    generateDesigns(id, selectedStyle.promptModifier);
-    router.push(`/generating/${id}`);
+    if (!selectedStyle || !id || isGenerating) return;
+    setIsGenerating(true);
+    
+    try {
+      // Start generation and immediately navigate to the generating screen
+      await generateDesigns(id, selectedStyle.promptModifier);
+      router.push(`/generating/${id}`);
+    } catch (error) {
+      console.error("Generate error:", error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleGoHome = () => {
@@ -140,7 +149,8 @@ export default function EditorScreen() {
           label="Generate 4 Designs"
           icon="sparkles"
           onPress={handleGenerate}
-          disabled={!selectedStyle || loading}
+          disabled={!selectedStyle || loading || isGenerating}
+          loading={isGenerating}
           variant="primary"
         />
       </View>
