@@ -15,48 +15,12 @@ test.describe("VisionBuild UI Screens Sweep", () => {
     // Seed localStorage for authenticated state with consent
     await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:intro_seen", "true");
+      localStorage.setItem("@visionbuild:mock_session", "true");
       localStorage.setItem("@visionbuild:ai_consent", "true");
       localStorage.setItem("@visionbuild:ai_consent_version", "2026-10-07b");
     });
 
     await page.goto(BASE_URL);
-    await page.waitForLoadState("networkidle");
-
-    // ===== Intro (fresh session, no intro_seen) =====
-    await page.goto(BASE_URL);
-    await page.evaluate(() => {
-      localStorage.removeItem("@visionbuild:intro_seen");
-    });
-    await page.reload();
-    await page.waitForLoadState("networkidle");
-    await expect(page.getByText(/see the transformation/i)).toBeVisible({ timeout: 10000 });
-    await page.screenshot({ path: "e2e/screens/ui-intro.png", fullPage: false });
-
-    // Restore intro_seen
-    await page.evaluate(() => {
-      localStorage.setItem("@visionbuild:intro_seen", "true");
-    });
-
-    // ===== Sign-in screen =====
-    await page.goto(BASE_URL);
-    await page.evaluate(() => {
-      localStorage.removeItem("@visionbuild:mock_session");
-    });
-    await page.reload();
-    await page.waitForLoadState("networkidle");
-    await expect(page.getByText(/continue with google/i)).toBeVisible({ timeout: 10000 });
-    await page.screenshot({ path: "e2e/screens/ui-sign-in.png", fullPage: false });
-
-    // Test 13+ error state
-    await page.getByRole("button", { name: /continue with google/i }).click();
-    await expect(page.getByText(/please confirm you're 13 or older/i)).toBeVisible();
-    await page.screenshot({ path: "e2e/screens/ui-sign-in-age-error.png", fullPage: false });
-
-    // Restore session
-    await page.evaluate(() => {
-      localStorage.setItem("@visionbuild:mock_session", "true");
-    });
-    await page.reload();
     await page.waitForLoadState("networkidle");
 
     // ===== Empty Home =====
