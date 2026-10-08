@@ -20,7 +20,7 @@ export default function DeleteAccountRequest() {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke("request-account-deletion", {
+      const { error } = await supabase.functions.invoke("request-account-deletion", {
         body: { email: email.trim(), note: note.trim() || null },
       });
 

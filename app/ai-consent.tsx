@@ -103,8 +103,8 @@ export default function AIConsentScreen() {
           router.replace("/(tabs)");
         }
       }
-    } catch (error) {
-      console.error("Failed to save AI consent:", error);
+    } catch (_error) {
+      console.error("Failed to save AI consent:", _error);
     } finally {
       setIsLoading(false);
     }

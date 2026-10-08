@@ -1,5 +1,5 @@
 import { supabase } from "../supabase";
-import { DataLayer } from "./index";
+import { DataLayer, UserSettings } from "./index";
 
 export interface ConsentError extends Error {
   isConsentError: true;
@@ -100,5 +100,56 @@ export class SupabaseDataLayer implements DataLayer {
       throw error;
     }
     return data?.generatedUrls || [];
+  }
+
+  async getUserSettings(userId: string): Promise<UserSettings | null> {
+    try {
+      const { data, error } = await (supabase
+        .from("user_settings") as any)
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+
+      if (error) {
+        // If no settings exist yet, return defaults
+        if (error.code === "PGRST116") {
+          return {
+            pushNotifications: true,
+            marketingEmails: false,
+            publicProjectsDefault: false,
+            reduceMotion: false,
+          };
+        }
+        console.error("Error loading user settings:", error);
+        return null;
+      }
+
+      return {
+        pushNotifications: data.push_notifications ?? true,
+        marketingEmails: data.marketing_emails ?? false,
+        publicProjectsDefault: data.public_projects_default ?? false,
+        reduceMotion: data.reduce_motion ?? false,
+      };
+    } catch (error) {
+      console.error("Error in getUserSettings:", error);
+      return null;
+    }
+  }
+
+  async saveUserSettings(userId: string, settings: UserSettings): Promise<void> {
+    const { error } = await (supabase
+      .from("user_settings") as any)
+      .upsert({
+        user_id: userId,
+        push_notifications: settings.pushNotifications,
+        marketing_emails: settings.marketingEmails,
+        public_projects_default: settings.publicProjectsDefault,
+        reduce_motion: settings.reduceMotion,
+      }, { onConflict: "user_id" });
+
+    if (error) {
+      console.error("Error saving user settings:", error);
+      throw error;
+    }
   }
 }

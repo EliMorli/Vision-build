@@ -121,6 +121,7 @@ export async function deleteUserData(params: DeleteUserDataParams): Promise<{
   await supabase.from("reports").delete().eq("user_id", userId);
   await supabase.from("consents").delete().eq("user_id", userId);
   await supabase.from("usage_events").delete().eq("user_id", userId);
+  await supabase.from("pro_waitlist").delete().eq("user_id", userId);
   await supabase.from("projects").delete().eq("user_id", userId);
   await supabase.from("profiles").delete().eq("id", userId);
 
