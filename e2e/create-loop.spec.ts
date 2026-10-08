@@ -95,8 +95,15 @@ test.describe("VisionBuild Create Loop", () => {
     // Wait for generation to complete - look for results screen
     await expect(page.getByText(/swipe to browse/i)).toBeInViewport({ timeout: 30000 });
 
-    // Assert Results screen, then screenshot
+    // Assert Results screen with loaded design images
     await expect(page.getByText("Option 1")).toBeVisible();
+    
+    // Wait for at least one design image to actually load (naturalWidth > 0)
+    await page.waitForFunction(() => {
+      const images = Array.from(document.querySelectorAll('img[data-testid="private-image-loaded"]'));
+      return images.some((img: any) => img.naturalWidth > 0);
+    }, { timeout: 5000 });
+    
     await page.screenshot({ path: "e2e/screens/a5-results.png", fullPage: true });
 
     // Select a design (click near the text "Option 1")
@@ -108,7 +115,12 @@ test.describe("VisionBuild Create Loop", () => {
     // Assert Project Detail screen, then screenshot
     await expect(page.getByText("Original Photo")).toBeInViewport({ timeout: 5000 });
     
-    // Take screenshot
+    // Wait for design images in the grid to load
+    await page.waitForFunction(() => {
+      const images = Array.from(document.querySelectorAll('img[data-testid="private-image-loaded"]'));
+      return images.some((img: any) => img.naturalWidth > 0);
+    }, { timeout: 5000 });
+    
     await page.screenshot({ path: "e2e/screens/a5-project-detail.png", fullPage: true });
     
     // Assert the original photo is NOT a design mock image (should be the uploaded test-room.jpg)
@@ -133,6 +145,13 @@ test.describe("VisionBuild Create Loop", () => {
 
     // Assert Home with project, then screenshot
     await expect(page.getByText(/renovation/i)).toBeVisible({ timeout: 5000 });
+    
+    // Wait for the project card image to load
+    await page.waitForFunction(() => {
+      const images = Array.from(document.querySelectorAll('img[data-testid="private-image-loaded"]'));
+      return images.some((img: any) => img.naturalWidth > 0);
+    }, { timeout: 5000 });
+    
     await page.screenshot({ path: "e2e/screens/a5-home-with-project.png", fullPage: true });
 
     // Verify no console errors
@@ -167,6 +186,7 @@ test.describe("VisionBuild Create Loop", () => {
     // With intro seen but no consent, and mock session enabled,
     // app will navigate to Home -> AI consent check triggers -> consent screen
     // So we should land on consent screen directly
+    // Assert consent screen visible, then screenshot
     await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 10000 });
     await page.screenshot({ path: "e2e/screens/a5-consent.png", fullPage: true });
 
@@ -213,43 +233,26 @@ test.describe("VisionBuild Create Loop", () => {
       localStorage.setItem("@visionbuild:ai_consent_version", "2026-10-07b");
     });
 
-    // Intercept mock design image URLs that PrivateImage will request
-    // First 4 requests: return 403 to trigger retry
-    // Next requests: return success to show retry worked
-    let requestCount = 0;
-    let allowSuccess = false;
+    // Track all signed URL requests to verify retries
+    const signedUrlRequests: string[] = [];
+    let interceptFailures = true;
     
-    await page.route("**/__mock__/design_*.png", async (route) => {
-      requestCount++;
-      const reqNum = requestCount;
-      console.log(`Mock design request #${reqNum}, allowSuccess=${allowSuccess}`);
+    // Intercept mock design image URLs that PrivateImage will request
+    // Initially return 403 to trigger retry, then succeed after we verify placeholder
+    await page.route("**/__mock__/design_*.png*", async (route) => {
+      const url = route.request().url();
+      signedUrlRequests.push(url);
       
-      if (!allowSuccess) {
-        // Return 403 to trigger retry
+      if (interceptFailures) {
+        // Return 403 to trigger retry and placeholder display
         await route.fulfill({ 
           status: 403, 
           body: "Forbidden",
           contentType: "text/plain"
         });
       } else {
-        // Return a 1x1 green PNG
-        const greenPixel = Buffer.from([
-          0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
-          0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
-          0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
-          0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53,
-          0xDE, 0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41,
-          0x54, 0x08, 0x99, 0x63, 0x60, 0xC0, 0x00, 0x00,
-          0x00, 0x04, 0x00, 0x01, 0x27, 0x9B, 0x4D, 0x52,
-          0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44,
-          0xAE, 0x42, 0x60, 0x82
-        ]);
-        await route.fulfill({
-          status: 200,
-          contentType: "image/png",
-          body: greenPixel
-        });
-        console.log(`Returned green pixel for request #${reqNum}`);
+        // Let the request go through to the actual file
+        await route.continue();
       }
     });
 
@@ -276,34 +279,38 @@ test.describe("VisionBuild Create Loop", () => {
     // Wait for results screen
     await expect(page.getByText(/swipe to browse/i)).toBeInViewport({ timeout: 30000 });
 
-    // Wait briefly for initial image load attempts (will fail with 403)
-    await page.waitForTimeout(1000);
+    // Wait for initial image load attempts to fail and show placeholder
+    // PrivateImage retries after 500ms, then 1500ms, so wait enough time
+    await page.waitForTimeout(2500);
     
-    console.log(`After initial wait: ${requestCount} requests (first attempts failed with 403)`);
-
-    // Take first screenshot showing failed/loading state
+    // Assert that placeholder is visible (the IsoRoom clay placeholder)
+    await expect(page.getByTestId("private-image-placeholder")).toBeVisible({ timeout: 2000 });
+    
+    // Verify that multiple signed URL requests were made (initial + retries)
+    const initialRequestCount = signedUrlRequests.length;
+    expect(initialRequestCount).toBeGreaterThan(1); // At least one retry happened
+    
     await page.screenshot({ path: "e2e/screens/a5-image-expired-placeholder.png", fullPage: true });
     
-    // Now allow subsequent requests to succeed (retries will work)
-    allowSuccess = true;
-    console.log('Allowing success for retry attempts');
-
-    // Swipe to next design to trigger new image loads that will succeed
-    await page.mouse.move(700, 350);
-    await page.mouse.down();
-    await page.mouse.move(300, 350, { steps: 10 });
-    await page.mouse.up();
+    // Now allow subsequent requests to succeed
+    interceptFailures = false;
     
-    // Wait for swipe animation and new image load
+    // The retry logic should eventually request a fresh signed URL (v=2, v=3, etc.)
+    // Wait for the component to make another retry attempt
     await page.waitForTimeout(2000);
     
-    console.log(`After swipe and retry wait: ${requestCount} total requests`);
-
-    // Take second screenshot showing state after swipe  
+    // Assert that the image eventually loads after retry
+    await expect(page.getByTestId("private-image-loaded")).toBeVisible({ timeout: 3000 });
+    
+    // Verify image actually loaded with non-zero dimensions
+    await page.waitForFunction(() => {
+      const img = document.querySelector('img[data-testid="private-image-loaded"]') as HTMLImageElement;
+      return img && img.naturalWidth > 0;
+    }, { timeout: 3000 });
+    
     await page.screenshot({ path: "e2e/screens/a5-image-retried.png", fullPage: true });
 
-    // Verify that swipe triggered additional requests
-    console.log(`Final request count: ${requestCount} (initial 4 + swipe loads)`);
-    expect(requestCount).toBeGreaterThanOrEqual(4); // At least the initial 4 requests happened
+    // Verify that additional signed URL requests were made (for the retry)
+    expect(signedUrlRequests.length).toBeGreaterThan(initialRequestCount);
   });
 });

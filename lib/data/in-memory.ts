@@ -7,12 +7,8 @@ const MOCK_IMAGE_URL = "https://placehold.co/800x600/E8F5E9/4CAF50?text=Mock+Roo
 // Store actual uploaded file URIs in mock mode (keyed by mock storage path)
 const mockUploadedFiles = new Map<string, string>();
 
-// Test-only fault injection for image loading (when EXPO_PUBLIC_DEV_MOCK_SESSION is true)
-let mockImageLoadShouldFail = false;
-
-export function setMockImageLoadFault(shouldFail: boolean) {
-  mockImageLoadShouldFail = shouldFail;
-}
+// Track signed URL request counts per path (for testing retry behavior)
+const signedUrlRequestCounts = new Map<string, number>();
 
 /**
  * In-memory mock implementation of the data layer
@@ -32,17 +28,23 @@ export class InMemoryDataLayer implements DataLayer {
     // Simulate network delay
     await new Promise((resolve) => setTimeout(resolve, 50));
     
+    // Track request count for this path
+    const requestKey = `${bucket}:${path}`;
+    const requestCount = (signedUrlRequestCounts.get(requestKey) || 0) + 1;
+    signedUrlRequestCounts.set(requestKey, requestCount);
+    
     // If this path has an actual uploaded file in mock mode, return that
     const actualUri = mockUploadedFiles.get(path);
     if (actualUri) {
       return actualUri;
     }
     
-    // For design images in mock mode, return different URLs to distinguish from original
+    // For design images in mock mode, return versioned URLs that tests can intercept
     if (path.includes('design_')) {
-      // Return a URL that can be intercepted in tests
+      // Return a URL with a version parameter that changes on each request
+      // This allows tests to track retries and force failures on specific requests
       const designNumber = path.match(/design_(\d+)/)?.[1] || '1';
-      return `http://localhost:19006/__mock__/design_${designNumber}.png`;
+      return `http://localhost:19006/__mock__/design_${designNumber}.png?v=${requestCount}`;
     }
     
     // Default: return the placeholder

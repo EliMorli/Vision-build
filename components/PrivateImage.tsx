@@ -155,12 +155,14 @@ export function PrivateImage({
   if (!path) {
     return (
       <View style={[styles.placeholderContainer, containerStyle]} testID={testID}>
-        <IsoRoom
-          palette={palette as any}
-          size={placeholderSize}
-          accessible={true}
-          accessibilityLabel={accessibilityLabel || "Room placeholder"}
-        />
+        <View testID="private-image-placeholder">
+          <IsoRoom
+            palette={palette as any}
+            size={placeholderSize}
+            accessible={true}
+            accessibilityLabel={accessibilityLabel || "Room placeholder"}
+          />
+        </View>
       </View>
     );
   }
@@ -183,12 +185,14 @@ export function PrivateImage({
         accessible={true}
         accessibilityLabel={accessibilityLabel || "Room placeholder (image unavailable)"}
       >
-        <IsoRoom
-          palette={palette as any}
-          size={placeholderSize}
-          accessible={false}
-          importantForAccessibility="no-hide-descendants"
-        />
+        <View testID="private-image-placeholder">
+          <IsoRoom
+            palette={palette as any}
+            size={placeholderSize}
+            accessible={false}
+            importantForAccessibility="no-hide-descendants"
+          />
+        </View>
       </View>
     );
   }
@@ -198,6 +202,7 @@ export function PrivateImage({
     <View style={containerStyle} testID={testID}>
       {imageUrl && (
         <Image
+          testID="private-image-loaded"
           source={{ uri: imageUrl }}
           style={style}
           onError={handleImageError}
