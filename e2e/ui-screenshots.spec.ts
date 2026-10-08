@@ -170,19 +170,17 @@ test.describe("UI Screenshots", () => {
   });
 
   test("mock create loop saves to Home", async ({ page }: { page: Page }) => {
-    // Set up authenticated state with clean slate
+    // Set up authenticated state - same as screenshot test
     await page.addInitScript(() => {
-      localStorage.clear();
       localStorage.setItem("@visionbuild:intro_seen", "true");
       localStorage.setItem("@visionbuild:mock_session", "true");
       localStorage.setItem("@visionbuild:ai_consent", "true");
       localStorage.setItem("@visionbuild:ai_consent_version", "2026-10-07b");
     });
 
+    // Start at home
     await page.goto(BASE_URL);
     await page.waitForLoadState("networkidle");
-    
-    // Wait for Home screen to load (starting screen with mock session)
     await expect(page.getByText(/ready to redesign/i)).toBeVisible({ timeout: 10000 });
 
     // Tap Camera tab
@@ -197,28 +195,30 @@ test.describe("UI Screenshots", () => {
     await page.getByTestId("gallery-mock-image").click();
 
     // Wait for style picker
-    await expect(page.getByText("What's your style?")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/select a design style/i)).toBeVisible({ timeout: 5000 });
 
     // Select first style
     await page.getByTestId("style-card").first().click();
 
     // Wait for generating state
-    await expect(page.getByText("Generating designs...")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/building your/i)).toBeVisible({ timeout: 5000 });
 
     // Wait for results (mock mode completes instantly)
-    await expect(page.getByText("Results")).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText(/your designs/i)).toBeVisible({ timeout: 8000 });
 
     // Pick first design
     await page.getByTestId("result-card").first().click();
 
     // Wait for project detail screen
-    await expect(page.getByTestId("project-detail-screen")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/original photo/i)).toBeVisible({ timeout: 5000 });
 
     // Click "Save to my project"
-    await page.getByTestId("save-project-button").click();
+    const saveButton = page.getByTestId("save-project-button");
+    await expect(saveButton).toBeVisible({ timeout: 3000 });
+    await saveButton.click();
 
     // Wait for save to complete (should show "Saved" state)
-    await expect(page.getByTestId("save-project-button")).toContainText("Saved", { timeout: 3000 });
+    await expect(saveButton).toContainText("Saved", { timeout: 3000 });
 
     // Tap Home tab (preserves in-memory state)
     await page.getByTestId("tab-home").click();
