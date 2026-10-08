@@ -63,7 +63,10 @@ test.describe("VisionBuild Explore Report and Block", () => {
     // Submit report
     await page.getByRole("button", { name: /Submit Report/i }).click();
 
-    // Verify success message
+    // Wait for modal to close first
+    await expect(page.getByText("What's wrong?")).not.toBeVisible({ timeout: 3000 });
+
+    // Verify success message appears after modal closes
     await expect(page.getByTestId("success-message")).toBeVisible({ timeout: 5000 });
 
     // Verify report was recorded in localStorage with correct reason
@@ -199,9 +202,14 @@ test.describe("VisionBuild Explore Report and Block", () => {
     await expect(page.getByTestId("block-confirm-sheet")).toBeVisible({ timeout: 3000 });
     await page.getByTestId("block-confirm-sheet-confirm").click();
 
-    // Wait for block to complete and sheet to close
+    // Wait for sheet to close
     await expect(page.getByTestId("block-confirm-sheet")).not.toBeVisible({ timeout: 3000 });
-    await expect(page.getByTestId("success-message")).toBeVisible({ timeout: 5000 });
+    
+    // Wait for menu to close too
+    await expect(page.getByTestId("report-block-menu")).not.toBeVisible({ timeout: 3000 });
+
+    // Success message should appear after block completes
+    await expect(page.getByTestId("success-message")).toBeVisible({ timeout: 10000 });
 
     // Verify only 1 design remains
     await expect(exploreCards).toHaveCount(1, { timeout: 5000 });

@@ -77,13 +77,16 @@ export default function ExploreScreen() {
 
   const handleConfirmBlock = async () => {
     const { userId } = confirmSheet;
-    setConfirmSheet({ visible: false, type: null, projectId: "", userId: "" });
     
     if (!userId) {
+      setConfirmSheet({ visible: false, type: null, projectId: "", userId: "" });
       setErrorMessage("Cannot block: user not found");
       setTimeout(() => setErrorMessage(""), 3000);
       return;
     }
+    
+    // Close sheet first
+    setConfirmSheet({ visible: false, type: null, projectId: "", userId: "" });
     
     try {
       await blockUser(userId);
