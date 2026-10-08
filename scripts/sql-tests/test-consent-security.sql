@@ -36,11 +36,11 @@ BEGIN
   VALUES ('00000000-0000-0000-0000-000000000001', 'ai_processing', '2026-10-07b')
   RETURNING id INTO consent_id;
 
-  IF consent_id IS NULL THEN
+  IF consent_id IS NOT NULL THEN
+    RAISE NOTICE 'PASS: User can insert their own consent';
+  ELSE
     RAISE EXCEPTION 'FAIL: User could not insert their own consent';
   END IF;
-
-  RAISE NOTICE 'PASS: User can insert their own consent';
 END;
 $$;
 
@@ -67,12 +67,15 @@ ROLLBACK;
 
 -- Test 3: User can read their own consents
 BEGIN;
-SET LOCAL ROLE authenticated;
-SET LOCAL request.jwt.claims TO '{"sub": "00000000-0000-0000-0000-000000000001"}';
 
--- First insert a consent
+-- First insert a consent as service_role
+SET LOCAL ROLE service_role;
 INSERT INTO public.consents (user_id, kind, version)
 VALUES ('00000000-0000-0000-0000-000000000001', 'ai_processing', '2026-10-07b');
+
+-- Switch to user and try to read
+SET LOCAL ROLE authenticated;
+SET LOCAL request.jwt.claims TO '{"sub": "00000000-0000-0000-0000-000000000001"}';
 
 DO $$
 DECLARE
@@ -82,11 +85,11 @@ BEGIN
   FROM public.consents
   WHERE user_id = '00000000-0000-0000-0000-000000000001';
 
-  IF consent_count = 0 THEN
+  IF consent_count > 0 THEN
+    RAISE NOTICE 'PASS: User can read their own consents';
+  ELSE
     RAISE EXCEPTION 'FAIL: User could not read their own consent';
   END IF;
-
-  RAISE NOTICE 'PASS: User can read their own consents';
 END;
 $$;
 
@@ -94,15 +97,13 @@ ROLLBACK;
 
 -- Test 4: User CANNOT read other user's consents
 BEGIN;
-SET LOCAL ROLE authenticated;
-SET LOCAL request.jwt.claims TO '{"sub": "00000000-0000-0000-0000-000000000001"}';
 
 -- Insert consent for user 2 as service role
 SET LOCAL ROLE service_role;
 INSERT INTO public.consents (user_id, kind, version)
 VALUES ('00000000-0000-0000-0000-000000000002', 'ai_processing', '2026-10-07b');
 
--- Switch back to user 1
+-- Switch to user 1 and try to read user 2's consent
 SET LOCAL ROLE authenticated;
 SET LOCAL request.jwt.claims TO '{"sub": "00000000-0000-0000-0000-000000000001"}';
 
@@ -114,11 +115,11 @@ BEGIN
   FROM public.consents
   WHERE user_id = '00000000-0000-0000-0000-000000000002';
 
-  IF consent_count > 0 THEN
+  IF consent_count = 0 THEN
+    RAISE NOTICE 'PASS: User cannot read other user''s consents';
+  ELSE
     RAISE EXCEPTION 'FAIL: User was able to read another user''s consent';
   END IF;
-
-  RAISE NOTICE 'PASS: User cannot read other user''s consents';
 END;
 $$;
 
