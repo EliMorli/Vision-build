@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -8,14 +8,40 @@ import {
   Pressable,
   Modal,
   Platform,
+  TextInput,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts, spacing, radius } from "@/lib/theme";
-import { licenses } from "@/lib/generated/licenses";
+import { licenses, LICENSE_TEXTS } from "@/lib/generated/licenses";
 
 export default function LicensesScreen() {
   const [selectedLicense, setSelectedLicense] = useState<typeof licenses[0] | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredLicenses = useMemo(() => {
+    if (!searchQuery.trim()) return licenses;
+    
+    const query = searchQuery.toLowerCase();
+    return licenses.filter(license => 
+      license.name.toLowerCase().includes(query) ||
+      license.license.toLowerCase().includes(query)
+    );
+  }, [searchQuery]);
+
+  const getLicenseText = (license: typeof licenses[0]) => {
+    if (!license.textId) {
+      return `License: ${license.license}\n\nFull license text not available.`;
+    }
+    
+    let text = '';
+    if (license.copyright) {
+      text = license.copyright + '\n\n';
+    }
+    text += LICENSE_TEXTS[license.textId] || '';
+    
+    return text;
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -27,24 +53,48 @@ export default function LicensesScreen() {
         <View style={{ width: 40 }} />
       </View>
 
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search packages..."
+          placeholderTextColor={colors.textSecondary}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+        {searchQuery.length > 0 && (
+          <Pressable onPress={() => setSearchQuery("")} style={styles.clearButton}>
+            <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+          </Pressable>
+        )}
+      </View>
+
       <ScrollView
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
+        testID="licenses-list"
       >
         <Text style={styles.intro}>
           VisionBuild is built with open-source software. Thank you to the following
           projects and their maintainers:
         </Text>
 
-        {licenses.map((license, index) => (
+        {filteredLicenses.map((license) => (
           <Pressable
-            key={index}
+            key={`${license.name}@${license.version}`}
             style={styles.licenseItem}
             onPress={() => setSelectedLicense(license)}
+            testID={`license-item-${license.name}`}
           >
             <View style={styles.licenseInfo}>
               <Text style={styles.licenseName}>{license.name}</Text>
-              <Text style={styles.licenseVersion}>{license.version}</Text>
+              <View style={styles.licenseMetaRow}>
+                <Text style={styles.licenseVersion}>v{license.version}</Text>
+                <Text style={styles.licenseDot}> • </Text>
+                <Text style={styles.licenseType}>{license.license}</Text>
+              </View>
             </View>
             <Ionicons
               name="chevron-forward"
@@ -53,6 +103,12 @@ export default function LicensesScreen() {
             />
           </Pressable>
         ))}
+
+        {filteredLicenses.length === 0 && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>No packages found</Text>
+          </View>
+        )}
       </ScrollView>
 
       <Modal
@@ -64,9 +120,20 @@ export default function LicensesScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {selectedLicense?.name || ""}
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.modalTitle}>
+                  {selectedLicense?.name || ""}
+                </Text>
+                <View style={styles.modalMetaRow}>
+                  <Text style={styles.modalVersion}>
+                    v{selectedLicense?.version || ""}
+                  </Text>
+                  <Text style={styles.modalDot}> • </Text>
+                  <Text style={styles.modalLicense}>
+                    {selectedLicense?.license || ""}
+                  </Text>
+                </View>
+              </View>
               <Pressable
                 onPress={() => setSelectedLicense(null)}
                 hitSlop={12}
@@ -75,15 +142,9 @@ export default function LicensesScreen() {
               </Pressable>
             </View>
 
-            <ScrollView style={styles.modalBody}>
-              <Text style={styles.modalVersion}>
-                Version: {selectedLicense?.version || ""}
-              </Text>
-              <Text style={styles.modalLicense}>
-                License: {selectedLicense?.license || ""}
-              </Text>
+            <ScrollView style={styles.modalBody} testID="license-text">
               <Text style={styles.modalLicenseText}>
-                {selectedLicense?.licenseText || ""}
+                {selectedLicense ? getLicenseText(selectedLicense) : ""}
               </Text>
             </ScrollView>
           </View>
@@ -116,6 +177,29 @@ const styles = StyleSheet.create({
     ...fonts.title,
     fontSize: 17,
   },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: spacing.lg,
+    marginVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: Platform.OS === 'ios' ? spacing.sm : spacing.xs,
+    backgroundColor: colors.border,
+    borderRadius: radius.md,
+  },
+  searchIcon: {
+    marginRight: spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    ...fonts.body,
+    fontSize: 15,
+    color: colors.textPrimary,
+    paddingVertical: spacing.xs,
+  },
+  clearButton: {
+    padding: spacing.xs,
+  },
   content: {
     flex: 1,
   },
@@ -142,11 +226,33 @@ const styles = StyleSheet.create({
   licenseName: {
     ...fonts.body,
     fontSize: 15,
-    marginBottom: 2,
+    marginBottom: 4,
+  },
+  licenseMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   licenseVersion: {
     ...fonts.regular,
     fontSize: 13,
+    color: colors.textSecondary,
+  },
+  licenseDot: {
+    ...fonts.regular,
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  licenseType: {
+    ...fonts.regular,
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  emptyState: {
+    paddingVertical: spacing.xl * 2,
+    alignItems: "center",
+  },
+  emptyStateText: {
+    ...fonts.body,
     color: colors.textSecondary,
   },
   modalOverlay: {
@@ -162,7 +268,7 @@ const styles = StyleSheet.create({
   },
   modalHeader: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
     padding: spacing.lg,
     borderBottomWidth: 1,
@@ -171,20 +277,29 @@ const styles = StyleSheet.create({
   modalTitle: {
     ...fonts.title,
     fontSize: 18,
-    flex: 1,
+    marginBottom: 4,
   },
-  modalBody: {
-    padding: spacing.lg,
+  modalMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   modalVersion: {
     ...fonts.body,
+    fontSize: 14,
     color: colors.textSecondary,
-    marginBottom: spacing.sm,
+  },
+  modalDot: {
+    ...fonts.body,
+    fontSize: 14,
+    color: colors.textSecondary,
   },
   modalLicense: {
     ...fonts.body,
+    fontSize: 14,
     color: colors.textSecondary,
-    marginBottom: spacing.lg,
+  },
+  modalBody: {
+    padding: spacing.lg,
   },
   modalLicenseText: {
     ...fonts.regular,
