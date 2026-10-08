@@ -11,6 +11,10 @@ DROP POLICY IF EXISTS "Authenticated users can delete public designs" ON storage
 -- Keep the public SELECT policy (if it exists)
 -- Public can still view objects in public-designs bucket
 
--- Note: Service role bypasses RLS by default and can always write
--- The app will call set-project-visibility edge function (with admin client) 
--- to copy/remove files when toggling project visibility
+-- PRIVACY CONSTRAINT:
+-- Only service role can write to public-designs (bypasses RLS by default).
+-- The set-project-visibility edge function (using admin client) is the ONLY
+-- route that should copy files here, and it MUST copy ONLY generated design
+-- images (design_image, generated_image_urls), NEVER main_image (original
+-- room photos showing the inside of someone's home).
+-- This constraint prevents accidental exposure of private room photos.
