@@ -27,8 +27,8 @@ serve(async (req: Request) => {
     }
     const { userId, anonClient } = authResult;
 
-    // Check rate limit (generous limit for chat)
-    const rateLimitResult = await checkRateLimit(anonClient, userId, "assistant-chat", 50);
+    // Check rate limit (uses default limit for assistant-chat)
+    const rateLimitResult = await checkRateLimit(anonClient, userId, "assistant-chat");
     if (rateLimitResult) {
       return rateLimitResult;
     }

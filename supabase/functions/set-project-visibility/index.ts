@@ -13,7 +13,11 @@ serve(async (req) => {
 
   try {
     // 1. Verify JWT and get userId
-    const { supabase, userId } = await verifyAuth(req);
+    const authResult = await verifyAuth(req);
+    if (authResult instanceof Response) {
+      return authResult;
+    }
+    const { anonClient, userId } = authResult;
 
     // 2. Parse payload
     const payload: SetVisibilityPayload = await req.json();
@@ -27,7 +31,11 @@ serve(async (req) => {
     }
 
     // 3. Verify project ownership
-    const project = await verifyProjectOwnership(supabase, userId, projectId);
+    const projectResult = await verifyProjectOwnership(anonClient, userId, projectId);
+    if (projectResult instanceof Response) {
+      return projectResult;
+    }
+    const { project } = projectResult;
 
     // 4. Get service role client (admin)
     const adminClient = getServiceRoleClient();
