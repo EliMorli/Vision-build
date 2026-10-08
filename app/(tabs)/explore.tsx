@@ -7,12 +7,11 @@ import {
   TextInput,
   Pressable,
   SafeAreaView,
-  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
-import { IsoRoom, Button, ReportModal } from "@/components";
+import { IsoRoom, Button, ReportModal, ConfirmationSheet, MenuSheet } from "@/components";
 import { useProjectStore, useReportStore } from "@/lib/store";
 
 export default function ExploreScreen() {
@@ -22,6 +21,18 @@ export default function ExploreScreen() {
   const blockUser = useReportStore((s) => s.blockUser);
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [reportingProjectId, setReportingProjectId] = useState<string>("");
+  const [menuSheet, setMenuSheet] = useState<{
+    visible: boolean;
+    projectId: string;
+    userId: string;
+  }>({ visible: false, projectId: "", userId: "" });
+  const [confirmSheet, setConfirmSheet] = useState<{
+    visible: boolean;
+    type: "report" | "block" | null;
+    projectId: string;
+    userId: string;
+  }>({ visible: false, type: null, projectId: "", userId: "" });
+  const [successMessage, setSuccessMessage] = useState<string>("");
   
   // Fetch projects on mount
   useEffect(() => {
@@ -43,34 +54,45 @@ export default function ExploreScreen() {
   const publicDesigns = projects.filter(p => p.is_public && !blockedUsers.has(p.user_id || ""));
 
   const handleReportMenu = (projectId: string, userId: string) => {
-    Alert.alert(
-      "Report or Block",
-      "What would you like to do?",
-      [
-        {
-          text: "Report this design",
-          onPress: () => {
-            setReportingProjectId(projectId);
-            setReportModalVisible(true);
-          },
-        },
-        {
-          text: "Block this user",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await blockUser(userId);
-              // Add to local blocked list
-              setBlockedUsers(prev => new Set([...prev, userId]));
-              Alert.alert("User Blocked", "You won't see designs from this user anymore.");
-            } catch (error) {
-              Alert.alert("Error", "Failed to block user. Please try again.");
-            }
-          },
-        },
-        { text: "Cancel", style: "cancel" },
-      ]
-    );
+    setMenuSheet({ visible: true, projectId, userId });
+  };
+
+  const handleReportOption = () => {
+    setConfirmSheet({
+      visible: true,
+      type: "report",
+      projectId: menuSheet.projectId,
+      userId: menuSheet.userId,
+    });
+  };
+
+  const handleBlockOption = () => {
+    setConfirmSheet({
+      visible: true,
+      type: "block",
+      projectId: menuSheet.projectId,
+      userId: menuSheet.userId,
+    });
+  };
+
+  const handleConfirmReport = () => {
+    const { projectId } = confirmSheet;
+    setReportingProjectId(projectId);
+    setReportModalVisible(true);
+  };
+
+  const handleConfirmBlock = async () => {
+    const { userId } = confirmSheet;
+    try {
+      await blockUser(userId);
+      // Add to local blocked list
+      setBlockedUsers(prev => new Set([...prev, userId]));
+      setSuccessMessage("User blocked. Their designs won't appear in Explore anymore.");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (error) {
+      setSuccessMessage("Failed to block user. Please try again.");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    }
   };
 
   // Empty state when no public designs
@@ -116,10 +138,64 @@ export default function ExploreScreen() {
         onClose={() => {
           setReportModalVisible(false);
           setReportingProjectId("");
+          setSuccessMessage("Thank you for reporting. We'll review this design.");
+          setTimeout(() => setSuccessMessage(""), 3000);
         }}
         type="design"
         itemId={reportingProjectId}
       />
+
+      <MenuSheet
+        visible={menuSheet.visible}
+        onClose={() => setMenuSheet({ visible: false, projectId: "", userId: "" })}
+        title="Report or Block"
+        options={[
+          {
+            label: "Report this design",
+            icon: "flag-outline",
+            onPress: handleReportOption,
+            testID: "menu-report-option",
+          },
+          {
+            label: "Block this user",
+            icon: "ban-outline",
+            variant: "destructive",
+            onPress: handleBlockOption,
+            testID: "menu-block-option",
+          },
+        ]}
+        testID="report-block-menu"
+      />
+
+      <ConfirmationSheet
+        visible={confirmSheet.visible && confirmSheet.type === "report"}
+        onClose={() => setConfirmSheet({ visible: false, type: null, projectId: "", userId: "" })}
+        title="Report Design"
+        message="Report this design for inappropriate content?"
+        confirmLabel="Report"
+        confirmVariant="danger"
+        onConfirm={handleConfirmReport}
+        testID="report-confirm-sheet"
+      />
+
+      <ConfirmationSheet
+        visible={confirmSheet.visible && confirmSheet.type === "block"}
+        onClose={() => setConfirmSheet({ visible: false, type: null, projectId: "", userId: "" })}
+        title="Block User"
+        message="Block this user? You won't see their designs in Explore anymore."
+        confirmLabel="Block User"
+        confirmVariant="danger"
+        onConfirm={handleConfirmBlock}
+        testID="block-confirm-sheet"
+      />
+
+      {/* Success message */}
+      {successMessage ? (
+        <View style={styles.successBanner} testID="success-message">
+          <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+          <Text style={styles.successText}>{successMessage}</Text>
+        </View>
+      ) : null}
 
       {/* Search bar */}
       <View style={styles.searchContainer}>
@@ -283,5 +359,25 @@ const styles = StyleSheet.create({
   cardCreator: {
     color: "rgba(255,255,255,0.85)",
     fontSize: 12,
+  },
+  successBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+    borderRadius: radius.md,
+    gap: spacing.sm,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  successText: {
+    ...fonts.body,
+    color: colors.textPrimary,
+    flex: 1,
   },
 });

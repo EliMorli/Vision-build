@@ -10,3 +10,5 @@ export { IsoRoom, PALETTES } from "./IsoRoom";
 export type { RoomPalette } from "./IsoRoom";
 export { PrivateImage } from "./PrivateImage";
 export { ProsTeaserCard } from "./ProsTeaserCard";
+export { ConfirmationSheet } from "./ConfirmationSheet";
+export { MenuSheet } from "./MenuSheet";

@@ -19,8 +19,15 @@ Comprehensive audit of all interactive controls across VisionBuild screens, docu
 |---------|--------|---------|--------|---------------|
 | Search Input | - | Filter designs | Updates `searchQuery` state | Manual |
 | "Start a new room" (Button) | - | Navigate to camera | `router.push("/(tabs)/camera")` | Used in e2e |
-| Design Card (Pressable) | - | View design details | Currently no action (viewing only) | Manual |
-| More Button (Pressable) | `explore-report-button` | Report/block user | Opens menu with report and block options | E2E test added |
+| Design Card (Pressable) | `explore-design-card` | View design details | Currently no action (viewing only) | Manual |
+| More Button (Pressable) | `explore-report-button` | Report/block user | Opens `MenuSheet` with report and block options | E2E test (`explore-report-block.spec.ts`) |
+| Menu: Report option | `menu-report-option` | Report design | Opens `ConfirmationSheet` for report confirmation | E2E test |
+| Menu: Block option | `menu-block-option` | Block user | Opens `ConfirmationSheet` for block confirmation | E2E test |
+
+**Confirmation Flow:**
+- `MenuSheet` (`report-block-menu`) replaces native Alert.alert, works on iOS/Android/Web
+- `ConfirmationSheet` (`report-confirm-sheet`, `block-confirm-sheet`) confirms destructive actions
+- Success message (`success-message`) shows result inline with Nunito font and theme colors
 
 ## Inbox Screen (`app/(tabs)/inbox.tsx`)
 
@@ -189,3 +196,43 @@ The following screens/features are properly gated behind `CONTRACTOR_OUTREACH_EN
 - `app/handoff-confirm.tsx`
 
 These are correctly excluded from the launch copy check and do not appear in homeowner UI.
+
+---
+
+## Confirmation Components (Web-Compatible)
+
+To fix Alert.alert incompatibility on React Native Web, we use custom components that work on iOS, Android, and Web:
+
+### MenuSheet (`components/MenuSheet.tsx`)
+- Bottom sheet menu for multiple options (replaces Alert.alert with buttons)
+- Used for: Explore report/block menu
+- Props: `title`, `options[]` with `label`, `icon`, `variant`, `onPress`, `testID`
+- Styled with Nunito fonts and theme colors
+- testID: Base testID is customizable (e.g., `report-block-menu`)
+
+### ConfirmationSheet (`components/ConfirmationSheet.tsx`)
+- Modal confirmation for destructive actions (replaces Alert.alert with OK/Cancel)
+- Used for: Report design confirmation, Block user confirmation
+- Props: `title`, `message`, `confirmLabel`, `confirmVariant` (`primary`|`danger`), `onConfirm`, `testID`
+- Styled with Nunito fonts and theme colors
+- testIDs: `{testID}` (container), `{testID}-cancel` (Cancel button), `{testID}-confirm` (Confirm button)
+
+**Usage Pattern:**
+```typescript
+// 1. Show MenuSheet for options
+<MenuSheet visible={menuVisible} title="Report or Block" options={[...]} />
+
+// 2. Show ConfirmationSheet for confirmation
+<ConfirmationSheet visible={confirmVisible} title="Block User" message="..." onConfirm={...} />
+
+// 3. Show success message inline
+{successMessage && <View testID="success-message"><Text>{successMessage}</Text></View>}
+```
+
+**E2E Testing:**
+- `menu-report-option`, `menu-block-option` - Menu options
+- `report-confirm-sheet`, `block-confirm-sheet` - Confirmation dialogs
+- `report-confirm-sheet-confirm`, `block-confirm-sheet-confirm` - Confirm buttons
+- `success-message` - Success feedback
+
+These components replace all Alert.alert calls that gate destructive/confirm actions requiring web compatibility.

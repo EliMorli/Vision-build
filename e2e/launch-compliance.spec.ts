@@ -282,6 +282,11 @@ test.describe("Launch Compliance Tests", () => {
   });
 
   test("explore empty state: shows clay room and start button", async ({ page }: { page: Page }) => {
+    // Seed empty projects list
+    await page.addInitScript(() => {
+      localStorage.setItem("@visionbuild:mock_seed_projects", JSON.stringify([]));
+    });
+    
     await page.goto(`${BASE_URL}/(tabs)/explore`);
     await page.waitForLoadState("networkidle");
     

@@ -3,7 +3,7 @@ import { test, expect, type Page } from "@playwright/test";
 const BASE_URL = process.env.BASE_URL || "http://localhost:19006";
 
 test.describe("VisionBuild Explore Report and Block", () => {
-  test.skip("report a design and block user - blocked designs disappear", async ({ page }: { page: Page }) => {
+  test("report a design and block user - blocked designs disappear", async ({ page }: { page: Page }) => {
     // Seed with intro seen, mock session, profile, and public projects from different users
     await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:intro_seen", "true");
@@ -80,14 +80,19 @@ test.describe("VisionBuild Explore Report and Block", () => {
     await expect(reportButtons.first()).toBeVisible({ timeout: 5000 });
     await reportButtons.first().click();
 
-    // Wait a bit for Alert to render
-    await page.waitForTimeout(1000);
-
-    // Should see Alert menu with Report and Block options
-    await expect(page.getByText("Report or Block")).toBeVisible({ timeout: 5000 });
+    // Should see menu with Report and Block options
+    await expect(page.getByTestId("report-block-menu")).toBeVisible({ timeout: 3000 });
+    await expect(page.getByText("Report or Block")).toBeVisible();
 
     // Click "Report this design"
-    await page.getByText("Report this design").click();
+    await page.getByTestId("menu-report-option").click();
+
+    // Should see confirmation sheet
+    await expect(page.getByTestId("report-confirm-sheet")).toBeVisible({ timeout: 3000 });
+    await expect(page.getByText("Report this design for inappropriate content?")).toBeVisible();
+
+    // Confirm report
+    await page.getByTestId("report-confirm-sheet-confirm").click();
 
     // ReportModal should open
     await expect(page.getByText("Report Design")).toBeVisible({ timeout: 3000 });
@@ -102,21 +107,26 @@ test.describe("VisionBuild Explore Report and Block", () => {
     // Submit report
     await page.getByRole("button", { name: /Submit Report/i }).click();
 
-    // Should see confirmation
-    await expect(page.getByText("Thank You")).toBeVisible({ timeout: 5000 });
-    await page.getByText("OK").click();
+    // Should see success message
+    await expect(page.getByTestId("success-message")).toBeVisible({ timeout: 5000 });
 
     // Now test blocking: click report button again
     await reportButtons.first().click();
-    await expect(page.getByText("Report or Block")).toBeVisible({ timeout: 3000 });
+    await expect(page.getByTestId("report-block-menu")).toBeVisible({ timeout: 3000 });
 
     // Click "Block this user"
-    await page.getByText("Block this user").click();
+    await page.getByTestId("menu-block-option").click();
 
     // Should see block confirmation
-    await expect(page.getByText("User Blocked")).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText(/won't see designs from this user/i)).toBeVisible();
-    await page.getByText("OK").click();
+    await expect(page.getByTestId("block-confirm-sheet")).toBeVisible({ timeout: 3000 });
+    await expect(page.getByText(/Block this user\? You won't see their designs/i)).toBeVisible();
+
+    // Confirm block
+    await page.getByTestId("block-confirm-sheet-confirm").click();
+
+    // Should see success message
+    await expect(page.getByTestId("success-message")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/User blocked/i)).toBeVisible();
 
     // Verify blocked user's designs are gone (should only see 1 design now - from other-user-2)
     await expect(exploreCards).toHaveCount(1, { timeout: 5000 });
