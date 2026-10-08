@@ -191,7 +191,7 @@ export default function ProfileSettingsScreen() {
         visible={deleteConfirmVisible}
         onClose={() => setDeleteConfirmVisible(false)}
         title="Delete Account"
-        message="Are you sure? This will permanently delete your account, all projects, and designs. This action cannot be undone."
+        message="Are you sure? This will permanently delete your account and your projects, photos, designs, chats and pros waitlist signup. This action cannot be undone."
         confirmLabel="Delete My Account"
         confirmVariant="danger"
         onConfirm={confirmDeleteAccount}

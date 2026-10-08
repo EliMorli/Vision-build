@@ -827,6 +827,13 @@ export const useReportStore = create<ReportState>(() => ({
 
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
       console.log("[Mock] Report submitted:", { targetType, targetId, reason, userId: userId || "mock-user" });
+      
+      // Persist report to AsyncStorage for E2E testing
+      const existingReports = await AsyncStorage.getItem("@visionbuild:reports");
+      const reports = existingReports ? JSON.parse(existingReports) : [];
+      reports.push({ targetType, targetId, reason, userId: userId || "mock-user", createdAt: new Date().toISOString() });
+      await AsyncStorage.setItem("@visionbuild:reports", JSON.stringify(reports));
+      
       return;
     }
 
