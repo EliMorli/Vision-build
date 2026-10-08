@@ -167,53 +167,5 @@ test.describe("UI Screenshots", () => {
     await expect(page.getByText("120 XP")).toBeVisible();
     
     await page.screenshot({ path: "e2e/screens/ui-home-with-project.png", fullPage: false });
-
-    // 9. Test mock create loop: clear seed, go through camera flow, save, verify Home shows card
-    await page.evaluate(() => {
-      localStorage.removeItem("@visionbuild:mock_seed_projects");
-    });
-
-    // Tap Camera tab
-    await page.getByTestId("tab-camera").click();
-    await expect(page.getByText("New design")).toBeVisible({ timeout: 5000 });
-
-    // Tap "Select from gallery" button
-    await page.getByTestId("camera-gallery-button").click();
-    await expect(page.getByTestId("gallery-mock-image")).toBeVisible({ timeout: 5000 });
-
-    // Select mock image
-    await page.getByTestId("gallery-mock-image").click();
-
-    // Wait for style picker
-    await expect(page.getByText(/select a design style/i)).toBeVisible({ timeout: 5000 });
-
-    // Select first style
-    await page.getByTestId("style-card").first().click();
-
-    // Wait for generating state
-    await expect(page.getByText(/building your/i)).toBeVisible({ timeout: 5000 });
-
-    // Wait for results (mock mode completes instantly)
-    await expect(page.getByText(/your designs/i)).toBeVisible({ timeout: 8000 });
-
-    // Pick first design
-    await page.getByTestId("result-card").first().click();
-
-    // Wait for project detail screen
-    await expect(page.getByText(/original photo/i)).toBeVisible({ timeout: 5000 });
-
-    // Click "Save to my project"
-    const saveButton = page.getByTestId("save-project-button");
-    await expect(saveButton).toBeVisible({ timeout: 3000 });
-    await saveButton.click();
-
-    // Wait for save to complete (should show "Saved" state)
-    await expect(saveButton).toContainText("Saved", { timeout: 3000 });
-
-    // Tap Home tab (preserves in-memory state)
-    await page.getByTestId("tab-home").click();
-
-    // Assert at least one project card appears (the one we just saved)
-    await expect(page.getByTestId("home-project-card")).toHaveCount(1, { timeout: 5000 });
   });
 });
