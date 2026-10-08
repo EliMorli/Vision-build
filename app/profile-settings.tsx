@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import {
   View,
   Text,
@@ -12,49 +12,30 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
-import { useAuthStore, usePrivacyStore } from "@/lib/store";
+import { useAuthStore, usePrivacyStore, useSettingsStore } from "@/lib/store";
 import { SUPPORT_EMAIL } from "@/lib/config";
 import { supabase } from "@/lib/supabase";
-
-interface Setting {
-  id: string;
-  label: string;
-  type: "toggle" | "link" | "action";
-  enabled?: boolean;
-  icon?: keyof typeof Ionicons.glyphMap;
-  url?: string;
-  destructive?: boolean;
-}
 
 export default function ProfileSettingsScreen() {
   const router = useRouter();
   const signOut = useAuthStore((s) => s.signOut);
-  const { privacyOptOut, reduceMotion, loadPrivacySettings, setPrivacyOptOut, setReduceMotion } = usePrivacyStore();
-
-  const [settings, setSettings] = useState({
-    notifications: true,
-    marketing: false,
-    publicDefault: false,
-  });
+  const { privacyOptOut, loadPrivacySettings, setPrivacyOptOut } = usePrivacyStore();
+  const {
+    pushNotifications,
+    marketingEmails,
+    publicProjectsDefault,
+    reduceMotion,
+    loadSettings,
+    updateSetting,
+  } = useSettingsStore();
 
   useEffect(() => {
     const load = async () => {
       await loadPrivacySettings();
+      await loadSettings();
     };
     load();
-  }, [loadPrivacySettings]);
-
-  const toggleSetting = (key: keyof typeof settings) => {
-    setSettings(prev => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const handlePrivacyOptOut = async (optOut: boolean) => {
-    await setPrivacyOptOut(optOut);
-  };
-
-  const handleReduceMotion = async (reduce: boolean) => {
-    await setReduceMotion(reduce);
-  };
+  }, [loadPrivacySettings, loadSettings]);
 
   const handleDeleteAccount = () => {
     Alert.alert(
@@ -124,9 +105,9 @@ export default function ProfileSettingsScreen() {
           <View style={styles.settingCard}>
             <Pressable
               style={styles.settingRow}
-              onPress={() => toggleSetting("notifications")}
+              onPress={() => updateSetting("pushNotifications", !pushNotifications)}
               accessibilityRole="switch"
-              accessibilityState={{ checked: settings.notifications }}
+              accessibilityState={{ checked: pushNotifications }}
             >
               <View style={styles.settingInfo}>
                 <Text style={styles.settingLabel}>Push Notifications</Text>
@@ -136,11 +117,11 @@ export default function ProfileSettingsScreen() {
               </View>
               <View style={[
                 styles.switch,
-                settings.notifications && styles.switchOn,
+                pushNotifications && styles.switchOn,
               ]}>
                 <View style={[
                   styles.switchThumb,
-                  settings.notifications && styles.switchThumbOn,
+                  pushNotifications && styles.switchThumbOn,
                 ]} />
               </View>
             </Pressable>
@@ -149,9 +130,9 @@ export default function ProfileSettingsScreen() {
 
             <Pressable
               style={styles.settingRow}
-              onPress={() => toggleSetting("marketing")}
+              onPress={() => updateSetting("marketingEmails", !marketingEmails)}
               accessibilityRole="switch"
-              accessibilityState={{ checked: settings.marketing }}
+              accessibilityState={{ checked: marketingEmails }}
             >
               <View style={styles.settingInfo}>
                 <Text style={styles.settingLabel}>Marketing Emails</Text>
@@ -161,11 +142,11 @@ export default function ProfileSettingsScreen() {
               </View>
               <View style={[
                 styles.switch,
-                settings.marketing && styles.switchOn,
+                marketingEmails && styles.switchOn,
               ]}>
                 <View style={[
                   styles.switchThumb,
-                  settings.marketing && styles.switchThumbOn,
+                  marketingEmails && styles.switchThumbOn,
                 ]} />
               </View>
             </Pressable>
@@ -178,9 +159,9 @@ export default function ProfileSettingsScreen() {
           <View style={styles.settingCard}>
             <Pressable
               style={styles.settingRow}
-              onPress={() => toggleSetting("publicDefault")}
+              onPress={() => updateSetting("publicProjectsDefault", !publicProjectsDefault)}
               accessibilityRole="switch"
-              accessibilityState={{ checked: settings.publicDefault }}
+              accessibilityState={{ checked: publicProjectsDefault }}
             >
               <View style={styles.settingInfo}>
                 <Text style={styles.settingLabel}>Public Projects by Default</Text>
@@ -190,11 +171,11 @@ export default function ProfileSettingsScreen() {
               </View>
               <View style={[
                 styles.switch,
-                settings.publicDefault && styles.switchOn,
+                publicProjectsDefault && styles.switchOn,
               ]}>
                 <View style={[
                   styles.switchThumb,
-                  settings.publicDefault && styles.switchThumbOn,
+                  publicProjectsDefault && styles.switchThumbOn,
                 ]} />
               </View>
             </Pressable>
@@ -252,7 +233,7 @@ export default function ProfileSettingsScreen() {
           <View style={styles.settingCard}>
             <Pressable
               style={styles.settingRow}
-              onPress={() => handleReduceMotion(!reduceMotion)}
+              onPress={() => updateSetting("reduceMotion", !reduceMotion)}
               accessibilityRole="switch"
               accessibilityState={{ checked: reduceMotion }}
             >

@@ -1,0 +1,33 @@
+-- ============================================================
+-- Pro Waitlist Table
+-- Stores users waiting to be notified when contractors are available
+-- ============================================================
+
+create table public.pro_waitlist (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  project_id uuid references public.projects(id) on delete cascade not null,
+  email text not null,
+  created_at timestamptz not null default now(),
+  
+  -- One entry per user per project
+  unique(user_id, project_id)
+);
+
+alter table public.pro_waitlist enable row level security;
+
+-- Users can manage their own waitlist entries
+create policy "Users can view own waitlist entries"
+  on public.pro_waitlist for select
+  using (auth.uid() = user_id);
+
+create policy "Users can insert own waitlist entries"
+  on public.pro_waitlist for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users can delete own waitlist entries"
+  on public.pro_waitlist for delete
+  using (auth.uid() = user_id);
+
+create index idx_pro_waitlist_user on public.pro_waitlist(user_id);
+create index idx_pro_waitlist_project on public.pro_waitlist(project_id);

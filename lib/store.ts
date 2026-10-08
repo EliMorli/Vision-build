@@ -794,19 +794,103 @@ export const useReportStore = create<ReportState>(() => ({
   },
 }));
 
+// ─── Settings Slice ────────────────────────────────────────
+
+interface UserSettings {
+  pushNotifications: boolean;
+  marketingEmails: boolean;
+  publicProjectsDefault: boolean;
+  reduceMotion: boolean;
+}
+
+interface SettingsState extends UserSettings {
+  loading: boolean;
+  loadSettings: () => Promise<void>;
+  updateSetting: <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => Promise<void>;
+}
+
+export const useSettingsStore = create<SettingsState>((set, get) => ({
+  pushNotifications: true,
+  marketingEmails: false,
+  publicProjectsDefault: false,
+  reduceMotion: false,
+  loading: false,
+
+  loadSettings: async () => {
+    const userId = useAuthStore.getState().session?.user?.id;
+
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      const dataLayer = getDataLayer();
+      const settings = await dataLayer.getUserSettings(userId || "mock-user");
+      if (settings) {
+        set({
+          pushNotifications: settings.pushNotifications,
+          marketingEmails: settings.marketingEmails,
+          publicProjectsDefault: settings.publicProjectsDefault,
+          reduceMotion: settings.reduceMotion,
+        });
+      }
+      return;
+    }
+
+    if (!userId) return;
+
+    const { data } = await (supabase
+      .from("user_settings") as any)
+      .select("*")
+      .eq("user_id", userId)
+      .single();
+
+    if (data) {
+      set({
+        pushNotifications: data.push_notifications ?? true,
+        marketingEmails: data.marketing_emails ?? false,
+        publicProjectsDefault: data.public_projects_default ?? false,
+        reduceMotion: data.reduce_motion ?? false,
+      });
+    }
+  },
+
+  updateSetting: async (key, value) => {
+    const userId = useAuthStore.getState().session?.user?.id;
+
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      set({ [key]: value } as any);
+      const dataLayer = getDataLayer();
+      await dataLayer.saveUserSettings(userId || "mock-user", {
+        ...get(),
+        [key]: value,
+      });
+      return;
+    }
+
+    if (!userId) return;
+
+    const dbKey = key.replace(/([A-Z])/g, "_$1").toLowerCase();
+    
+    const { error } = await (supabase
+      .from("user_settings") as any)
+      .upsert({
+        user_id: userId,
+        [dbKey]: value,
+      }, { onConflict: "user_id" });
+
+    if (!error) {
+      set({ [key]: value } as any);
+    }
+  },
+}));
+
 // ─── Privacy Slice ─────────────────────────────────────────
 
 interface PrivacyState {
   privacyOptOut: boolean;
-  reduceMotion: boolean;
   loadPrivacySettings: () => Promise<void>;
   setPrivacyOptOut: (optOut: boolean) => Promise<void>;
-  setReduceMotion: (reduce: boolean) => Promise<void>;
 }
 
 export const usePrivacyStore = create<PrivacyState>((set, get) => ({
   privacyOptOut: false,
-  reduceMotion: false,
 
   loadPrivacySettings: async () => {
     const userId = useAuthStore.getState().session?.user?.id;
@@ -846,9 +930,5 @@ export const usePrivacyStore = create<PrivacyState>((set, get) => ({
     if (!error) {
       set({ privacyOptOut: optOut });
     }
-  },
-
-  setReduceMotion: async (reduce: boolean) => {
-    set({ reduceMotion: reduce });
   },
 }));
