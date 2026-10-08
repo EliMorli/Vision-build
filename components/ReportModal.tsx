@@ -7,7 +7,6 @@ import {
   Pressable,
   SafeAreaView,
   ScrollView,
-  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
@@ -78,7 +77,6 @@ export function ReportModal({ visible, onClose, onSuccess, type, itemId }: Repor
       }
     } catch (error) {
       setIsSubmitting(false);
-      // TODO: Show inline error message instead of Alert.alert
       console.error("Failed to submit report:", error);
     }
   };

@@ -7,7 +7,6 @@ import {
   Pressable,
   SafeAreaView,
   TextInput,
-  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
@@ -28,15 +27,15 @@ export default function EditProfileScreen() {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [successMessage, setSuccessMessage] = useState<string>("");
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
     if (status !== "granted") {
-      Alert.alert(
-        "Permission Required",
-        "Please grant photo library access to change your profile picture."
-      );
+      setErrorMessage("Please grant photo library access to change your profile picture.");
+      setTimeout(() => setErrorMessage(""), 3000);
       return;
     }
 
@@ -81,7 +80,8 @@ export default function EditProfileScreen() {
       return data?.path || null;
     } catch (_error) {
       console.error("Error uploading photo:", _error);
-      Alert.alert("Upload Failed", "Could not upload profile photo. Please try again.");
+      setErrorMessage("Could not upload profile photo. Please try again.");
+      setTimeout(() => setErrorMessage(""), 3000);
       return null;
     } finally {
       setUploading(false);
@@ -105,9 +105,12 @@ export default function EditProfileScreen() {
       }
 
       if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
-        Alert.alert("Success", "Profile updated!");
         await fetchProfile();
-        router.back();
+        setSuccessMessage("Profile updated!");
+        setTimeout(() => {
+          setSuccessMessage("");
+          router.back();
+        }, 1500);
         return;
       }
 
@@ -121,12 +124,16 @@ export default function EditProfileScreen() {
 
       if (error) throw error;
 
-      Alert.alert("Success", "Profile updated!");
       await fetchProfile();
-      router.back();
+      setSuccessMessage("Profile updated!");
+      setTimeout(() => {
+        setSuccessMessage("");
+        router.back();
+      }, 1500);
     } catch (error: any) {
       console.error("Error updating profile:", error);
-      Alert.alert("Error", error.message || "Could not update profile. Please try again.");
+      setErrorMessage(error.message || "Could not update profile. Please try again.");
+      setTimeout(() => setErrorMessage(""), 3000);
     } finally {
       setLoading(false);
     }
@@ -145,6 +152,18 @@ export default function EditProfileScreen() {
           <Text style={styles.headerTitle}>Edit Profile</Text>
           <View style={{ width: 24 }} />
         </View>
+
+        {/* Messages */}
+        {errorMessage ? (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorText}>{errorMessage}</Text>
+          </View>
+        ) : null}
+        {successMessage ? (
+          <View style={styles.successBanner}>
+            <Text style={styles.successText}>{successMessage}</Text>
+          </View>
+        ) : null}
 
         {/* Avatar */}
         <View style={styles.avatarSection}>
@@ -317,5 +336,31 @@ const styles = StyleSheet.create({
   buttonContainer: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
+  },
+  errorBanner: {
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+    borderRadius: radius.md,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.error,
+  },
+  errorText: {
+    ...fonts.body,
+    color: colors.error,
+  },
+  successBanner: {
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+    borderRadius: radius.md,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.success,
+  },
+  successText: {
+    ...fonts.body,
+    color: colors.success,
   },
 });
