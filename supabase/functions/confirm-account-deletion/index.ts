@@ -5,12 +5,12 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { getServiceRoleClient } from "../_shared/auth.ts";
-import { deleteUserData, DeleteUserDataParams } from "../_shared/delete-user-data.ts";
+import { deleteUserData, DeleteUserDataParams, DeleteUserDataResult } from "../_shared/delete-user-data.ts";
 
 export interface ConfirmDeletionDeps {
   supabase: any;
   clock: { now: () => Date };
-  deleteUser: (params: DeleteUserDataParams) => Promise<{ success: true; appleRevokeStatus: any }>;
+  deleteUser: (params: DeleteUserDataParams) => Promise<DeleteUserDataResult>;
   crypto: {
     sha256: (data: Uint8Array) => Promise<Uint8Array>;
   };
