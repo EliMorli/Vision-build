@@ -9,6 +9,7 @@ import {
   SafeAreaView,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore, useAuthStore } from "@/lib/store";
@@ -32,6 +33,7 @@ export default function DashboardScreen() {
   const { projects, fetchProjects, generatingStartTime } = useProjectStore();
   const profile = useAuthStore((s) => s.profile);
   const [showRenderingCard, setShowRenderingCard] = useState(false);
+  const [prosCardKey, setProsCardKey] = useState(0);
 
   // NOTE: AI consent is now enforced server-side in analyze-room, generate-design, and assistant-chat
   // Removed client-side useAIConsentCheck() - consent errors trigger re-consent flow with resume capability
@@ -44,6 +46,12 @@ export default function DashboardScreen() {
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
+
+  useFocusEffect(
+    useCallback(() => {
+      setProsCardKey(k => k + 1);
+    }, [])
+  );
 
   // Only show "Rendering..." card if generation has been running > 45 seconds
   useEffect(() => {
@@ -94,7 +102,7 @@ export default function DashboardScreen() {
           </Pressable>
         </View>
         <View style={styles.emptyContent}>
-          <ProsTeaserCard />
+          <ProsTeaserCard key={prosCardKey} />
           
           <EmptyState
             icon="home-outline"
@@ -123,7 +131,7 @@ export default function DashboardScreen() {
         fullWidth
       />
       
-      <ProsTeaserCard />
+      <ProsTeaserCard key={prosCardKey} />
     </View>
   );
 
