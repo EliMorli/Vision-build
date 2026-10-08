@@ -219,6 +219,7 @@ export default function ProfileSettingsScreen() {
               accessibilityState={{ checked: prosWaitlist }}
               accessibilityLabel={`Pros Waitlist, ${prosWaitlist ? "on" : "off"}. Get notified when local pros can quote your projects.`}
               disabled={checkingWaitlist}
+              testID="settings-pros-waitlist-toggle"
             >
               <View style={styles.settingInfo}>
                 <Text style={styles.settingLabel}>Pros Waitlist</Text>

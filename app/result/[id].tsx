@@ -273,12 +273,15 @@ export default function ResultScreen() {
 
       {/* Waitlist Card */}
       {!isOnWaitlist && (
-        <View style={styles.waitlistCard}>
+        <View style={styles.waitlistCard} testID="results-waitlist-card">
           <Text style={styles.waitlistTitle}>Want this built?</Text>
           <Pressable
             style={[styles.waitlistButton, waitlistLoading && styles.waitlistButtonDisabled]}
             onPress={handleJoinWaitlist}
             disabled={waitlistLoading}
+            testID="results-waitlist-join"
+            accessibilityRole="button"
+            accessibilityLabel="Join the waitlist"
           >
             <Text style={styles.waitlistButtonText}>
               {waitlistLoading ? "Joining..." : "Join the waitlist"}

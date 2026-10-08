@@ -94,7 +94,7 @@ export function ProsTeaserCard() {
   // Slim mode when on waitlist
   if (isOnWaitlist) {
     return (
-      <View style={styles.slimCard}>
+      <View style={styles.slimCard} testID="pros-teaser-joined">
         <Ionicons name="checkmark-circle" size={20} color={colors.success} />
         <Text style={styles.slimText}>✓ You're on the list.</Text>
       </View>
@@ -102,7 +102,7 @@ export function ProsTeaserCard() {
   }
 
   return (
-    <View style={styles.card}>
+    <View style={styles.card} testID="pros-teaser">
       <View style={styles.tag}>
         <Text style={styles.tagText}>Coming soon</Text>
       </View>
@@ -118,6 +118,9 @@ export function ProsTeaserCard() {
             style={[styles.notifyButton, loading && styles.notifyButtonDisabled]}
             onPress={handleJoinWaitlist}
             disabled={loading || checking}
+            testID="pros-teaser-join"
+            accessibilityRole="button"
+            accessibilityLabel="Join the waitlist"
           >
             <Text style={styles.notifyButtonText}>
               {checking ? "..." : loading ? "Joining..." : "Join the waitlist"}

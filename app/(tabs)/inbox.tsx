@@ -9,8 +9,8 @@ export default function InboxScreen() {
     <SafeAreaView style={styles.container}>
       <EmptyState
         icon="chatbubbles-outline"
-        title="Coming soon"
-        subtitle="Pro quotes and messages will appear here when they're available in your area."
+        title="No messages yet"
+        subtitle="Messages from local pros will appear here when they're available in your area."
       />
     </SafeAreaView>
   );

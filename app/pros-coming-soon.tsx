@@ -156,19 +156,19 @@ export default function ProsComingSoonScreen() {
 
           {/* Steps Card */}
           <View style={styles.stepsCard}>
-            <View style={styles.step}>
+            <View style={styles.step} testID="pros-coming-soon-step-1">
               <View style={styles.stepNumber}>
                 <Text style={styles.stepNumberText}>1</Text>
               </View>
               <Text style={styles.stepText}>We write a brief from your design</Text>
             </View>
-            <View style={styles.step}>
+            <View style={styles.step} testID="pros-coming-soon-step-2">
               <View style={styles.stepNumber}>
                 <Text style={styles.stepNumberText}>2</Text>
               </View>
               <Text style={styles.stepText}>We reach out to local pros for you</Text>
             </View>
-            <View style={styles.step}>
+            <View style={styles.step} testID="pros-coming-soon-step-3">
               <View style={styles.stepNumber}>
                 <Text style={styles.stepNumberText}>3</Text>
               </View>
@@ -204,6 +204,7 @@ export default function ProsComingSoonScreen() {
                 onPress={handleNotifyMe}
                 loading={loading}
                 variant="primary"
+                testID="pros-coming-soon-join"
               />
             </View>
           )}
