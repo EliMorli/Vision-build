@@ -29,7 +29,7 @@ COMMIT;
 -- Test 1: User can join general waitlist (NULL project_id)
 BEGIN;
 SET LOCAL ROLE authenticated;
-SET LOCAL request.jwt.claims.sub TO '11111111-1111-1111-1111-111111111111';
+SET LOCAL request.jwt.claims TO '{"sub": "11111111-1111-1111-1111-111111111111"}';
 
 DO $$
 BEGIN
@@ -45,7 +45,7 @@ COMMIT;
 -- Test 2: User cannot join general waitlist twice (unique constraint on NULL)
 BEGIN;
 SET LOCAL ROLE authenticated;
-SET LOCAL request.jwt.claims.sub TO '11111111-1111-1111-1111-111111111111';
+SET LOCAL request.jwt.claims TO '{"sub": "11111111-1111-1111-1111-111111111111"}';
 
 DO $$
 BEGIN
@@ -64,7 +64,7 @@ ROLLBACK;
 -- Test 3: User can join project-specific waitlist
 BEGIN;
 SET LOCAL ROLE authenticated;
-SET LOCAL request.jwt.claims.sub TO '11111111-1111-1111-1111-111111111111';
+SET LOCAL request.jwt.claims TO '{"sub": "11111111-1111-1111-1111-111111111111"}';
 
 DO $$
 BEGIN
@@ -80,7 +80,7 @@ COMMIT;
 -- Test 4: User cannot join same project waitlist twice
 BEGIN;
 SET LOCAL ROLE authenticated;
-SET LOCAL request.jwt.claims.sub TO '11111111-1111-1111-1111-111111111111';
+SET LOCAL request.jwt.claims TO '{"sub": "11111111-1111-1111-1111-111111111111"}';
 
 DO $$
 BEGIN
@@ -99,7 +99,7 @@ ROLLBACK;
 -- Test 5: RLS denies cross-user SELECT
 BEGIN;
 SET LOCAL ROLE authenticated;
-SET LOCAL request.jwt.claims.sub TO '22222222-2222-2222-2222-222222222222';
+SET LOCAL request.jwt.claims TO '{"sub": "22222222-2222-2222-2222-222222222222"}';
 
 DO $$
 DECLARE
@@ -123,7 +123,7 @@ ROLLBACK;
 -- Test 6: RLS denies cross-user INSERT
 BEGIN;
 SET LOCAL ROLE authenticated;
-SET LOCAL request.jwt.claims.sub TO '22222222-2222-2222-2222-222222222222';
+SET LOCAL request.jwt.claims TO '{"sub": "22222222-2222-2222-2222-222222222222"}';
 
 DO $$
 BEGIN
@@ -143,7 +143,7 @@ ROLLBACK;
 -- Test 7: RLS denies cross-user DELETE
 BEGIN;
 SET LOCAL ROLE authenticated;
-SET LOCAL request.jwt.claims.sub TO '22222222-2222-2222-2222-222222222222';
+SET LOCAL request.jwt.claims TO '{"sub": "22222222-2222-2222-2222-222222222222"}';
 
 DO $$
 DECLARE
@@ -168,7 +168,7 @@ ROLLBACK;
 -- Test 8: User can delete their own entries
 BEGIN;
 SET LOCAL ROLE authenticated;
-SET LOCAL request.jwt.claims.sub TO '11111111-1111-1111-1111-111111111111';
+SET LOCAL request.jwt.claims TO '{"sub": "11111111-1111-1111-1111-111111111111"}';
 
 DO $$
 DECLARE
