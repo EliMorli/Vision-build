@@ -74,12 +74,42 @@ test.describe("UI Screenshots", () => {
     const viewport = page.viewportSize();
     expect(viewport).toEqual({ width: 390, height: 844 });
 
-    // Set up authenticated state
+    // Set up authenticated state and seed mock project
     await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:intro_seen", "true");
       localStorage.setItem("@visionbuild:mock_session", "true");
       localStorage.setItem("@visionbuild:ai_consent", "true");
       localStorage.setItem("@visionbuild:ai_consent_version", "2026-10-07b");
+      
+      // Seed a mock project for home-with-project screenshot
+      const mockProject = {
+        id: "mock-project-1",
+        user_id: "mock-user",
+        title: "Living Room Refresh",
+        status: "generated",
+        selected_style: "modern",
+        room_analysis: {
+          roomType: "living_room",
+          currentStyle: "traditional",
+          estimatedSqFt: 200,
+          keyElements: ["sectional sofa", "large windows", "hardwood floors"],
+          rawAnalysis: "Spacious living room with natural light and modern potential",
+        },
+        generated_image_urls: [
+          "mock-gen-1.jpg",
+          "mock-gen-2.jpg", 
+          "mock-gen-3.jpg",
+          "mock-gen-4.jpg"
+        ],
+        selected_generation_url: "mock-gen-1.jpg",
+        original_image_url: "mock-original.jpg",
+        is_public: false,
+        lead_info: null,
+        created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
+        updated_at: new Date(Date.now() - 86400000).toISOString(),
+      };
+      
+      localStorage.setItem("@visionbuild:mock_seed_projects", JSON.stringify([mockProject]));
     });
 
     // 1. Intro
@@ -125,13 +155,18 @@ test.describe("UI Screenshots", () => {
     await expect(page.getByText(/original photo/i)).toBeVisible({ timeout: 10000 });
     await page.screenshot({ path: "e2e/screens/ui-project-detail.png", fullPage: false });
 
-    // 8. Home with project
-    // Note: In true web mock mode with session, we don't have mock projects loaded
-    // So this will show the same empty state as ui-home-empty.png for now
-    // In real usage, users would have projects from the create flow
+    // 8. Home with project - seeded project should now be visible
     await page.goto(BASE_URL);
     await page.waitForLoadState("networkidle");
     await expect(page.getByText(/ready to redesign/i)).toBeVisible();
+    
+    // Assert project card is visible with the seeded project
+    await expect(page.getByTestId("home-project-card")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("Living Room Refresh")).toBeVisible();
+    
+    // XP should reflect the project activity (120 XP from initial seed)
+    await expect(page.getByText("120 XP")).toBeVisible();
+    
     await page.screenshot({ path: "e2e/screens/ui-home-with-project.png", fullPage: false });
   });
 });
