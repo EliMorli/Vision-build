@@ -223,8 +223,8 @@ test.describe("VisionBuild Create Loop", () => {
     await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 10000 });
     await page.screenshot({ path: "e2e/screens/a5-consent.png", fullPage: true });
 
-    // Decline consent (handleDecline navigates back to camera)
-    await page.getByRole("button", { name: /decline/i }).click();
+    // Click "Not now" (navigates back to camera)
+    await page.getByRole("button", { name: /not now/i }).click();
 
     // Should be back on camera screen
     await expect(page.getByText(/take a photo or pick one/i)).toBeInViewport({ timeout: 5000 });
@@ -237,8 +237,8 @@ test.describe("VisionBuild Create Loop", () => {
     // Should be on consent screen again
     await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 5000 });
 
-    // Decline again
-    await page.getByRole("button", { name: /decline/i }).click();
+    // Click "Not now" again
+    await page.getByRole("button", { name: /not now/i }).click();
 
     // Should be back on camera screen
     await expect(page.getByText(/take a photo or pick one/i)).toBeInViewport();
