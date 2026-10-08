@@ -81,6 +81,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="camera"
         options={{
+          title: "New design",
           href: null,
         }}
       />

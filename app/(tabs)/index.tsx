@@ -182,6 +182,7 @@ export default function DashboardScreen() {
               onPress={() => openProject(item)}
               accessibilityRole="button"
               accessibilityLabel={`Open ${item.title} project`}
+              testID="home-project-card"
             >
               {item.selected_generation_url || item.original_image_url ? (
                 <PrivateImage

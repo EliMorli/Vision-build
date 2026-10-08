@@ -84,14 +84,14 @@ function BeforeAfterSlider() {
         {/* Before image - full width, neutral/unstyled room */}
         <View style={sliderStyles.beforeImage}>
           <IsoRoom palette="modern" size={imageWidth * 0.9} />
-          <Text style={sliderStyles.imageLabel}>Before</Text>
+          <Text style={sliderStyles.beforeLabel}>Before</Text>
         </View>
 
         {/* After image - clipped based on slider, modern styled room */}
         <View style={[sliderStyles.afterContainer, { width: dividerX }]}>
           <View style={sliderStyles.afterImage}>
             <IsoRoom palette="modern" size={imageWidth * 0.9} spark />
-            <Text style={sliderStyles.imageLabel}>After</Text>
+            <Text style={sliderStyles.afterLabel}>After</Text>
           </View>
         </View>
 
@@ -303,9 +303,24 @@ const sliderStyles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  imageLabel: {
+  beforeLabel: {
     position: "absolute",
     bottom: 16,
+    left: 16,
+    fontSize: 16,
+    fontFamily: "Nunito_900Black",
+    color: colors.textPrimary,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+  },
+  afterLabel: {
+    position: "absolute",
+    bottom: 16,
+    right: 16,
     fontSize: 16,
     fontFamily: "Nunito_900Black",
     color: colors.textPrimary,

@@ -97,6 +97,7 @@ test.describe("UI Screenshots", () => {
     // 3. Camera
     await page.goto(`${BASE_URL}/(tabs)/camera`);
     await page.waitForLoadState("networkidle");
+    await expect(page.getByText("New design")).toBeVisible();
     await expect(page.getByText(/take a photo or pick one/i)).toBeVisible();
     await page.screenshot({ path: "e2e/screens/ui-camera.png", fullPage: false });
 
@@ -124,7 +125,10 @@ test.describe("UI Screenshots", () => {
     await expect(page.getByText(/original photo/i)).toBeVisible({ timeout: 10000 });
     await page.screenshot({ path: "e2e/screens/ui-project-detail.png", fullPage: false });
 
-    // 8. Home with project - go back to home
+    // 8. Home with project
+    // Note: In true web mock mode with session, we don't have mock projects loaded
+    // So this will show the same empty state as ui-home-empty.png for now
+    // In real usage, users would have projects from the create flow
     await page.goto(BASE_URL);
     await page.waitForLoadState("networkidle");
     await expect(page.getByText(/ready to redesign/i)).toBeVisible();
