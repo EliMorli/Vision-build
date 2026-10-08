@@ -216,7 +216,10 @@ Deno.test("confirm POST: valid token deletes user", async () => {
     },
     deleteUser: async (params) => {
       deletedUsers.push(params.userId);
-      return true;
+      return { 
+        success: true, 
+        appleRevokeStatus: { status: 'skipped', reason: 'not_apple_user' } 
+      };
     },
   });
   
@@ -255,7 +258,10 @@ Deno.test("confirm POST: expired token does not delete", async () => {
     },
     deleteUser: async (params) => {
       deletedUsers.push(params.userId);
-      return true;
+      return { 
+        success: true, 
+        appleRevokeStatus: { status: 'skipped', reason: 'not_apple_user' } 
+      };
     },
   });
   
@@ -294,7 +300,10 @@ Deno.test("confirm POST: reused token does not delete twice", async () => {
     },
     deleteUser: async (params) => {
       deletedUsers.push(params.userId);
-      return true;
+      return { 
+        success: true, 
+        appleRevokeStatus: { status: 'skipped', reason: 'not_apple_user' } 
+      };
     },
   });
   
@@ -334,7 +343,10 @@ Deno.test("confirm POST: unknown email completes without error", async () => {
     },
     deleteUser: async (params) => {
       deletedUsers.push(params.userId);
-      return true;
+      return { 
+        success: true, 
+        appleRevokeStatus: { status: 'skipped', reason: 'not_apple_user' } 
+      };
     },
   });
   
