@@ -74,42 +74,12 @@ test.describe("UI Screenshots", () => {
     const viewport = page.viewportSize();
     expect(viewport).toEqual({ width: 390, height: 844 });
 
-    // Set up authenticated state and seed mock project
+    // Set up authenticated state (no project seed yet - will add after home-empty screenshot)
     await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:intro_seen", "true");
       localStorage.setItem("@visionbuild:mock_session", "true");
       localStorage.setItem("@visionbuild:ai_consent", "true");
       localStorage.setItem("@visionbuild:ai_consent_version", "2026-10-07b");
-      
-      // Seed a mock project for home-with-project screenshot
-      const mockProject = {
-        id: "mock-project-1",
-        user_id: "mock-user",
-        title: "Living Room Refresh",
-        status: "generated",
-        selected_style: "modern",
-        room_analysis: {
-          roomType: "living_room",
-          currentStyle: "traditional",
-          estimatedSqFt: 200,
-          keyElements: ["sectional sofa", "large windows", "hardwood floors"],
-          rawAnalysis: "Spacious living room with natural light and modern potential",
-        },
-        generated_image_urls: [
-          "mock-gen-1.jpg",
-          "mock-gen-2.jpg", 
-          "mock-gen-3.jpg",
-          "mock-gen-4.jpg"
-        ],
-        selected_generation_url: "mock-gen-1.jpg",
-        original_image_url: "mock-original.jpg",
-        is_public: false,
-        lead_info: null,
-        created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-        updated_at: new Date(Date.now() - 86400000).toISOString(),
-      };
-      
-      localStorage.setItem("@visionbuild:mock_seed_projects", JSON.stringify([mockProject]));
     });
 
     // 1. Intro
@@ -118,10 +88,13 @@ test.describe("UI Screenshots", () => {
     await expect(page.getByText(/see the transformation/i)).toBeVisible({ timeout: 10000 });
     await page.screenshot({ path: "e2e/screens/ui-intro.png", fullPage: false });
 
-    // 2. Home empty
+    // 2. Home empty - no seed, should show empty state
     await page.goto(BASE_URL);
     await page.waitForLoadState("networkidle");
     await expect(page.getByText(/ready to redesign/i)).toBeVisible();
+    await expect(page.getByText("No projects yet")).toBeVisible();
+    // Verify no project cards are present
+    await expect(page.getByTestId("home-project-card")).toHaveCount(0);
     await page.screenshot({ path: "e2e/screens/ui-home-empty.png", fullPage: false });
 
     // 3. Camera
@@ -155,7 +128,33 @@ test.describe("UI Screenshots", () => {
     await expect(page.getByText(/original photo/i)).toBeVisible({ timeout: 10000 });
     await page.screenshot({ path: "e2e/screens/ui-project-detail.png", fullPage: false });
 
-    // 8. Home with project - seeded project should now be visible
+    // 8. Home with project - seed a project now for this screenshot
+    await page.evaluate(() => {
+      // Seed a mock project - use clay IsoRoom by omitting image URLs
+      const mockProject = {
+        id: "mock-project-1",
+        user_id: "mock-user",
+        title: "Living Room Refresh",
+        status: "generated",
+        selected_style: "modern",
+        room_analysis: {
+          roomType: "living_room",
+          currentStyle: "traditional",
+          estimatedSqFt: 200,
+          keyElements: ["sectional sofa", "large windows", "hardwood floors"],
+          rawAnalysis: "Spacious living room with natural light and modern potential",
+        },
+        generated_image_urls: ["mock-gen-1.jpg", "mock-gen-2.jpg", "mock-gen-3.jpg", "mock-gen-4.jpg"],
+        selected_generation_url: null,
+        original_image_url: null,
+        is_public: false,
+        lead_info: null,
+        created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
+        updated_at: new Date(Date.now() - 86400000).toISOString(),
+      };
+      localStorage.setItem("@visionbuild:mock_seed_projects", JSON.stringify([mockProject]));
+    });
+    
     await page.goto(BASE_URL);
     await page.waitForLoadState("networkidle");
     await expect(page.getByText(/ready to redesign/i)).toBeVisible();
