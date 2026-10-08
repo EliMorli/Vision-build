@@ -22,6 +22,7 @@ returns setof public.projects
 language sql
 security definer
 stable
+set search_path = public, auth
 as $$
   select p.*
   from public.projects p
