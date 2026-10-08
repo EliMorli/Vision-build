@@ -176,14 +176,14 @@ export function PrivateImage({
     );
   }
 
-  // Show placeholder if image failed to load after retries
-  if (showPlaceholder) {
+  // Show placeholder if image failed to load after retries OR while loading/retrying
+  if (showPlaceholder || !imageUrl) {
     return (
       <View
         style={[styles.placeholderContainer, containerStyle]}
         testID={testID}
         accessible={true}
-        accessibilityLabel={accessibilityLabel || "Room placeholder (image unavailable)"}
+        accessibilityLabel={accessibilityLabel || "Room placeholder"}
       >
         <View testID="private-image-placeholder">
           <IsoRoom
@@ -197,43 +197,17 @@ export function PrivateImage({
     );
   }
 
-  // If no imageUrl yet and we're not showing placeholder, show loading or placeholder
-  if (!imageUrl && !showPlaceholder) {
-    if (showLoadingSpinner) {
-      return (
-        <View style={[styles.placeholderContainer, containerStyle]} testID={testID}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      );
-    }
-    // If not showing spinner, show placeholder while waiting
-    return (
-      <View style={[styles.placeholderContainer, containerStyle]} testID={testID}>
-        <View testID="private-image-placeholder">
-          <IsoRoom
-            palette={palette as any}
-            size={placeholderSize}
-            accessible={true}
-            accessibilityLabel={accessibilityLabel || "Loading..."}
-          />
-        </View>
-      </View>
-    );
-  }
-
-  // Show the image
+  // Show the image (imageUrl exists and not showing placeholder)
   return (
     <View style={containerStyle} testID={testID}>
-      {imageUrl && (
-        <Image
-          testID="private-image-loaded"
-          source={{ uri: imageUrl }}
-          style={style}
-          onError={handleImageError}
-          onLoad={handleImageLoad}
-          accessibilityLabel={accessibilityLabel}
-        />
-      )}
+      <Image
+        testID="private-image-loaded"
+        source={{ uri: imageUrl }}
+        style={style}
+        onError={handleImageError}
+        onLoad={handleImageLoad}
+        accessibilityLabel={accessibilityLabel}
+      />
       {isLoading && showLoadingSpinner && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="small" color={colors.primary} />

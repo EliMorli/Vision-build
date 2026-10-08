@@ -306,8 +306,17 @@ test.describe("VisionBuild Create Loop", () => {
     // The first requests return 403, then retries are held on promise
     await page.waitForTimeout(2500);
     
-    // Take screenshot showing loading/failed state (images haven't loaded yet)
-    // This demonstrates the retry behavior - requests are being held
+    // Assert that the clay IsoRoom placeholder is visible (not blank)
+    const placeholder = page.getByTestId("private-image-placeholder").first();
+    await expect(placeholder).toBeVisible({ timeout: 5000 });
+    
+    // Verify placeholder has non-zero bounding box
+    const boundingBox = await placeholder.boundingBox();
+    expect(boundingBox).not.toBeNull();
+    expect(boundingBox!.width).toBeGreaterThan(0);
+    expect(boundingBox!.height).toBeGreaterThan(0);
+    
+    // Take screenshot showing clay placeholder (should show IsoRoom, not blank)
     await page.screenshot({ path: "e2e/screens/a5-image-expired-placeholder.png", fullPage: true });
     
     // Release the hold so retry requests can proceed
