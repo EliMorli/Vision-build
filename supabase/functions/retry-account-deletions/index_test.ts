@@ -145,14 +145,16 @@ Deno.test("retry-account-deletions - marks request completed on success", async 
               }),
             }),
           }),
-          update: (data: any) => ({
-            eq: () => {
-              if (data.status === "completed") {
-                completedCalled = true;
-              }
-              return Promise.resolve({ error: null });
-            },
-          }),
+          update: (data: any) => {
+            return {
+              eq: (col: string) => {
+                if (data.status === "completed") {
+                  completedCalled = true;
+                }
+                return Promise.resolve({ error: null });
+              },
+            };
+          },
         };
       }
       if (table === "deletion_completion_log") {
