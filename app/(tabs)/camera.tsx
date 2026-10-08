@@ -19,6 +19,10 @@ import { AI_CONSENT_VERSION } from "@/lib/config";
 
 const AI_CONSENT_VERSION_KEY = "@visionbuild:ai_consent_version";
 
+export const options = {
+  title: "New design",
+};
+
 export default function CameraScreen() {
   const router = useRouter();
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -166,12 +170,15 @@ export default function CameraScreen() {
       {!loading && (
         <View style={styles.buttons}>
           {imageUri ? (
-            <Button
-              label="Analyze Room"
-              icon="sparkles"
-              onPress={handleAnalyze}
-              variant="primary"
-            />
+            <>
+              <Button
+                label="Analyze Room"
+                icon="sparkles"
+                onPress={handleAnalyze}
+                variant="primary"
+              />
+              <View style={styles.buttonSpacer} />
+            </>
           ) : (
             <View style={styles.buttonRow}>
               <Pressable
@@ -332,5 +339,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     color: colors.textPrimary,
+  },
+  buttonSpacer: {
+    height: 16,
   },
 });

@@ -104,6 +104,8 @@ export default function ResultScreen() {
         </Animated.View>
       )}
 
+      {showXPBanner && <View style={styles.xpSpacer} />}
+
       <Text style={styles.subtitle}>
         Swipe to browse. Tap to select your favorite.
       </Text>
@@ -204,8 +206,11 @@ export default function ResultScreen() {
 
       {/* CTA */}
       <View style={styles.cta}>
+        {!selectedUrl && (
+          <Text style={styles.ctaHint}>Pick a favorite to save</Text>
+        )}
         <Button
-          label={selectedUrl ? "Save Design" : "Tap a design to choose it"}
+          label="Save to my project"
           icon="checkmark-circle"
           onPress={handleContinue}
           disabled={!selectedUrl || isSaving}
@@ -305,6 +310,9 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     color: "#B37A00",
   },
+  xpSpacer: {
+    height: 12,
+  },
   subtitle: {
     ...fonts.body,
     color: colors.textSecondary,
@@ -390,6 +398,12 @@ const styles = StyleSheet.create({
   dotActive: { width: 24, backgroundColor: colors.primary },
   dotInactive: { width: 8, backgroundColor: colors.primary + "33" },
   cta: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg },
+  ctaHint: {
+    ...fonts.body,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginBottom: spacing.sm,
+  },
   modal: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",

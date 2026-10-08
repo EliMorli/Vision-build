@@ -13,6 +13,12 @@ import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore, useAuthStore } from "@/lib/store";
 import { IsoRoom, MakePublicSheet, PrivateImage } from "@/components";
 
+// Helper to format text to sentence case
+function toSentenceCase(text: string): string {
+  if (!text) return text;
+  return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+}
+
 // Placeholder timeline data
 const TIMELINE_EVENTS = [
   { id: "1", type: "photo", label: "Original photo uploaded", date: "3 days ago" },
@@ -126,7 +132,7 @@ export default function ProjectDetailScreen() {
         >
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>{projectTitle}</Text>
+        <Text style={styles.headerTitle}>{toSentenceCase(projectTitle)}</Text>
         <Pressable 
           hitSlop={12}
           accessibilityRole="button"
@@ -191,13 +197,13 @@ export default function ProjectDetailScreen() {
             {currentStyle && (
               <View style={styles.chip}>
                 <Ionicons name="home-outline" size={14} color={colors.textSecondary} />
-                <Text style={styles.chipText}>{currentStyle} style</Text>
+                <Text style={styles.chipText}>{toSentenceCase(currentStyle)}</Text>
               </View>
             )}
             {keyElements.slice(0, 1).map((element, i) => (
               <View key={i} style={styles.chip}>
                 <Ionicons name="list-outline" size={14} color={colors.textSecondary} />
-                <Text style={styles.chipText}>{element}</Text>
+                <Text style={styles.chipText}>{toSentenceCase(element)}</Text>
               </View>
             ))}
           </View>
@@ -263,7 +269,15 @@ export default function ProjectDetailScreen() {
               ))
             ) : (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>No designs generated yet</Text>
+                <Text style={styles.emptyText}>No designs yet</Text>
+                <Pressable
+                  style={styles.createButton}
+                  onPress={() => router.push(`/editor/${id}`)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Create designs"
+                >
+                  <Text style={styles.createButtonText}>Create designs</Text>
+                </Pressable>
               </View>
             )}
           </View>
@@ -700,7 +714,21 @@ const styles = StyleSheet.create({
     ...fonts.title,
     fontSize: 16,
     marginTop: spacing.md,
+    marginBottom: spacing.md,
     color: colors.textSecondary,
+  },
+  createButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: radius.lg,
+    borderBottomWidth: 4,
+    borderBottomColor: "#0F4FB0",
+  },
+  createButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
   },
   emptySubtext: {
     ...fonts.body,
