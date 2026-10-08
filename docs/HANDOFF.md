@@ -13,7 +13,7 @@ All 6 security issues from review of commit d93632a have been fixed:
 
 1. **Blocked anon INSERT attack** - Migration 00008 removes all anon/authenticated access to `account_deletion_requests`
 2. **Separated GET/POST deletion** - GET validates only, POST executes. Email scanners won't trigger deletion.
-3. **Fixed user lookup pagination** - Migration 00009 adds `auth.get_user_id_by_email` SECURITY DEFINER function
+3. **Fixed user lookup pagination** - Migration 00009 adds `public.get_user_id_by_email` SECURITY DEFINER function. NOTE: Edited in place (no remote project exists yet) to fix search_path security (empty search_path, fully qualified auth.users)
 4. **Fixed production logging** - Token only logged in dev/staging, never in production
 5. **Fixed set-project-visibility** - Never copies main_image or 'original' files; keeps full storage paths; fails loudly
 6. **Repo hygiene** - Removed 39MB supabase-go binary, added to .gitignore

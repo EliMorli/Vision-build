@@ -21,6 +21,5 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.reports TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.usage_events TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.profiles TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.projects TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.chat_messages TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.xp_events TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.outreach_log TO authenticated;
