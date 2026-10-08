@@ -52,7 +52,7 @@ export default function AIConsentScreen() {
 
       // If we have resume data, retry the original operation
       if (pendingConsent?.resume) {
-        const { type, projectId, stylePrompt, imageUri } = pendingConsent.resume;
+        const { type, projectId, stylePrompt, imageUri, roomAnalysis } = pendingConsent.resume;
         
         // Clear pending consent before resuming
         clearPendingConsent();
@@ -69,9 +69,10 @@ export default function AIConsentScreen() {
             router.replace("/(tabs)");
           }
         } else if (type === "generate" && projectId && stylePrompt) {
-          // Resume generate designs - match the flow from editor screen
+          // Resume generate designs - replace consent screen with generating screen
           const projectStore = useProjectStore.getState();
-          router.push(`/generating/${projectId}`);
+          // Use replace to swap consent screen with generating screen
+          router.replace(`/generating/${projectId}`);
           // Start generation after navigation
           await projectStore.generateDesigns(projectId, stylePrompt);
         } else {
@@ -102,13 +103,23 @@ export default function AIConsentScreen() {
     // Clear pending consent
     clearPendingConsent();
     
-    // If we have resume data with a project, return to that project
-    if (pendingConsent?.resume?.projectId) {
-      router.replace(`/project/${pendingConsent.resume.projectId}`);
-    } else if (router.canGoBack()) {
-      router.back();
+    // If we have resume data, return to appropriate screen
+    if (pendingConsent?.resume) {
+      const { type, projectId } = pendingConsent.resume;
+      if (type === "generate" && projectId) {
+        // For generate flow, dismiss back to project detail (not editor/style picker)
+        // Use dismissTo to remove consent screen from stack
+        router.dismissTo(`/project/${projectId}`);
+      } else if (projectId) {
+        // For other flows with project, go to project detail
+        router.dismissTo(`/project/${projectId}`);
+      } else {
+        // No project, go to camera/home
+        router.dismissTo("/(tabs)/camera");
+      }
     } else {
-      router.replace("/(tabs)");
+      // No resume data, go to camera
+      router.dismissTo("/(tabs)/camera");
     }
   };
 
