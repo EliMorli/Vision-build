@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, StyleSheet, SafeAreaView, ScrollView } from "react-native";
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -7,7 +7,8 @@ import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { Button } from "@/components";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore, useProjectStore } from "@/lib/store";
-import { AI_CONSENT_VERSION } from "@/lib/config";
+import { AI_CONSENT_VERSION, CONSENT_CHANGE_NOTE } from "@/lib/config";
+import { getProviderDisclosureText } from "@/lib/ai-models";
 
 const AI_CONSENT_KEY = "@visionbuild:ai_consent";
 const AI_CONSENT_VERSION_KEY = "@visionbuild:ai_consent_version";
@@ -125,7 +126,11 @@ export default function AIConsentScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={true}
+        bounces={true}
+      >
         <View style={styles.content}>
           {/* Icon */}
           <View style={styles.iconCircle}>
@@ -139,9 +144,14 @@ export default function AIConsentScreen() {
           {isReconsent && isOutdated && (
             <View style={styles.updateNotice}>
               <Ionicons name="information-circle" size={20} color={colors.primary} />
-              <Text style={styles.updateText}>
-                We've updated how your photos are handled. Please review before your next design.
-              </Text>
+              <View style={styles.updateTextContainer}>
+                <Text style={styles.updateText}>
+                  We've updated how your photos are handled.
+                </Text>
+                <Text style={styles.updateText}>
+                  {CONSENT_CHANGE_NOTE}
+                </Text>
+              </View>
             </View>
           )}
 
@@ -155,19 +165,11 @@ export default function AIConsentScreen() {
             Your designs stay in your projects until you delete them.
           </Text>
 
-          {/* Additional info */}
+          {/* Provider disclosure */}
           <View style={styles.infoBox}>
             <View style={styles.infoRow}>
               <Ionicons name="lock-closed" size={20} color={colors.primary} />
-              <Text style={styles.infoText}>Data encrypted in transit</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Ionicons name="shield-checkmark" size={20} color={colors.primary} />
-              <Text style={styles.infoText}>Privacy-first AI providers only</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Ionicons name="trash" size={20} color={colors.primary} />
-              <Text style={styles.infoText}>No data retention or training</Text>
+              <Text style={styles.infoText}>{getProviderDisclosureText()}</Text>
             </View>
           </View>
         </View>
@@ -189,7 +191,10 @@ export default function AIConsentScreen() {
           style={{ marginTop: spacing.sm }}
         />
         <Text style={styles.footerText}>
-          By continuing, you consent to this use of AI services.
+          By continuing, you agree to this use of AI.{" "}
+          <Pressable onPress={() => router.push("/privacy")} accessibilityRole="link">
+            <Text style={styles.privacyLink}>Privacy Policy</Text>
+          </Pressable>
         </Text>
       </View>
     </SafeAreaView>
@@ -242,11 +247,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
     gap: spacing.sm,
   },
+  updateTextContainer: {
+    flex: 1,
+    gap: spacing.xs,
+  },
   updateText: {
     ...fonts.body,
     fontSize: 14,
     color: colors.textPrimary,
-    flex: 1,
   },
   infoBox: {
     width: "100%",
@@ -276,5 +284,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: spacing.sm,
     color: colors.textSecondary,
+  },
+  privacyLink: {
+    color: colors.primary,
+    textDecorationLine: "underline",
   },
 });

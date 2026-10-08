@@ -15,13 +15,17 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Default models from the codebase (must match supabase/functions/_shared/ai.ts)
+// Load the shared AI models configuration
+const aiModelsPath = resolve(__dirname, '../lib/ai-models.json');
+const aiModelsConfig = JSON.parse(readFileSync(aiModelsPath, 'utf-8'));
+
+// Default models from the shared config (single source of truth)
 const DEFAULT_MODELS = {
-  AI_MODEL_VISION: 'google/gemini-2.5-pro',
-  AI_MODEL_TEXT: 'anthropic/claude-sonnet-5.5',
-  AI_MODEL_CHAT: 'anthropic/claude-sonnet-5.5',
-  AI_MODEL_RENDER_PREVIEW: 'google/gemini-3.1-flash-image',
-  AI_MODEL_RENDER_FINAL: 'google/gemini-3.1-flash-image',
+  AI_MODEL_VISION: aiModelsConfig.models.vision,
+  AI_MODEL_TEXT: aiModelsConfig.models.text,
+  AI_MODEL_CHAT: aiModelsConfig.models.chat,
+  AI_MODEL_RENDER_PREVIEW: aiModelsConfig.models.renderPreview,
+  AI_MODEL_RENDER_FINAL: aiModelsConfig.models.renderFinal,
 };
 
 async function fetchZDREndpoints() {

@@ -34,6 +34,25 @@ test.describe("VisionBuild AI Consent Flow", () => {
     // Wait for update notice to be visible (should appear immediately with the screen)
     await expect(page.getByText(/We've updated how your photos are handled/i)).toBeVisible({ timeout: 10000 });
     
+    // Verify the change note is visible
+    await expect(page.getByText(/We now name the AI providers that see your photos/i)).toBeVisible();
+    
+    // Verify provider disclosure is shown
+    await expect(page.getByText(/Google \(Gemini\)/i)).toBeVisible();
+    await expect(page.getByText(/Anthropic \(Claude\)/i)).toBeVisible();
+    
+    // Verify old checklist items are NOT present
+    await expect(page.getByText(/Data encrypted in transit/i)).not.toBeVisible();
+    await expect(page.getByText(/Privacy-first AI providers only/i)).not.toBeVisible();
+    await expect(page.getByText(/No data retention or training/i)).not.toBeVisible();
+    
+    // Verify Privacy Policy link exists
+    await expect(page.getByText("Privacy Policy")).toBeVisible();
+    
+    // Verify Continue and Not now are in viewport (390x844)
+    await expect(page.getByRole("button", { name: /continue/i })).toBeInViewport();
+    await expect(page.getByRole("button", { name: /not now/i })).toBeInViewport();
+    
     // Assert screen with update notice
     await page.screenshot({ path: "e2e/screens/a7-reconsent-outdated.png", fullPage: true });
 
@@ -96,6 +115,30 @@ test.describe("VisionBuild AI Consent Flow", () => {
     // Should see consent screen WITHOUT update notice
     await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 5000 });
     await expect(page.getByText(/We've updated how your photos are handled/i)).not.toBeVisible();
+    
+    // Verify provider disclosure is shown
+    await expect(page.getByText(/Google \(Gemini\)/i)).toBeVisible();
+    await expect(page.getByText(/Anthropic \(Claude\)/i)).toBeVisible();
+    
+    // Verify old checklist items are NOT present
+    await expect(page.getByText(/Data encrypted in transit/i)).not.toBeVisible();
+    await expect(page.getByText(/Privacy-first AI providers only/i)).not.toBeVisible();
+    await expect(page.getByText(/No data retention or training/i)).not.toBeVisible();
+    
+    // Verify Privacy Policy link exists
+    await expect(page.getByText("Privacy Policy")).toBeVisible();
+    
+    // Verify Continue and Not now are in viewport (390x844)
+    await expect(page.getByRole("button", { name: /continue/i })).toBeInViewport();
+    await expect(page.getByRole("button", { name: /not now/i })).toBeInViewport();
+    
+    // Test Privacy Policy link navigation
+    await page.getByText("Privacy Policy").click();
+    await expect(page.url()).toContain("/privacy");
+    
+    // Navigate back to consent screen
+    await page.goBack();
+    await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 5000 });
     
     // Assert screen without update notice
     await page.screenshot({ path: "e2e/screens/a7-reconsent-never.png", fullPage: true });
