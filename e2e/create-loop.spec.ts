@@ -2,16 +2,12 @@ import { test, expect, type Page } from "@playwright/test";
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:19006";
 
-// Solid green 100x100 PNG for mock design images
-// This is large enough to be visible in the UI
-const GREEN_IMAGE = Buffer.from([
-  0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
-  0x00, 0x00, 0x00, 0x64, 0x00, 0x00, 0x00, 0x64, 0x08, 0x02, 0x00, 0x00, 0x00, 0xFF, 0x80, 0x02,
-  0x03, 0x00, 0x00, 0x00, 0x19, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0xED, 0xC1, 0x01, 0x01, 0x00,
-  0x00, 0x00, 0x82, 0x20, 0xFF, 0xAF, 0x6E, 0x48, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0xD8, 0x9F,
-  0x00, 0x01, 0x00, 0x00, 0xDE, 0x00, 0x02, 0xE7, 0xC7, 0x37, 0xB6, 0x00, 0x00, 0x00, 0x00, 0x49,
-  0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82
-]);
+// Simple SVG image as a string - a green square with "MOCK" text
+const GREEN_IMAGE_SVG = `<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#4CAF50"/>
+  <text x="400" y="300" font-family="Arial" font-size="48" fill="white" text-anchor="middle">MOCK DESIGN</text>
+</svg>`;
+const GREEN_IMAGE = Buffer.from(GREEN_IMAGE_SVG);
 
 test.describe("VisionBuild Create Loop", () => {
   test("fresh session shows intro then consent", async ({ page }: { page: Page }) => {
@@ -66,10 +62,10 @@ test.describe("VisionBuild Create Loop", () => {
       console.log(`[TEST] Intercepted mock image request #${imageRequestCount}: ${route.request().url()}`);
       await route.fulfill({
         status: 200,
-        contentType: "image/png",
+        contentType: "image/svg+xml",
         body: GREEN_IMAGE,
         headers: {
-          'Content-Type': 'image/png',
+          'Content-Type': 'image/svg+xml',
           'Cache-Control': 'no-cache'
         }
       });
@@ -292,7 +288,7 @@ test.describe("VisionBuild Create Loop", () => {
         // Return a green image
         await route.fulfill({
           status: 200,
-          contentType: "image/png",
+          contentType: "image/svg+xml",
           body: GREEN_IMAGE
         });
       }
