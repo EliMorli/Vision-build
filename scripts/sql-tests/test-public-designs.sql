@@ -16,15 +16,20 @@ DECLARE
   v_result record;
 BEGIN
   -- Setup: Create test users with random UUIDs to avoid conflicts
+  -- Note: profiles may be auto-created by trigger
   INSERT INTO auth.users (id, email) VALUES
     (v_alice_id, 'alice-pd-' || substring(v_alice_id::text from 1 for 8) || '@test.com'),
     (v_bob_id, 'bob-pd-' || substring(v_bob_id::text from 1 for 8) || '@test.com'),
     (v_charlie_id, 'charlie-pd-' || substring(v_charlie_id::text from 1 for 8) || '@test.com');
 
+  -- Ensure profiles exist (upsert in case trigger already created them)
   INSERT INTO public.profiles (id, email, display_name) VALUES
     (v_alice_id, 'alice-pd-' || substring(v_alice_id::text from 1 for 8) || '@test.com', 'Alice PD'),
     (v_bob_id, 'bob-pd-' || substring(v_bob_id::text from 1 for 8) || '@test.com', 'Bob PD'),
-    (v_charlie_id, 'charlie-pd-' || substring(v_charlie_id::text from 1 for 8) || '@test.com', 'Charlie PD');
+    (v_charlie_id, 'charlie-pd-' || substring(v_charlie_id::text from 1 for 8) || '@test.com', 'Charlie PD')
+  ON CONFLICT (id) DO UPDATE SET 
+    email = EXCLUDED.email,
+    display_name = EXCLUDED.display_name;
 
   -- Alice has 1 public and 1 private project
   INSERT INTO public.projects (id, user_id, title, original_image_url, is_public, status) VALUES
