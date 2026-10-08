@@ -21,7 +21,8 @@ DECLARE
   service_role_key_present boolean;
 BEGIN
   -- Only service_role can call this function
-  IF current_user NOT IN ('service_role', 'postgres') THEN
+  -- Use session_user because current_user changes to definer in SECURITY DEFINER functions
+  IF session_user NOT IN ('service_role', 'postgres') THEN
     RAISE EXCEPTION 'deletion_cron_ready() can only be called by service_role';
   END IF;
   
