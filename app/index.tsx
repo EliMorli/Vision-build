@@ -17,7 +17,12 @@ export default function Index() {
   const [introSeen, setIntroSeen] = useState<boolean | null>(null);
 
   useEffect(() => {
-    checkIntroSeen();
+    // In mock mode, skip intro and go straight to tabs
+    if (DEV_MOCK_ENABLED) {
+      setIntroSeen(true);
+    } else {
+      checkIntroSeen();
+    }
   }, []);
   
   // Set mock session in dev mode

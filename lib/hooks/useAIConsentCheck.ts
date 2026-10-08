@@ -7,15 +7,24 @@ import { useAuthStore } from "@/lib/store";
 const AI_CONSENT_KEY = "@visionbuild:ai_consent";
 const AI_CONSENT_VERSION_KEY = "@visionbuild:ai_consent_version";
 
+const DEV_MOCK_ENABLED = 
+  __DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true";
+
 /**
  * Check if user needs to re-consent to AI processing.
  * Navigates to ai-consent screen if version mismatch.
+ * Skipped in mock mode.
  */
 export function useAIConsentCheck() {
   const router = useRouter();
   const session = useAuthStore((s) => s.session);
 
   const checkConsentVersion = useCallback(async () => {
+    // Skip consent check in mock mode
+    if (DEV_MOCK_ENABLED) {
+      return;
+    }
+
     try {
       const [consented, storedVersion] = await Promise.all([
         AsyncStorage.getItem(AI_CONSENT_KEY),
