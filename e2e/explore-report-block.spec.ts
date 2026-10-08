@@ -68,8 +68,8 @@ test.describe("VisionBuild Explore Report and Block", () => {
 
     await page.goto(BASE_URL);
 
-    // Navigate to Explore tab
-    await page.getByRole("button", { name: /Explore/i }).click();
+    // Navigate to Explore tab by URL
+    await page.goto(`${BASE_URL}/(tabs)/explore`);
 
     // Verify we see 3 designs initially
     const exploreCards = page.locator('[data-testid="explore-design-card"]');
