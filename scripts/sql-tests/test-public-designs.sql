@@ -106,17 +106,19 @@ BEGIN
   END IF;
   RAISE NOTICE 'PASS: fetch_public_designs excludes blocked user''s designs';
 
-  -- ─── Test 5: Anon cannot execute fetch_public_designs ───
+  -- ─── Test 5: Verify fetch_public_designs grants (PUBLIC should not have EXECUTE) ───
 
-  PERFORM set_config('request.jwt.claims', '{"role": "anon"}', true);
+  SELECT COUNT(*) INTO v_count
+  FROM pg_proc p
+  JOIN pg_namespace n ON p.pronamespace = n.oid
+  WHERE n.nspname = 'public'
+    AND p.proname = 'fetch_public_designs'
+    AND NOT has_function_privilege('anon', p.oid, 'EXECUTE');
 
-  BEGIN
-    PERFORM public.fetch_public_designs();
-    RAISE EXCEPTION 'FAIL: Anon should not be able to execute fetch_public_designs';
-  EXCEPTION
-    WHEN insufficient_privilege THEN
-      RAISE NOTICE 'PASS: Anon cannot execute fetch_public_designs';
-  END;
+  IF v_count != 1 THEN
+    RAISE EXCEPTION 'FAIL: anon should NOT have EXECUTE on fetch_public_designs';
+  END IF;
+  RAISE NOTICE 'PASS: Anon cannot execute fetch_public_designs (EXECUTE revoked from PUBLIC)';
 
   -- ─── Test 6: Anon cannot insert reports ───
 
