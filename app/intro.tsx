@@ -52,6 +52,10 @@ function BeforeAfterSlider() {
   const sliderPosition = useRef(new Animated.Value(0.5)).current;
   const [dividerX, setDividerX] = useState(width * 0.8 * 0.5); // center of the image width
   const imageWidth = width * 0.8;
+  
+  // Hide labels when divider is too close (within 60px of edges to account for label width)
+  const showBeforeLabel = dividerX > 60;
+  const showAfterLabel = dividerX < imageWidth - 60;
 
   const panResponder = useRef(
     PanResponder.create({
@@ -91,14 +95,14 @@ function BeforeAfterSlider() {
       <View style={sliderStyles.sliderContainer} {...panHandlers}>
         <View style={sliderStyles.beforeImage}>
           <IsoRoom palette="modern" size={imageWidth * 0.9} />
-          <Text style={sliderStyles.beforeLabel}>Before</Text>
+          {showBeforeLabel && <Text style={sliderStyles.beforeLabel}>Before</Text>}
         </View>
 
         {/* After image - clipped based on slider, modern styled room */}
         <View style={[sliderStyles.afterContainer, { width: dividerX }]}>
           <View style={sliderStyles.afterImage}>
             <IsoRoom palette="modern" size={imageWidth * 0.9} spark />
-            <Text style={sliderStyles.afterLabel}>After</Text>
+            {showAfterLabel && <Text style={sliderStyles.afterLabel}>After</Text>}
           </View>
         </View>
 
@@ -327,6 +331,7 @@ const sliderStyles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: radius.sm,
+    zIndex: 1,
   },
   afterLabel: {
     position: "absolute",
@@ -341,6 +346,7 @@ const sliderStyles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: radius.sm,
+    zIndex: 1,
   },
   afterContainer: {
     position: "absolute",

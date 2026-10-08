@@ -15,9 +15,19 @@ import { BUDGET_RANGES } from "@/lib/types";
 import { useProjectStore, useLeadStore, useAuthStore } from "@/lib/store";
 import { Button, Banner, EmptyState, FullScreenLoader } from "@/components";
 
+// Feature flag for contractor outreach
+const CONTRACTOR_OUTREACH_ENABLED = false;
+
 export default function HandoffScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  
+  // Redirect if feature is disabled
+  if (!CONTRACTOR_OUTREACH_ENABLED) {
+    router.replace(`/pros-coming-soon?projectId=${id}`);
+    return null;
+  }
+  
   const { currentProject } = useProjectStore();
   const {
     emailPreview,

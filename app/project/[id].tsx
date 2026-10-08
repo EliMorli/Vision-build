@@ -294,22 +294,23 @@ export default function ProjectDetailScreen() {
         </View>
 
         {/* Project brief */}
-        <View style={styles.briefSection}>
-          <Text style={styles.sectionTitle}>Project Brief</Text>
-          <View style={styles.briefCard}>
-            <Text style={styles.briefText}>
-              Kitchen remodel: Modern design with warm tones, replacing oak cabinets, tile
-              flooring, and updating lighting fixtures. Estimated 150 sq ft.
-            </Text>
-            <Pressable
-              style={styles.briefButton}
-              onPress={() => router.push(`/pros-coming-soon?projectId=${id}`)}
-            >
-              <Text style={styles.briefButtonText}>Get quotes</Text>
-              <Ionicons name="arrow-forward" size={14} color={colors.primary} />
-            </Pressable>
+        {project?.lead_info?.projectBrief && (
+          <View style={styles.briefSection}>
+            <Text style={styles.sectionTitle}>Project Brief</Text>
+            <View style={styles.briefCard}>
+              <Text style={styles.briefText}>
+                {project.lead_info.projectBrief}
+              </Text>
+              <Pressable
+                style={styles.briefButton}
+                onPress={() => router.push(`/pros-coming-soon?projectId=${id}`)}
+              >
+                <Text style={styles.briefButtonText}>Join the pros waitlist</Text>
+                <Ionicons name="arrow-forward" size={14} color={colors.primary} />
+              </Pressable>
+            </View>
           </View>
-        </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

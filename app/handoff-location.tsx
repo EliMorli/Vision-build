@@ -14,9 +14,19 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { Button } from "@/components";
 
+// Feature flag for contractor outreach
+const CONTRACTOR_OUTREACH_ENABLED = false;
+
 export default function HandoffLocationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  
+  // Redirect if feature is disabled
+  if (!CONTRACTOR_OUTREACH_ENABLED) {
+    router.replace(`/pros-coming-soon?projectId=${id}`);
+    return null;
+  }
+  
   const [zipCode, setZipCode] = useState("");
   const [error, setError] = useState("");
   const [isValidating, setIsValidating] = useState(false);
