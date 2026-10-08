@@ -176,6 +176,8 @@ export default function ResultScreen() {
         </Animated.View>
       )}
 
+      {showXPBanner && <View style={styles.xpSpacer} />}
+
       <Text style={styles.subtitle}>
         Swipe to browse. Tap to select your favorite.
       </Text>
@@ -222,6 +224,9 @@ export default function ResultScreen() {
                 }
               }}
               disabled={!url}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isSelected }}
+              accessibilityLabel={`Design option ${index + 1}${isSelected ? ", selected" : ""}`}
             >
               {url ? (
                 <>
@@ -236,7 +241,7 @@ export default function ResultScreen() {
                   />
                   {isSelected && (
                     <View style={styles.checkBadge}>
-                      <Ionicons name="checkmark" size={18} color="#fff" />
+                      <Ionicons name="checkmark" size={22} color="#fff" />
                     </View>
                   )}
                   <View style={styles.optionLabel}>
@@ -292,13 +297,17 @@ export default function ResultScreen() {
 
       {/* CTA */}
       <View style={styles.cta}>
+        {!selectedUrl && (
+          <Text style={styles.ctaHint}>Pick a favorite to save</Text>
+        )}
         <Button
-          label="Save Design"
+          label="Save to my project"
           icon="checkmark-circle"
           onPress={handleContinue}
           disabled={!selectedUrl || isSaving}
           loading={isSaving}
           variant="secondary"
+          testID="results-save"
         />
       </View>
 
@@ -380,18 +389,21 @@ const styles = StyleSheet.create({
   },
   xpTitle: {
     fontSize: 14,
-    fontWeight: "900",
+    fontFamily: "Nunito_900Black",
     color: colors.textPrimary,
   },
   xpSubtitle: {
     fontSize: 12,
-    fontWeight: "700",
+    fontFamily: "Nunito_700Bold",
     color: "#8A6A00",
   },
   xpAmount: {
     fontSize: 18,
-    fontWeight: "900",
+    fontFamily: "Nunito_900Black",
     color: "#B37A00",
+  },
+  xpSpacer: {
+    height: 12,
   },
   subtitle: {
     ...fonts.body,
@@ -435,18 +447,28 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     backgroundColor: "#fff",
   },
-  cardSelected: { borderWidth: 3, borderColor: colors.primary },
+  cardSelected: { 
+    borderWidth: 4, 
+    borderColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.3,
+  },
   cardImage: { width: "100%", height: "100%" },
   checkBadge: {
     position: "absolute",
-    top: 12,
-    right: 12,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    top: 16,
+    right: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
+    elevation: 6,
   },
   optionLabel: {
     position: "absolute",
@@ -457,7 +479,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: radius.full,
   },
-  optionText: { color: "#fff", fontSize: 12, fontWeight: "500" },
+  optionText: { color: "#fff", fontSize: 12, fontFamily: "Nunito_600SemiBold" },
   dots: {
     flexDirection: "row",
     justifyContent: "center",
@@ -501,6 +523,12 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
   cta: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg },
+  ctaHint: {
+    ...fonts.body,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginBottom: spacing.sm,
+  },
   modal: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",

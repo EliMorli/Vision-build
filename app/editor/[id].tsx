@@ -86,12 +86,10 @@ export default function EditorScreen() {
             <Pressable
               style={[styles.styleCard, isSelected && styles.styleCardSelected]}
               onPress={() => setSelectedStyle(item)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isSelected }}
+              accessibilityLabel={`${item.name} style`}
             >
-              {isSelected && (
-                <View style={styles.checkBadge}>
-                  <Ionicons name="checkmark" size={14} color="#fff" />
-                </View>
-              )}
               <View style={styles.styleImage}>
                 <IsoRoom 
                   palette={item.id}
@@ -99,6 +97,11 @@ export default function EditorScreen() {
                   accessible={false}
                   importantForAccessibility="no-hide-descendants"
                 />
+                {isSelected && (
+                  <View style={styles.checkBadge}>
+                    <Ionicons name="checkmark" size={20} color="#fff" />
+                  </View>
+                )}
               </View>
               <Text
                 style={[
@@ -116,7 +119,7 @@ export default function EditorScreen() {
       {/* Footer */}
       <View style={styles.footer}>
         <Button
-          label="Generate 4 Designs"
+          label={selectedStyle ? "Generate 4 Designs" : "Pick a style"}
           icon="sparkles"
           onPress={handleGenerate}
           disabled={!selectedStyle || loading || isGenerating}
@@ -166,25 +169,27 @@ const styles = StyleSheet.create({
   },
   styleCardSelected: {
     borderColor: colors.primary,
-    borderWidth: 3,
+    borderWidth: 4,
     backgroundColor: colors.primary + "0A",
     shadowColor: colors.primary,
-    shadowOpacity: 0.2,
-    transform: [{ translateY: -3 }],
+    shadowOpacity: 0.3,
   },
   checkBadge: {
     position: "absolute",
-    top: -8,
-    right: -8,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    top: 8,
+    right: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: colors.primary,
-    borderWidth: 3,
-    borderColor: "#fff",
     justifyContent: "center",
     alignItems: "center",
     zIndex: 10,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 4,
   },
   styleImage: {
     width: "100%",

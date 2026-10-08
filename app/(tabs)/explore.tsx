@@ -13,11 +13,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { IsoRoom } from "@/components";
 
+// Feature flag for likes (off by default until feature is real)
+const SHOW_LIKES = false;
+
 // Placeholder data - only public projects
 const PLACEHOLDER_DESIGNS = Array.from({ length: 8 }, (_, i) => ({
   id: String(i + 1),
-  title: `Design ${i + 1}`,
   style: ["modern", "coastal", "farmhouse", "industrial", "luxury", "scandinavian"][i % 6],
+  creator: ["Sarah M.", "Alex K.", "Jordan T.", "Casey R.", "Morgan L.", "Taylor B."][i % 6],
   likes: Math.floor(Math.random() * 500) + 50,
   isPublic: true,
 }));
@@ -62,7 +65,11 @@ export default function ExploreScreen() {
         contentContainerStyle={styles.grid}
         columnWrapperStyle={styles.row}
         renderItem={({ item }) => (
-          <Pressable style={styles.card}>
+          <Pressable 
+            style={styles.card}
+            accessibilityRole="button"
+            accessibilityLabel={`${item.style} design by ${item.creator}`}
+          >
             <View style={styles.cardImageWrapper}>
               <IsoRoom
                 palette={item.style}
@@ -74,21 +81,24 @@ export default function ExploreScreen() {
             <Pressable
               style={styles.moreButton}
               onPress={() => handleReport(item.id)}
-              accessibilityLabel="Report or block"
-              hitSlop={8}
+              accessibilityLabel="Report or block design"
+              accessibilityRole="button"
+              hitSlop={12}
             >
               <Ionicons name="ellipsis-horizontal" size={20} color="#fff" />
             </Pressable>
             <View style={styles.cardOverlay}>
               <Text style={styles.cardTitle} numberOfLines={1}>
-                {item.title}
+                {item.style.charAt(0).toUpperCase() + item.style.slice(1)}
               </Text>
               <View style={styles.cardFooter}>
-                <Text style={styles.cardStyle}>{item.style}</Text>
-                <View style={styles.likes}>
-                  <Ionicons name="heart-outline" size={14} color="#fff" />
-                  <Text style={styles.likesText}>{item.likes}</Text>
-                </View>
+                <Text style={styles.cardCreator}>by {item.creator}</Text>
+                {SHOW_LIKES && (
+                  <View style={styles.likes}>
+                    <Ionicons name="heart-outline" size={14} color="#fff" />
+                    <Text style={styles.likesText}>{item.likes}</Text>
+                  </View>
+                )}
               </View>
             </View>
           </Pressable>
@@ -141,9 +151,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 8,
     right: 8,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     alignItems: "center",
@@ -168,8 +178,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  cardStyle: {
-    color: "#fff",
+  cardCreator: {
+    color: "rgba(255,255,255,0.85)",
     fontSize: 12,
   },
   likes: {

@@ -12,11 +12,13 @@
     "check:hardcoded": "node scripts/check-hardcoded-values.js",
     "supabase:types": "npx supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > lib/database.types.ts",
     "check:models": "node scripts/check-zdr-models.mjs && node scripts/validate-ai-models.mjs",
+    "check:dev-button": "bash scripts/check-dev-button.sh",
     "db:test": "bash scripts/db/run-tests.sh",
     "fn:test": "bash scripts/run-function-tests.sh",
     "e2e:web": "playwright test"
   },
   "dependencies": {
+    "@expo-google-fonts/nunito": "^0.4.2",
     "@expo/vector-icons": "~14.0.4",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-navigation/native": "^7.0.0",
@@ -36,7 +38,7 @@
     "expo-linking": "~7.0.0",
     "expo-router": "~4.0.0",
     "expo-secure-store": "~14.0.0",
-    "expo-splash-screen": "~0.29.0",
+    "expo-splash-screen": "~0.29.24",
     "expo-status-bar": "~2.0.0",
     "expo-web-browser": "~14.0.0",
     "query-string": "6.14.1",
@@ -49,6 +51,7 @@
     "react-native-svg": "15.8.0",
     "react-native-url-polyfill": "^2.0.0",
     "react-native-web": "~0.19.13",
+    "sharp": "^0.35.5",
     "zustand": "^5.0.0"
   },
   "devDependencies": {

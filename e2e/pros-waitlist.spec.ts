@@ -2,6 +2,11 @@ import { test, expect, type Page } from "@playwright/test";
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:19006";
 
+test.use({
+  viewport: { width: 390, height: 844 },
+  deviceScaleFactor: 2,
+});
+
 test.describe("Pros Waitlist", () => {
   test.beforeEach(async ({ page }: { page: Page }) => {
     // Seed intro seen and consent accepted for all tests
@@ -27,6 +32,7 @@ test.describe("Pros Waitlist", () => {
 
     // Wait for the card to collapse to slim mode
     await expect(page.getByTestId("pros-teaser-joined")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("You're on the list.", { exact: true })).toBeVisible();
 
     // Screenshot after joining
     await page.screenshot({ path: "e2e/screens/hf-home-joined.png", fullPage: false });
@@ -89,6 +95,7 @@ test.describe("Pros Waitlist", () => {
     await expect(page.getByTestId("pros-coming-soon-step-1")).toBeVisible();
     await expect(page.getByTestId("pros-coming-soon-step-2")).toBeVisible();
     await expect(page.getByTestId("pros-coming-soon-step-3")).toBeVisible();
+    await expect(page.getByText("Find a pro")).toBeVisible();
 
     // Screenshot
     await page.screenshot({ path: "e2e/screens/hf-pros-coming-soon.png", fullPage: false });

@@ -2,14 +2,32 @@ import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as WebBrowser from "expo-web-browser";
+import * as SplashScreen from "expo-splash-screen";
+import {
+  useFonts,
+  Nunito_600SemiBold,
+  Nunito_700Bold,
+  Nunito_800ExtraBold,
+  Nunito_900Black,
+} from "@expo-google-fonts/nunito";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/lib/store";
 
 // Complete any pending auth sessions (handles redirect back from browser)
 WebBrowser.maybeCompleteAuthSession();
 
+// Hold splash screen until fonts are loaded
+SplashScreen.preventAutoHideAsync();
+
 export default function RootLayout() {
   const setSession = useAuthStore((s) => s.setSession);
+
+  const [fontsLoaded, fontError] = useFonts({
+    Nunito_600SemiBold,
+    Nunito_700Bold,
+    Nunito_800ExtraBold,
+    Nunito_900Black,
+  });
 
   useEffect(() => {
     // Hydrate existing session on cold start
@@ -27,6 +45,16 @@ export default function RootLayout() {
     return () => subscription.unsubscribe();
   }, [setSession]);
 
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontError]);
+
+  if (!fontsLoaded && !fontError) {
+    return null;
+  }
+
   return (
     <>
       <StatusBar style="dark" />
@@ -34,7 +62,7 @@ export default function RootLayout() {
         screenOptions={{
           headerStyle: { backgroundColor: "#fff" },
           headerTintColor: "#202124",
-          headerTitleStyle: { fontWeight: "600" },
+          headerTitleStyle: { fontFamily: "Nunito_800ExtraBold" },
           headerShadowVisible: false,
         }}
       >

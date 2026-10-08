@@ -15,7 +15,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
-import { Button } from "@/components";
+import { Button, IsoRoom } from "@/components";
 import { useAuthStore } from "@/lib/store";
 
 const INTRO_SEEN_KEY = "@visionbuild:intro_seen";
@@ -89,15 +89,16 @@ function BeforeAfterSlider() {
       <Text style={sliderStyles.subtitle}>Drag the slider to reveal the power of AI redesign</Text>
 
       <View style={sliderStyles.sliderContainer} {...panHandlers}>
-        {/* Before image - full width, neutral palette */}
         <View style={sliderStyles.beforeImage}>
-          <Text style={sliderStyles.imageLabel}>Before</Text>
+          <IsoRoom palette="modern" size={imageWidth * 0.9} />
+          <Text style={sliderStyles.beforeLabel}>Before</Text>
         </View>
 
-        {/* After image - clipped based on slider, modern palette */}
+        {/* After image - clipped based on slider, modern styled room */}
         <View style={[sliderStyles.afterContainer, { width: dividerX }]}>
           <View style={sliderStyles.afterImage}>
-            <Text style={sliderStyles.imageLabel}>After</Text>
+            <IsoRoom palette="modern" size={imageWidth * 0.9} spark />
+            <Text style={sliderStyles.afterLabel}>After</Text>
           </View>
         </View>
 
@@ -228,7 +229,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingTop: spacing.lg,
   },
-  logoText: { fontSize: 20, fontWeight: "700", color: colors.textPrimary },
+  logoText: { fontSize: 20, fontFamily: "Nunito_700Bold", color: colors.textPrimary },
   page: {
     width,
     justifyContent: "center",
@@ -302,23 +303,44 @@ const sliderStyles = StyleSheet.create({
   beforeImage: {
     width: "100%",
     height: "100%",
-    backgroundColor: "#E8E8E8",
+    backgroundColor: "#F5F5F5",
     justifyContent: "center",
     alignItems: "center",
   },
   afterImage: {
     width: width * 0.8,
     height: 260,
-    backgroundColor: "#C8E6F5",
+    backgroundColor: "#E8F0FE",
     justifyContent: "center",
     alignItems: "center",
   },
-  imageLabel: {
-    fontSize: 18,
-    fontWeight: "700",
+  beforeLabel: {
+    position: "absolute",
+    bottom: 16,
+    left: 16,
+    fontSize: 16,
+    fontFamily: "Nunito_900Black",
     color: colors.textPrimary,
     textTransform: "uppercase",
     letterSpacing: 1,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+  },
+  afterLabel: {
+    position: "absolute",
+    bottom: 16,
+    right: 16,
+    fontSize: 16,
+    fontFamily: "Nunito_900Black",
+    color: colors.textPrimary,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
   },
   afterContainer: {
     position: "absolute",
@@ -372,7 +394,7 @@ const sliderStyles = StyleSheet.create({
   controlText: {
     ...fonts.body,
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: "Nunito_700Bold",
     color: colors.primary,
   },
 });

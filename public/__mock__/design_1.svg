@@ -1,4 +1,52 @@
-<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
-  <rect width="800" height="600" fill="#2196F3"/>
-  <text x="400" y="300" font-family="Arial, sans-serif" font-size="64" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="middle">DESIGN 1</text>
+<svg width="800" height="640" viewBox="0 -14 200 160" xmlns="http://www.w3.org/2000/svg">
+  <!-- Modern style room -->
+  <!-- Left wall -->
+  <polygon points="0,136 0,74 100,52 100,114" fill="#E8ECF3"/>
+  <!-- Right wall -->
+  <polygon points="100,52 184,74 184,136 100,114" fill="#F5F7FB"/>
+  <!-- Window on right wall -->
+  <polygon points="130,34 160,34 160,4 130,4" fill="#CFEAFF" stroke="#fff" stroke-width="3"/>
+  <!-- Art on right wall -->
+  <polygon points="26,26 50,26 50,6 26,6" fill="#1A73E8" stroke="#fff" stroke-width="2.5"/>
+  <!-- Floor -->
+  <polygon points="100,52 184,74 184,136 100,158 16,136 16,74" fill="#C9CED8"/>
+  <!-- Floor thickness -->
+  <polygon points="16,136 84,158 84,165 16,143" fill="#A0A5B0"/>
+  <polygon points="84,158 184,136 184,143 84,165" fill="#B0B5C0"/>
+  <!-- Rug -->
+  <polygon points="122,76 166,76 166,116 122,116" fill="#FFFFFF"/>
+  <!-- Sofa boxes -->
+  <polygon points="54,28 100,28 100,38 54,38" fill="#3E4A61"/>
+  <polygon points="100,28 100,38 92,42 92,32" fill="#2E3A4A"/>
+  <polygon points="54,28 92,32 92,42 54,38" fill="#25313E"/>
+  <polygon points="54,28 100,28 92,32 54,32" fill="#4A5669"/>
+  <polygon points="54,28 100,28 100,34 54,34" fill="#3E4A61"/>
+  <polygon points="100,28 100,34 96,36 96,30" fill="#2E3A4A"/>
+  <polygon points="54,28 96,30 96,36 54,34" fill="#25313E"/>
+  <polygon points="54,17 100,17 96,19 54,19" fill="#4A5669"/>
+  <polygon points="54,28 60,28 60,44 54,44" fill="#3E4A61"/>
+  <polygon points="60,28 60,44 58,45 58,29" fill="#2E3A4A"/>
+  <polygon points="54,28 58,29 58,45 54,44" fill="#25313E"/>
+  <polygon points="54,22 60,22 58,23 54,23" fill="#4A5669"/>
+  <polygon points="94,28 100,28 100,44 94,44" fill="#3E4A61"/>
+  <polygon points="100,28 100,44 98,45 98,29" fill="#2E3A4A"/>
+  <polygon points="94,28 98,29 98,45 94,44" fill="#25313E"/>
+  <polygon points="94,22 100,22 98,23 94,23" fill="#4A5669"/>
+  <!-- Coffee table -->
+  <polygon points="130,88 150,88 150,97 130,97" fill="#1A73E8"/>
+  <polygon points="150,88 150,97 143,101 143,92" fill="#0D4FA0"/>
+  <polygon points="130,88 143,92 143,101 130,97" fill="#0A3D7A"/>
+  <polygon points="130,79 150,79 143,83 130,83" fill="#2E86F0"/>
+  <!-- Plant pot -->
+  <polygon points="164,20 174,20 174,32 164,32" fill="#E9DCCB"/>
+  <polygon points="174,20 174,32 169,34 169,22" fill="#D5C9BA"/>
+  <polygon points="164,20 169,22 169,34 164,32" fill="#C4B8AA"/>
+  <polygon points="164,8 174,8 169,10 164,10" fill="#F2E8DC"/>
+  <circle cx="169" cy="10" r="11" fill="#3FAF6A"/>
+  <circle cx="163" cy="13" r="7" fill="#35985D"/>
+  <!-- Lamp -->
+  <rect x="4.5" y="62" width="3" height="40" fill="#555"/>
+  <path d="M-4,64 13,64 9,52 0,52Z" fill="#FFD66B"/>
+  <!-- Small AI-generated tag -->
+  <text x="100" y="155" font-family="Arial, sans-serif" font-size="6" fill="#888" text-anchor="middle">AI-generated</text>
 </svg>

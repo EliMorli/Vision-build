@@ -52,6 +52,9 @@ jobs:
       - name: Check Zod/Database models
         run: npm run check:models
       
+      - name: Check dev button gating
+        run: npm run check:dev-button
+      
       - name: Setup database for tests
         env:
           PGHOST: localhost

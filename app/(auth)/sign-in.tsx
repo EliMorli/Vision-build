@@ -39,6 +39,7 @@ const PAGES = [
 export default function SignInScreen() {
   const [currentPage, setCurrentPage] = useState(0);
   const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [showAgeError, setShowAgeError] = useState(false);
   const { signInWithOAuth, loading, error, session } = useAuthStore();
   const router = useRouter();
 
@@ -48,6 +49,15 @@ export default function SignInScreen() {
 
   const openLink = (url: string) => {
     Linking.openURL(url);
+  };
+
+  const handleOAuthPress = (provider: "google" | "apple") => {
+    if (!ageConfirmed) {
+      setShowAgeError(true);
+      return;
+    }
+    setShowAgeError(false);
+    signInWithOAuth(provider);
   };
 
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
@@ -104,37 +114,46 @@ export default function SignInScreen() {
       </View>
 
       {/* Age confirmation */}
-      <Pressable
-        style={styles.ageConfirmRow}
-        onPress={() => setAgeConfirmed(!ageConfirmed)}
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked: ageConfirmed }}
-        accessibilityLabel="I confirm I am 13 years or older"
-      >
-        <View style={[styles.checkbox, ageConfirmed && styles.checkboxChecked]}>
-          {ageConfirmed && <Ionicons name="checkmark" size={16} color="#fff" />}
-        </View>
-        <Text style={styles.ageText}>I confirm I am 13 years or older</Text>
-      </Pressable>
+      <View style={styles.ageSection}>
+        <Pressable
+          style={styles.ageConfirmRow}
+          onPress={() => {
+            setAgeConfirmed(!ageConfirmed);
+            setShowAgeError(false);
+          }}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: ageConfirmed }}
+          accessibilityLabel="I confirm I am 13 years or older"
+        >
+          <View style={[styles.checkbox, ageConfirmed && styles.checkboxChecked]}>
+            {ageConfirmed && <Ionicons name="checkmark" size={16} color="#fff" />}
+          </View>
+          <Text style={styles.ageText}>I confirm I am 13 years or older</Text>
+        </Pressable>
+        {showAgeError && (
+          <Text style={styles.ageError}>Please confirm you're 13 or older</Text>
+        )}
+      </View>
 
       {/* Auth buttons */}
       <View style={styles.buttons}>
         <Button
           label="Continue with Google"
           icon="logo-google"
-          onPress={() => signInWithOAuth("google")}
+          onPress={() => handleOAuthPress("google")}
           loading={loading}
           variant="primary"
-          disabled={!ageConfirmed}
+          style={styles.googleButton}
+          textColor={colors.textPrimary}
+          iconColor={colors.textPrimary}
         />
         <Button
           label="Continue with Apple"
           icon="logo-apple"
-          onPress={() => signInWithOAuth("apple")}
+          onPress={() => handleOAuthPress("apple")}
           loading={loading}
           variant="primary"
-          disabled={!ageConfirmed}
-          style={ageConfirmed ? styles.appleButton : styles.appleButtonDisabled}
+          style={styles.appleButton}
         />
         {error && <Text style={styles.errorText}>{error}</Text>}
       </View>
@@ -204,12 +223,14 @@ const styles = StyleSheet.create({
   dot: { height: 8, borderRadius: 4, marginHorizontal: 4 },
   dotActive: { width: 24, backgroundColor: colors.primary },
   dotInactive: { width: 8, backgroundColor: colors.primary + "30" },
+  ageSection: {
+    paddingHorizontal: spacing.xl,
+    marginBottom: spacing.md,
+  },
   ageConfirmRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: spacing.xl,
     gap: spacing.sm,
-    marginBottom: spacing.md,
   },
   checkbox: {
     width: 24,
@@ -230,13 +251,20 @@ const styles = StyleSheet.create({
     fontSize: 15,
     flex: 1,
   },
-  buttons: { paddingHorizontal: spacing.xl, gap: spacing.sm },
-  appleButton: {
-    backgroundColor: "#000",
+  ageError: {
+    color: colors.error,
+    fontSize: 13,
+    marginTop: spacing.xs,
+    marginLeft: 32,
   },
-  appleButtonDisabled: {
-    backgroundColor: "#000",
-    opacity: 0.4,
+  buttons: { paddingHorizontal: spacing.xl, gap: spacing.sm },
+  googleButton: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#DADCE0",
+  },
+  appleButton: {
+    backgroundColor: "#000000",
   },
   errorText: {
     color: colors.error,
