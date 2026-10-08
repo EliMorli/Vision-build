@@ -1,0 +1,550 @@
+{
+  "screens": {
+    "intro": {
+      "url": "http://localhost:8080/intro",
+      "buttons": [
+        {
+          "index": 0,
+          "label": "\nBefore",
+          "type": "button",
+          "result": "state change or no-op"
+        },
+        {
+          "index": 1,
+          "label": "After\n",
+          "type": "button",
+          "result": "state change or no-op"
+        },
+        {
+          "index": 2,
+          "label": "\nGet Started",
+          "type": "button",
+          "result": "navigated to /sign-in"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+        "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+        "Failed to load resource: net::ERR_NAME_NOT_RESOLVED"
+      ],
+      "timestamp": "2026-10-08T02:12:23.267Z"
+    },
+    "sign-in": {
+      "url": "http://localhost:8080/sign-in",
+      "buttons": [
+        {
+          "index": 0,
+          "label": "\nContinue with Google",
+          "type": "button",
+          "result": "disabled/hidden"
+        },
+        {
+          "index": 1,
+          "label": "\nContinue with Apple",
+          "type": "button",
+          "result": "disabled/hidden"
+        },
+        {
+          "index": 2,
+          "label": "Terms of Service",
+          "type": "link",
+          "result": "state change or no-op"
+        },
+        {
+          "index": 3,
+          "label": "Privacy Policy",
+          "type": "link",
+          "result": "state change or no-op"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+        "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+        "Failed to load resource: net::ERR_NAME_NOT_RESOLVED"
+      ],
+      "timestamp": "2026-10-08T02:12:28.592Z"
+    },
+    "home": {
+      "url": "http://localhost:8080/",
+      "buttons": [
+        {
+          "index": 0,
+          "label": "Start Your First Project",
+          "type": "button",
+          "result": "disabled/hidden"
+        },
+        {
+          "index": 1,
+          "label": "Home",
+          "type": "tab",
+          "result": "disabled/hidden"
+        },
+        {
+          "index": 2,
+          "label": "Explore",
+          "type": "tab",
+          "result": "disabled/hidden"
+        },
+        {
+          "index": 3,
+          "label": " ",
+          "type": "tab",
+          "result": "disabled/hidden"
+        },
+        {
+          "index": 4,
+          "label": "Inbox",
+          "type": "tab",
+          "result": "disabled/hidden"
+        },
+        {
+          "index": 5,
+          "label": "Profile",
+          "type": "tab",
+          "result": "disabled/hidden"
+        },
+        {
+          "index": 6,
+          "label": "\nContinue",
+          "type": "button",
+          "result": "navigated to /"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+        "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+        "Failed to load resource: net::ERR_NAME_NOT_RESOLVED"
+      ],
+      "timestamp": "2026-10-08T02:12:33.025Z"
+    },
+    "explore": {
+      "url": "http://localhost:8080/explore",
+      "buttons": [
+        {
+          "index": 0,
+          "label": "\n\nHome",
+          "type": "tab",
+          "result": "navigated to /"
+        },
+        {
+          "index": 1,
+          "label": "error",
+          "result": "error: elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation",
+          "error": "elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "index": 2,
+          "label": "error",
+          "result": "error: elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation",
+          "error": "elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "index": 3,
+          "label": "error",
+          "result": "error: elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation",
+          "error": "elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "index": 4,
+          "label": "error",
+          "result": "error: elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation",
+          "error": "elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "consoleErrors": [],
+      "timestamp": "2026-10-08T02:12:37.980Z"
+    },
+    "inbox": {
+      "url": "http://localhost:8080/inbox",
+      "buttons": [
+        {
+          "index": 0,
+          "label": "\n\nHome",
+          "type": "tab",
+          "result": "navigated to /"
+        },
+        {
+          "index": 1,
+          "label": "error",
+          "result": "error: elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation",
+          "error": "elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "index": 2,
+          "label": "error",
+          "result": "error: elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation",
+          "error": "elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "index": 3,
+          "label": "error",
+          "result": "error: elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation",
+          "error": "elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "index": 4,
+          "label": "error",
+          "result": "error: elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation",
+          "error": "elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "consoleErrors": [],
+      "timestamp": "2026-10-08T02:12:42.926Z"
+    },
+    "profile": {
+      "url": "http://localhost:8080/profile",
+      "buttons": [
+        {
+          "index": 0,
+          "label": "\nSign Out",
+          "type": "button",
+          "result": "state change or no-op"
+        },
+        {
+          "index": 1,
+          "label": "\n\nHome",
+          "type": "tab",
+          "result": "navigated to /"
+        },
+        {
+          "index": 2,
+          "label": "error",
+          "result": "error: elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation",
+          "error": "elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "index": 3,
+          "label": "error",
+          "result": "error: elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation",
+          "error": "elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "index": 4,
+          "label": "error",
+          "result": "error: elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation",
+          "error": "elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "index": 5,
+          "label": "error",
+          "result": "error: elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation",
+          "error": "elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "consoleErrors": [],
+      "timestamp": "2026-10-08T02:12:47.751Z"
+    },
+    "editor-style": {
+      "url": "http://localhost:8080/editor/test-id",
+      "buttons": [
+        {
+          "index": 0,
+          "label": "\nGenerate 4 Designs",
+          "type": "button",
+          "result": "disabled/hidden"
+        }
+      ],
+      "consoleErrors": [],
+      "timestamp": "2026-10-08T02:12:53.242Z"
+    },
+    "generating": {
+      "url": "http://localhost:8080/generating/test-id",
+      "buttons": [],
+      "consoleErrors": [],
+      "timestamp": "2026-10-08T02:12:56.062Z"
+    },
+    "result": {
+      "url": "http://localhost:8080/result/test-id",
+      "buttons": [
+        {
+          "index": 0,
+          "label": "\nGet Estimates",
+          "type": "button",
+          "result": "disabled/hidden"
+        }
+      ],
+      "consoleErrors": [],
+      "timestamp": "2026-10-08T02:12:58.795Z"
+    },
+    "project-detail": {
+      "url": "http://localhost:8080/project/mock-1",
+      "buttons": [
+        {
+          "index": 0,
+          "label": "Make project public",
+          "type": "switch",
+          "result": "state change or no-op"
+        }
+      ],
+      "consoleErrors": [],
+      "timestamp": "2026-10-08T02:13:01.646Z"
+    },
+    "assistant-chat": {
+      "url": "http://localhost:8080/assistant-chat",
+      "buttons": [
+        {
+          "index": 0,
+          "label": "\nGenerate Design",
+          "type": "button",
+          "result": "state change or no-op"
+        },
+        {
+          "index": 1,
+          "label": "\nFind Me a Pro",
+          "type": "button",
+          "result": "navigated to /handoff/placeholder?__EXPO_ROUTER_key=undefined-5qeL7TICqmSLb6ewPR-gC"
+        }
+      ],
+      "consoleErrors": [],
+      "timestamp": "2026-10-08T02:13:06.190Z"
+    },
+    "profile-settings": {
+      "url": "http://localhost:8080/profile-settings",
+      "buttons": [
+        {
+          "index": 0,
+          "label": "Push Notifications\nGet updates about quotes and messages",
+          "type": "switch",
+          "result": "state change or no-op"
+        },
+        {
+          "index": 1,
+          "label": "Marketing Emails\nDesign tips, trends, and special offers",
+          "type": "switch",
+          "result": "state change or no-op"
+        },
+        {
+          "index": 2,
+          "label": "Public Projects by Default\nNew projects visible in Explore (you can change per-project)",
+          "type": "switch",
+          "result": "state change or no-op"
+        },
+        {
+          "index": 3,
+          "label": "Opt out of AI processing\nDisable AI processing (design generation and chat won't work)",
+          "type": "switch",
+          "result": "state change or no-op"
+        },
+        {
+          "index": 4,
+          "label": "Reduce Motion\nMinimize animations and transitions",
+          "type": "switch",
+          "result": "state change or no-op"
+        }
+      ],
+      "consoleErrors": [],
+      "timestamp": "2026-10-08T02:13:10.810Z"
+    },
+    "handoff": {
+      "url": "http://localhost:8080/handoff/test-id",
+      "buttons": [
+        {
+          "index": 0,
+          "label": "\nGenerate Project Brief",
+          "type": "button",
+          "result": "disabled/hidden"
+        }
+      ],
+      "consoleErrors": [],
+      "timestamp": "2026-10-08T02:13:17.291Z"
+    },
+    "result-error-rate-limit": {
+      "url": "http://localhost:8080/result-error?type=rate-limit",
+      "buttons": [
+        {
+          "index": 0,
+          "label": "\nBack to Home",
+          "type": "button",
+          "result": "navigated to /"
+        }
+      ],
+      "consoleErrors": [],
+      "timestamp": "2026-10-08T02:13:20.108Z"
+    }
+  },
+  "deadButtons": [
+    {
+      "screen": "intro",
+      "label": "\nBefore",
+      "result": "state change or no-op"
+    },
+    {
+      "screen": "intro",
+      "label": "After\n",
+      "result": "state change or no-op"
+    },
+    {
+      "screen": "sign-in",
+      "label": "\nContinue with Google",
+      "result": "disabled/hidden"
+    },
+    {
+      "screen": "sign-in",
+      "label": "\nContinue with Apple",
+      "result": "disabled/hidden"
+    },
+    {
+      "screen": "sign-in",
+      "label": "Terms of Service",
+      "result": "state change or no-op"
+    },
+    {
+      "screen": "sign-in",
+      "label": "Privacy Policy",
+      "result": "state change or no-op"
+    },
+    {
+      "screen": "home",
+      "label": "Start Your First Project",
+      "result": "disabled/hidden"
+    },
+    {
+      "screen": "home",
+      "label": "Home",
+      "result": "disabled/hidden"
+    },
+    {
+      "screen": "home",
+      "label": "Explore",
+      "result": "disabled/hidden"
+    },
+    {
+      "screen": "home",
+      "label": " ",
+      "result": "disabled/hidden"
+    },
+    {
+      "screen": "home",
+      "label": "Inbox",
+      "result": "disabled/hidden"
+    },
+    {
+      "screen": "home",
+      "label": "Profile",
+      "result": "disabled/hidden"
+    },
+    {
+      "screen": "explore",
+      "label": "error",
+      "result": "error: elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation"
+    },
+    {
+      "screen": "explore",
+      "label": "error",
+      "result": "error: elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation"
+    },
+    {
+      "screen": "explore",
+      "label": "error",
+      "result": "error: elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation"
+    },
+    {
+      "screen": "explore",
+      "label": "error",
+      "result": "error: elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation"
+    },
+    {
+      "screen": "inbox",
+      "label": "error",
+      "result": "error: elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation"
+    },
+    {
+      "screen": "inbox",
+      "label": "error",
+      "result": "error: elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation"
+    },
+    {
+      "screen": "inbox",
+      "label": "error",
+      "result": "error: elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation"
+    },
+    {
+      "screen": "inbox",
+      "label": "error",
+      "result": "error: elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation"
+    },
+    {
+      "screen": "profile",
+      "label": "\nSign Out",
+      "result": "state change or no-op"
+    },
+    {
+      "screen": "profile",
+      "label": "error",
+      "result": "error: elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation"
+    },
+    {
+      "screen": "profile",
+      "label": "error",
+      "result": "error: elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation"
+    },
+    {
+      "screen": "profile",
+      "label": "error",
+      "result": "error: elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation"
+    },
+    {
+      "screen": "profile",
+      "label": "error",
+      "result": "error: elementHandle.evaluate: Execution context was destroyed, most likely because of a navigation"
+    },
+    {
+      "screen": "editor-style",
+      "label": "\nGenerate 4 Designs",
+      "result": "disabled/hidden"
+    },
+    {
+      "screen": "result",
+      "label": "\nGet Estimates",
+      "result": "disabled/hidden"
+    },
+    {
+      "screen": "project-detail",
+      "label": "Make project public",
+      "result": "state change or no-op"
+    },
+    {
+      "screen": "assistant-chat",
+      "label": "\nGenerate Design",
+      "result": "state change or no-op"
+    },
+    {
+      "screen": "profile-settings",
+      "label": "Push Notifications\nGet updates about quotes and messages",
+      "result": "state change or no-op"
+    },
+    {
+      "screen": "profile-settings",
+      "label": "Marketing Emails\nDesign tips, trends, and special offers",
+      "result": "state change or no-op"
+    },
+    {
+      "screen": "profile-settings",
+      "label": "Public Projects by Default\nNew projects visible in Explore (you can change per-project)",
+      "result": "state change or no-op"
+    },
+    {
+      "screen": "profile-settings",
+      "label": "Opt out of AI processing\nDisable AI processing (design generation and chat won't work)",
+      "result": "state change or no-op"
+    },
+    {
+      "screen": "profile-settings",
+      "label": "Reduce Motion\nMinimize animations and transitions",
+      "result": "state change or no-op"
+    },
+    {
+      "screen": "handoff",
+      "label": "\nGenerate Project Brief",
+      "result": "disabled/hidden"
+    }
+  ],
+  "errors": [],
+  "summary": {
+    "totalScreens": 14,
+    "totalButtons": 42,
+    "workingButtons": 7,
+    "deadButtons": 35,
+    "errors": 3
+  }
+}
