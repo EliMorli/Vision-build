@@ -2,6 +2,7 @@ import React from "react";
 import { Modal, View, Text, StyleSheet, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
+import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 
 interface MenuOption {
   label: string;
@@ -26,6 +27,8 @@ export function MenuSheet({
   options,
   testID = "menu-sheet",
 }: MenuSheetProps) {
+  const reduceMotion = useReducedMotion();
+  
   const handleOption = (onPress: () => void) => {
     onPress();
     onClose();
@@ -35,7 +38,7 @@ export function MenuSheet({
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType={reduceMotion ? "none" : "fade"}
       onRequestClose={onClose}
     >
       <View style={styles.container} testID={testID}>

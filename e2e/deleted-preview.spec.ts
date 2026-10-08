@@ -109,8 +109,8 @@ test.describe("Deleted Account Screen Preview", () => {
     // Wait for deleted state
     await expect(page.getByText("Your account has been deleted")).toBeVisible({ timeout: 10000 });
 
-    // On web, Done button should NOT be visible
-    await expect(page.getByTestId("delete-done-button")).not.toBeVisible();
+    // Done button should always be visible
+    await expect(page.getByTestId("delete-done-button")).toBeVisible();
 
     // Apple note should NOT be visible on web
     await expect(page.getByText("We've also asked Apple to disconnect VisionBuild")).not.toBeVisible();

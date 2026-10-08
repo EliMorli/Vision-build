@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from "react-native";
 import { colors, fonts, spacing } from "@/lib/theme";
-import { APPLE_DELETION_NOTE } from "@/lib/constants/deletion";
+import { APPLE_DELETION_NOTE, DELETED_DATA_SUMMARY } from "@/lib/constants/deletion";
 import { Button } from "./Button";
 
 interface DeletedAccountViewProps {
@@ -19,24 +19,22 @@ export default function DeletedAccountView({
       <View style={styles.card}>
         <Text style={styles.title}>Your account has been deleted</Text>
         <Text style={styles.body}>
-          All your data has been permanently removed. Thank you for using VisionBuild.
+          We deleted your account and {DELETED_DATA_SUMMARY}. Thank you for using VisionBuild.
         </Text>
         {showNativeActions && isAppleUser && (
           <Text style={styles.appleSettingsNote}>
             {APPLE_DELETION_NOTE}
           </Text>
         )}
-        {showNativeActions && (
-          <View style={styles.buttonContainer}>
-            <Button
-              label="Done"
-              onPress={onDone}
-              variant="primary"
-              fullWidth
-              testID="deleted-account-done"
-            />
-          </View>
-        )}
+        <View style={styles.buttonContainer}>
+          <Button
+            label="Done"
+            onPress={onDone}
+            variant="primary"
+            fullWidth
+            testID="delete-done-button"
+          />
+        </View>
       </View>
     </View>
   );

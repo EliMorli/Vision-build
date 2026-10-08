@@ -89,7 +89,7 @@ test.describe("Delete Account Flow", () => {
     });
     
     // Press Done button
-    await page.getByTestId("deleted-account-done").click();
+    await page.getByTestId("delete-done-button").click();
     
     // Should navigate to welcome/sign-in screen
     await expect(page.getByTestId("sign-in-screen")).toBeVisible({ timeout: 5000 });

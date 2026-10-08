@@ -189,9 +189,9 @@ test.describe("Account Deletion Retry Flow", () => {
     // Wait for success message
     await expect(page.getByText("Your account has been deleted")).toBeVisible({ timeout: 10000 });
 
-    // On web, Done button should NOT be visible
+    // Done button should always be visible
     const doneButton = page.getByTestId("delete-done-button");
-    await expect(doneButton).not.toBeVisible();
+    await expect(doneButton).toBeVisible();
 
     // Apple settings note should NOT be visible on web
     await expect(page.getByText(/We've also asked Apple to disconnect/)).not.toBeVisible();

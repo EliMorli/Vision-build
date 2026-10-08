@@ -3,6 +3,7 @@ import { Modal, View, Text, StyleSheet, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { Button } from "./Button";
+import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 
 interface ConfirmationSheetProps {
   visible: boolean;
@@ -25,6 +26,8 @@ export function ConfirmationSheet({
   onConfirm,
   testID = "confirmation-sheet",
 }: ConfirmationSheetProps) {
+  const reduceMotion = useReducedMotion();
+  
   const handleConfirm = () => {
     onConfirm();
     onClose();
@@ -34,7 +37,7 @@ export function ConfirmationSheet({
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType={reduceMotion ? "none" : "fade"}
       onRequestClose={onClose}
     >
       <View style={styles.container} testID={testID}>
@@ -56,18 +59,18 @@ export function ConfirmationSheet({
 
             <View style={styles.actions}>
               <Button
-                label="Cancel"
-                variant="outline"
-                onPress={onClose}
-                fullWidth
-                testID={`${testID}-cancel`}
-              />
-              <Button
                 label={confirmLabel}
                 variant={confirmVariant}
                 onPress={handleConfirm}
                 fullWidth
                 testID={`${testID}-confirm`}
+              />
+              <Button
+                label="Cancel"
+                variant="outline"
+                onPress={onClose}
+                fullWidth
+                testID={`${testID}-cancel`}
               />
             </View>
           </Pressable>
@@ -117,7 +120,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   actions: {
-    flexDirection: "row",
+    flexDirection: "column",
     gap: spacing.sm,
   },
 });

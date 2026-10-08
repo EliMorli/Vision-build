@@ -117,6 +117,13 @@ export default function RootLayout() {
         <Stack.Screen name="profile-settings" options={{ headerShown: false }} />
         <Stack.Screen name="help-contact" options={{ headerShown: false }} />
         <Stack.Screen name="result-error" options={{ headerShown: false }} />
+        <Stack.Screen 
+          name="deleted-account" 
+          options={{ 
+            headerShown: false,
+            gestureEnabled: false
+          }} 
+        />
         <Stack.Screen name="project/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="editor/[id]" options={{ title: "Choose Style" }} />
         <Stack.Screen name="generating/[id]" options={{ headerShown: false }} />
