@@ -29,16 +29,22 @@ const PAGES = [
     type: "slider" as const,
   },
   {
-    id: "ai",
-    icon: "color-wand-outline" as const,
-    title: "AI Redesigns It",
-    subtitle: "Pick a style and our AI generates 4 photorealistic designs — keeping your walls, windows, and layout intact.",
+    id: "snap",
+    icon: "camera-outline" as const,
+    title: "Snap any room",
+    subtitle: "Take a photo of a kitchen, bathroom or backyard.",
   },
   {
-    id: "estimates",
-    icon: "people-outline" as const,
-    title: "Get Real Estimates",
-    subtitle: "We create a professional project brief and connect you with vetted local contractors in 24 hours.",
+    id: "redesign",
+    icon: "color-wand-outline" as const,
+    title: "See it redesigned",
+    subtitle: "Pick a style and get four AI designs in seconds.",
+  },
+  {
+    id: "save",
+    icon: "bookmark-outline" as const,
+    title: "Keep every idea",
+    subtitle: "Save favorites to your projects, with local pros coming soon.",
   },
 ];
 
