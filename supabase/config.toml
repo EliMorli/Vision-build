@@ -20,7 +20,7 @@ enabled = true
 port = 54323
 api_url = "http://localhost"
 
-[inbucket]
+[local_smtp]
 enabled = true
 port = 54324
 smtp_port = 54325
@@ -46,5 +46,5 @@ enabled = true
 [edge_runtime]
 enabled = true
 
-[[analytics]]
+[analytics]
 enabled = false
