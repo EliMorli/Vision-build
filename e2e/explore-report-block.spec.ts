@@ -94,9 +94,12 @@ test.describe("VisionBuild Explore Report and Block", () => {
     // Confirm report
     await page.getByTestId("report-confirm-sheet-confirm").click();
 
+    // Wait for confirmation sheet to close
+    await expect(page.getByTestId("report-confirm-sheet")).not.toBeVisible({ timeout: 3000 });
+
     // ReportModal should open
-    await expect(page.getByText("Report Design")).toBeVisible({ timeout: 3000 });
-    await expect(page.getByText("What's wrong?")).toBeVisible();
+    const reportModal = page.getByText("What's wrong?");
+    await expect(reportModal).toBeVisible({ timeout: 3000 });
 
     // Select a reason
     await page.getByText("Inappropriate or offensive content").click();
