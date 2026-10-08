@@ -55,6 +55,29 @@ jobs:
       - name: Check dev button gating
         run: npm run check:dev-button
       
+      - name: Install pg_cron in PostgreSQL container
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+        run: |
+          # Get the container ID for the postgres service
+          CONTAINER_ID=$(docker ps --filter "ancestor=postgres:16" --format "{{.ID}}" | head -1)
+          
+          # Install pg_cron extension in the container
+          docker exec $CONTAINER_ID bash -c "apt-get update && apt-get install -y postgresql-16-cron"
+          
+          # Configure pg_cron
+          docker exec $CONTAINER_ID bash -c "echo \"shared_preload_libraries = 'pg_cron'\" >> /var/lib/postgresql/data/postgresql.conf"
+          docker exec $CONTAINER_ID bash -c "echo \"cron.database_name = 'visionbuild_test'\" >> /var/lib/postgresql/data/postgresql.conf"
+          
+          # Restart PostgreSQL in the container
+          docker restart $CONTAINER_ID
+          
+          # Wait for PostgreSQL to be ready
+          timeout 30 bash -c 'until pg_isready -h localhost -p 5432 -U postgres; do sleep 1; done'
+      
       - name: Setup database for tests
         env:
           PGHOST: localhost
