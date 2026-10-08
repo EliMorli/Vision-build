@@ -168,4 +168,56 @@ test.describe("UI Screenshots", () => {
     
     await page.screenshot({ path: "e2e/screens/ui-home-with-project.png", fullPage: false });
   });
+
+  test("mock create loop saves to Home", async ({ page }: { page: Page }) => {
+    // Set up authenticated state
+    await page.addInitScript(() => {
+      localStorage.setItem("@visionbuild:intro_seen", "true");
+      localStorage.setItem("@visionbuild:mock_session", "true");
+    });
+
+    await page.goto(BASE_URL);
+    await expect(page.getByTestId("tab-camera")).toBeVisible({ timeout: 10000 });
+
+    // Tap Camera tab
+    await page.getByTestId("tab-camera").click();
+    await expect(page.getByText("New design")).toBeVisible({ timeout: 5000 });
+
+    // Tap "Select from gallery" button
+    await page.getByTestId("camera-gallery-button").click();
+    await expect(page.getByTestId("gallery-mock-image")).toBeVisible({ timeout: 5000 });
+
+    // Select mock image
+    await page.getByTestId("gallery-mock-image").click();
+
+    // Wait for style picker
+    await expect(page.getByText("What's your style?")).toBeVisible({ timeout: 5000 });
+
+    // Select first style
+    await page.getByTestId("style-card").first().click();
+
+    // Wait for generating state
+    await expect(page.getByText("Generating designs...")).toBeVisible({ timeout: 5000 });
+
+    // Wait for results (mock mode completes instantly)
+    await expect(page.getByText("Results")).toBeVisible({ timeout: 8000 });
+
+    // Pick first design
+    await page.getByTestId("result-card").first().click();
+
+    // Wait for project detail screen
+    await expect(page.getByTestId("project-detail-screen")).toBeVisible({ timeout: 5000 });
+
+    // Click "Save to my project"
+    await page.getByTestId("save-project-button").click();
+
+    // Wait for save to complete (should show "Saved" state)
+    await expect(page.getByTestId("save-project-button")).toContainText("Saved", { timeout: 3000 });
+
+    // Tap Home tab (preserves in-memory state)
+    await page.getByTestId("tab-home").click();
+
+    // Assert project card appears
+    await expect(page.getByTestId("home-project-card")).toHaveCount(1, { timeout: 5000 });
+  });
 });

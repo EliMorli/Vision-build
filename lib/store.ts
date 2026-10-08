@@ -224,11 +224,6 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           set({ projects: seedProjects });
           return;
         }
-        // If there's a userId but no seed, return empty (for home-empty test)
-        if (userId) {
-          set({ projects: [] });
-          return;
-        }
       } catch (e) {
         console.warn("Failed to load mock seed projects:", e);
       }
