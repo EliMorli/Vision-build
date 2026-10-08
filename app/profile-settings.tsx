@@ -396,6 +396,7 @@ export default function ProfileSettingsScreen() {
               onPress={handleDeleteAccount}
               accessibilityRole="button"
               accessibilityLabel="Delete Account. Permanently delete your account and all data."
+              testID="delete-account-button"
             >
               <View style={styles.settingInfo}>
                 <Text style={[styles.settingLabel, styles.dangerLabel]}>

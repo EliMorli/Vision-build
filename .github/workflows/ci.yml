@@ -160,6 +160,19 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
       
+      - name: Check Playwright test count
+        run: |
+          LISTED_COUNT=$(npx playwright test --list | grep -c "›" || echo "0")
+          FOUND_COUNT=$(grep -rn "test(" e2e/*.spec.ts | grep -v "test.describe" | grep -v "//" | wc -l)
+          echo "Listed tests: $LISTED_COUNT"
+          echo "test() calls in spec files: $FOUND_COUNT"
+          if [ "$LISTED_COUNT" != "$FOUND_COUNT" ]; then
+            echo "ERROR: Test count mismatch! Listed: $LISTED_COUNT, Found: $FOUND_COUNT"
+            echo "Some tests may not be discovered by Playwright. Check test file structure."
+            exit 1
+          fi
+          echo "✓ Test discovery validation passed"
+      
       - name: Run E2E Web Tests
         run: npm run e2e:web
         env:
