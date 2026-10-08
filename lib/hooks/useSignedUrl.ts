@@ -41,9 +41,9 @@ export function useSignedUrl(
     };
   }, []);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!path) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSignedUrl(null);
       return;
     }
