@@ -306,26 +306,7 @@ test.describe("VisionBuild Create Loop", () => {
     // The first requests return 403, then retries are held on promise
     await page.waitForTimeout(2500);
     
-    // Debug: check what's on the page
-    const pageContent = await page.content();
-    console.log(`[TEST] Page has ${(pageContent.match(/data-testid/g) || []).length} data-testid attributes`);
-    
-    // Check if images are showing or placeholders
-    const hasLoadedImage = await page.locator('[data-testid="private-image-loaded"]').first().isVisible().catch(() => false);
-    const hasPlaceholder = await page.locator('[data-testid="private-image-placeholder"]').first().isVisible().catch(() => false);
-    console.log(`[TEST] hasLoadedImage=${hasLoadedImage}, hasPlaceholder=${hasPlaceholder}`);
-    
-    // Take screenshot showing current state (images failed to load, should show placeholder)
-    await page.screenshot({ path: "e2e/screens/a5-image-expired-placeholder.png", fullPage: true });
-    
-    if (!hasPlaceholder) {
-      // If placeholder not visible, wait a bit more for the error handler to trigger
-      await page.waitForTimeout(2000);
-      const hasPlaceholder2 = await page.locator('[data-testid="private-image-placeholder"]').first().isVisible().catch(() => false);
-      console.log(`[TEST] After 2s wait: hasPlaceholder=${hasPlaceholder2}`);
-    }
-    
-    // Assert that the clay IsoRoom placeholder is visible (not blank)
+    // Assert that the clay IsoRoom placeholder is visible (not blank white cards)
     const placeholder = page.locator('[data-testid="private-image-placeholder"]').first();
     await expect(placeholder).toBeVisible({ timeout: 5000 });
     
@@ -334,6 +315,9 @@ test.describe("VisionBuild Create Loop", () => {
     expect(boundingBox).not.toBeNull();
     expect(boundingBox!.width).toBeGreaterThan(0);
     expect(boundingBox!.height).toBeGreaterThan(0);
+    
+    // Screenshot shows clay IsoRoom placeholder, not blank white
+    await page.screenshot({ path: "e2e/screens/a5-image-expired-placeholder.png", fullPage: true });
     
     // Release the hold so retry requests can proceed
     console.log('[TEST] Releasing hold, allowing retry requests through');

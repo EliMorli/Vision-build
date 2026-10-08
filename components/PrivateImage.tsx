@@ -117,12 +117,10 @@ export function PrivateImage({
   }, [signedUrl]);
 
   const handleImageError = async () => {
-    console.log(`[PrivateImage] handleImageError called - path=${path}, mounted=${isMountedRef.current}, retryCount=${retryCountRef.current}`);
     if (!path || !isMountedRef.current) return;
 
     // If we've exhausted retries, show placeholder
     if (retryCountRef.current >= MAX_RETRIES) {
-      console.log(`[PrivateImage] Max retries reached, showing permanent placeholder`);
       setShowPlaceholder(true);
       setIsLoading(false);
       return;
@@ -133,11 +131,10 @@ export function PrivateImage({
     retryCountRef.current++;
 
     console.log(
-      `[PrivateImage] Image failed to load (retry ${retryCountRef.current}/${MAX_RETRIES}), retrying in ${retryDelay}ms...`
+      `Image failed to load (retry ${retryCountRef.current}/${MAX_RETRIES}), retrying in ${retryDelay}ms...`
     );
 
     // Immediately set retrying state to show placeholder
-    console.log(`[PrivateImage] Setting isLoading=true, imageUrl=null to show placeholder`);
     setIsLoading(true);
     setImageUrl(null);
 
@@ -150,15 +147,13 @@ export function PrivateImage({
     if (!isMountedRef.current) return;
 
     // Trigger a re-fetch by incrementing retryTrigger (changes hook dependency)
-    console.log(`[PrivateImage] Triggering retry with retryTrigger increment`);
     setRetryTrigger(prev => prev + 1);
   };
 
   const handleImageLoad = () => {
-    console.log(`[PrivateImage] handleImageLoad called, image successfully loaded`);
     setIsLoading(false);
     setShowPlaceholder(false);
-    setImageLoaded(true); // Mark image as successfully loaded
+    setImageLoaded(true);
   };
 
   // Show placeholder if no path provided
@@ -189,8 +184,6 @@ export function PrivateImage({
   // Show placeholder until image successfully loads
   // This ensures we NEVER show a blank card
   const shouldShowPlaceholder = showPlaceholder || !imageUrl || !imageLoaded;
-
-  console.log(`[PrivateImage] shouldShowPlaceholder=${shouldShowPlaceholder}, showPlaceholder=${showPlaceholder}, imageUrl=${imageUrl}, imageLoaded=${imageLoaded}`);
 
   return (
     <View style={containerStyle} testID={testID}>
