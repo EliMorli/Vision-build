@@ -144,8 +144,8 @@ export default function ExploreScreen() {
     );
   }
 
-  // Error state
-  if (error) {
+  // Error state - only show full error screen when no content
+  if (error && publicDesigns.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
         {isOffline && <OfflineBanner testID="offline-banner" />}

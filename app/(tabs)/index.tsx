@@ -121,7 +121,7 @@ export default function DashboardScreen() {
 
   // ─── Error state ──────────────────────────────────────────
 
-  if (error) {
+  if (error && projects.length === 0) {
     return (
       <SafeAreaView style={styles.container} testID="home-screen">
         {isOffline && <OfflineBanner testID="offline-banner" />}
