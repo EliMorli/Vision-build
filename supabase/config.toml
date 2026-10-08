@@ -1,18 +1,41 @@
+# Supabase local development config
+# https://supabase.com/docs/guides/cli/config
+
 [project]
-id = "your-project-ref"
+id = "visionbuild-local"
 
 [api]
+enabled = true
 port = 54321
+schemas = ["public", "storage"]
+extra_search_path = ["public"]
+max_rows = 1000
 
 [db]
 port = 54322
+major_version = 15
 
 [studio]
+enabled = true
 port = 54323
+api_url = "http://localhost"
+
+[inbucket]
+enabled = true
+port = 54324
+smtp_port = 54325
+pop3_port = 54326
+
+[storage]
+enabled = true
+file_size_limit = "10MB"
 
 [auth]
+enabled = true
 site_url = "visionbuild://auth/callback"
 additional_redirect_urls = ["visionbuild://auth/callback"]
+jwt_expiry = 3600
+enable_signup = true
 
 [auth.external.google]
 enabled = true
@@ -20,5 +43,8 @@ enabled = true
 [auth.external.apple]
 enabled = true
 
-[storage]
-file_size_limit = "10MB"
+[edge_runtime]
+enabled = true
+
+[[analytics]]
+enabled = false
