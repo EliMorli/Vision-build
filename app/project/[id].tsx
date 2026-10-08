@@ -97,6 +97,15 @@ export default function ProjectDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Make Public Confirmation Sheet */}
+      <MakePublicSheet
+        visible={showMakePublicSheet}
+        onMakePublic={handleMakePublic}
+        onKeepPrivate={handleKeepPrivate}
+        userHandle={profile?.display_name}
+        userLevel={profile?.level}
+      />
+
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={12}>

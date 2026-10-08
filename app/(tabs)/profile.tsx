@@ -9,8 +9,18 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
-import { useAuthStore } from "@/lib/store";
+import { useAuthStore, useProjectStore } from "@/lib/store";
 import { Button } from "@/components";
+
+// Define all available badges (greyed out if not earned)
+const ALL_BADGES = [
+  { id: "first-room", name: "First room", color: colors.primary, earned: true },
+  { id: "style-hopper", name: "Style hopper", color: "#34A853", earned: true },
+  { id: "got-quotes", name: "Got quotes", color: "#FBBC04", earned: true },
+  { id: "trendsetter", name: "Trendsetter", color: "#8B7CF6", earned: false },
+  { id: "exterior-pro", name: "Exterior pro", color: "#FF7A59", earned: false },
+  { id: "builder", name: "Builder", color: "#2E86C1", earned: false },
+];
 
 export default function ProfileScreen() {
   const router = useRouter();
