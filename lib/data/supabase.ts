@@ -1,6 +1,12 @@
 import { supabase } from "../supabase";
 import { DataLayer } from "./index";
 
+export interface ConsentError extends Error {
+  isConsentError: true;
+  reason: "never" | "outdated";
+  currentVersion: string;
+}
+
 /**
  * Supabase implementation of the data layer
  */
@@ -37,7 +43,26 @@ export class SupabaseDataLayer implements DataLayer {
       body: { imageUrl },
     });
 
-    if (error) throw error;
+    if (error) {
+      // Check if this is a consent error
+      if (error.message) {
+        try {
+          const errorData = JSON.parse(error.message);
+          if (errorData.error === "consent_required") {
+            const consentError = new Error(
+              "AI consent required"
+            ) as ConsentError;
+            consentError.isConsentError = true;
+            consentError.reason = errorData.reason;
+            consentError.currentVersion = errorData.current_version;
+            throw consentError;
+          }
+        } catch (parseError) {
+          // Not JSON or not a consent error, fall through
+        }
+      }
+      throw error;
+    }
     return data;
   }
 
@@ -54,7 +79,26 @@ export class SupabaseDataLayer implements DataLayer {
       },
     });
 
-    if (error) throw error;
+    if (error) {
+      // Check if this is a consent error
+      if (error.message) {
+        try {
+          const errorData = JSON.parse(error.message);
+          if (errorData.error === "consent_required") {
+            const consentError = new Error(
+              "AI consent required"
+            ) as ConsentError;
+            consentError.isConsentError = true;
+            consentError.reason = errorData.reason;
+            consentError.currentVersion = errorData.current_version;
+            throw consentError;
+          }
+        } catch (parseError) {
+          // Not JSON or not a consent error, fall through
+        }
+      }
+      throw error;
+    }
     return data?.generatedUrls || [];
   }
 }

@@ -1,4 +1,6 @@
 import { DataLayer } from "./index";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AI_CONSENT_VERSION } from "../config";
 
 // Bundled placeholder image for mock mode
 // In a real implementation, this would be a local asset
@@ -9,6 +11,42 @@ const mockUploadedFiles = new Map<string, string>();
 
 // Track signed URL request counts per path (for testing retry behavior)
 const signedUrlRequestCounts = new Map<string, number>();
+
+// Key for simulated consent version in localStorage (for mock mode)
+const MOCK_CONSENT_VERSION_KEY = "@visionbuild:mock_consent_version";
+
+interface ConsentError extends Error {
+  isConsentError: true;
+  reason: "never" | "outdated";
+  currentVersion: string;
+}
+
+/**
+ * Check mock consent status (simulated for testing)
+ */
+async function checkMockConsent(): Promise<void> {
+  const mockVersion = await AsyncStorage.getItem(MOCK_CONSENT_VERSION_KEY);
+  
+  // If no consent version set, return never
+  if (!mockVersion) {
+    const error = new Error("AI consent required") as ConsentError;
+    error.isConsentError = true;
+    error.reason = "never";
+    error.currentVersion = AI_CONSENT_VERSION;
+    throw error;
+  }
+  
+  // If outdated version, return outdated
+  if (mockVersion !== AI_CONSENT_VERSION) {
+    const error = new Error("AI consent required") as ConsentError;
+    error.isConsentError = true;
+    error.reason = "outdated";
+    error.currentVersion = AI_CONSENT_VERSION;
+    throw error;
+  }
+  
+  // Current version, allow operation
+}
 
 /**
  * In-memory mock implementation of the data layer
@@ -55,6 +93,9 @@ export class InMemoryDataLayer implements DataLayer {
   }
 
   async analyzeRoom(imageUrl: string): Promise<any> {
+    // Check mock consent
+    await checkMockConsent();
+    
     // Simulate network delay
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -76,6 +117,9 @@ export class InMemoryDataLayer implements DataLayer {
     stylePrompt: string,
     roomAnalysis: string
   ): Promise<string[]> {
+    // Check mock consent
+    await checkMockConsent();
+    
     // Simulate realistic generation time for testing
     // Long enough to see the generating screen with countdown (needs at least 2-3 seconds)
     await new Promise((resolve) => setTimeout(resolve, 3000));

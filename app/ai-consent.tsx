@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, StyleSheet, SafeAreaView, ScrollView } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { Button } from "@/components";
 import { supabase } from "@/lib/supabase";
-import { useAuthStore } from "@/lib/store";
+import { useAuthStore, useProjectStore } from "@/lib/store";
 import { AI_CONSENT_VERSION } from "@/lib/config";
 
 const AI_CONSENT_KEY = "@visionbuild:ai_consent";
@@ -14,8 +14,17 @@ const AI_CONSENT_VERSION_KEY = "@visionbuild:ai_consent_version";
 
 export default function AIConsentScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const userId = useAuthStore((s) => s.session?.user?.id);
+  
+  // Parse re-consent mode parameters
+  const reason = params.reason as "never" | "outdated" | undefined;
+  const isReconsent = reason === "never" || reason === "outdated";
+  
+  // Parse resume data (encoded as JSON string)
+  const resumeData = params.resumeData as string | undefined;
+  const parsedResumeData = resumeData ? JSON.parse(resumeData) : null;
 
   const handleAccept = async () => {
     setIsLoading(true);
@@ -34,15 +43,57 @@ export default function AIConsentScreen() {
         ]);
       }
 
-      if (router.canGoBack()) {
-        router.back();
+      // If we have resume data, retry the original operation
+      if (parsedResumeData) {
+        const { type, projectId, stylePrompt, roomAnalysis, imageUri } = parsedResumeData;
+        
+        if (type === "analyze" && imageUri) {
+          // Resume upload and analyze
+          const projectStore = useProjectStore.getState();
+          router.replace("/(tabs)");
+          // Retry the upload after a brief delay to let the screen transition
+          setTimeout(() => {
+            projectStore.uploadAndAnalyze(imageUri);
+          }, 100);
+        } else if (type === "generate" && projectId && stylePrompt) {
+          // Resume generate designs
+          const projectStore = useProjectStore.getState();
+          router.replace(`/project/${projectId}`);
+          // Retry generate after a brief delay
+          setTimeout(() => {
+            projectStore.generateDesigns(projectId, stylePrompt);
+          }, 100);
+        } else {
+          // No valid resume data, just go back
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace("/(tabs)");
+          }
+        }
       } else {
-        router.replace("/(tabs)");
+        // Normal flow - just go back or to home
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace("/(tabs)");
+        }
       }
     } catch (error) {
       console.error("Failed to save AI consent:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDecline = () => {
+    // If we have resume data with a project, return to that project
+    if (parsedResumeData?.projectId) {
+      router.replace(`/project/${parsedResumeData.projectId}`);
+    } else if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/(tabs)");
     }
   };
 
@@ -57,6 +108,16 @@ export default function AIConsentScreen() {
 
           {/* Title */}
           <Text style={styles.title}>AI-Powered Designs</Text>
+
+          {/* Re-consent message (if applicable) */}
+          {isReconsent && reason === "outdated" && (
+            <View style={styles.updateNotice}>
+              <Ionicons name="information-circle" size={20} color={colors.primary} />
+              <Text style={styles.updateText}>
+                We've updated how your photos are handled. Please review before your next design.
+              </Text>
+            </View>
+          )}
 
           {/* Description - exact copy as required */}
           <Text style={styles.description}>
@@ -95,6 +156,14 @@ export default function AIConsentScreen() {
           loading={isLoading}
           variant="primary"
         />
+        {isReconsent && (
+          <Button
+            label="Decline"
+            onPress={handleDecline}
+            variant="ghost"
+            style={{ marginTop: spacing.sm }}
+          />
+        )}
         <Text style={styles.footerText}>
           By continuing, you consent to this use of AI services.
         </Text>
@@ -139,6 +208,21 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     color: colors.textSecondary,
     marginBottom: spacing.xl,
+  },
+  updateNotice: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.primary + "12",
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
+  },
+  updateText: {
+    ...fonts.body,
+    fontSize: 14,
+    color: colors.textPrimary,
+    flex: 1,
   },
   infoBox: {
     width: "100%",

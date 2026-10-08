@@ -469,6 +469,25 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         return project;
       }
     } catch (e: any) {
+      // Check if this is a consent error
+      if (e.isConsentError) {
+        set({ loading: false });
+        // Navigate to consent screen with resume data
+        const { router } = require("expo-router");
+        const resumeData = {
+          type: "analyze",
+          imageUri,
+        };
+        router.push({
+          pathname: "/ai-consent",
+          params: {
+            reason: e.reason,
+            resumeData: JSON.stringify(resumeData),
+          },
+        });
+        return null;
+      }
+      
       set({ error: e.message, loading: false });
       return null;
     }
@@ -544,6 +563,28 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         return null;
       }
     } catch (e: any) {
+      // Check if this is a consent error
+      if (e.isConsentError) {
+        set({ loading: false, generatingStartTime: null });
+        // Navigate to consent screen with resume data
+        const { router } = require("expo-router");
+        const roomAnalysis = get().currentProject?.room_analysis?.rawAnalysis ?? "";
+        const resumeData = {
+          type: "generate",
+          projectId,
+          stylePrompt,
+          roomAnalysis,
+        };
+        router.push({
+          pathname: "/ai-consent",
+          params: {
+            reason: e.reason,
+            resumeData: JSON.stringify(resumeData),
+          },
+        });
+        return null;
+      }
+      
       set({ error: e.message, loading: false, generatingStartTime: null });
       return null;
     }
