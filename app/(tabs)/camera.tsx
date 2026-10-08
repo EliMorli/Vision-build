@@ -105,6 +105,11 @@ export default function CameraScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Instruction */}
+      <Text style={styles.instruction}>
+        Take a photo or pick one from your gallery to get started.
+      </Text>
+
       {/* Quick tips */}
       {!imageUri && (
         <View style={styles.tipsContainer}>
@@ -142,9 +147,7 @@ export default function CameraScreen() {
               <Ionicons name="image-outline" size={48} color={colors.primary} />
             </View>
             <Text style={styles.placeholderTitle}>Add a Room Photo</Text>
-            <Text style={styles.placeholderSub}>
-              Take a photo or pick one from your gallery to get started.
-            </Text>
+            <Text style={styles.placeholderSub}>Tap here to choose from your gallery</Text>
           </Pressable>
         )}
       </View>
@@ -203,6 +206,12 @@ export default function CameraScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff", padding: spacing.lg },
+  instruction: {
+    ...fonts.regular,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginBottom: spacing.md,
+  },
   tipsContainer: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
