@@ -154,7 +154,8 @@ ROLLBACK;
 -- Test 6: User A creates settings, User B cannot read them
 -- Insert as postgres (bypassing RLS for test setup)
 INSERT INTO public.user_settings (user_id, push_notifications)
-VALUES ('11111111-1111-1111-1111-111111111111', false);
+VALUES ('11111111-1111-1111-1111-111111111111', false)
+ON CONFLICT (user_id) DO UPDATE SET push_notifications = false;
 
 -- Try to read as User B (should see nothing due to RLS)
 BEGIN;
