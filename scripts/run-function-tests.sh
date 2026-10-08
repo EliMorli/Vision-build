@@ -4,7 +4,6 @@ set -e
 # Function test runner for VisionBuild Supabase Functions
 # Runs deno check for type checking and deno test for unit tests
 
-DENO_BIN="/home/ubuntu/.deno/bin/deno"
 FUNCTIONS_DIR="$(cd "$(dirname "$0")/../supabase/functions" && pwd)"
 
 echo "🧪 VisionBuild Function Test Suite"
@@ -12,11 +11,13 @@ echo "==================================="
 echo ""
 
 # Check if Deno is available
-if [ ! -f "$DENO_BIN" ]; then
-  echo "❌ Deno not found at $DENO_BIN"
+if ! command -v deno &> /dev/null; then
+  echo "❌ Deno not found in PATH"
   echo "Please install Deno: curl -fsSL https://deno.land/install.sh | sh"
   exit 1
 fi
+
+DENO_BIN="deno"
 
 # Type check all functions
 echo "🔍 Type checking functions..."
