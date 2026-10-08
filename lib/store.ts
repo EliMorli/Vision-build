@@ -9,7 +9,7 @@ import { Project, Profile, Contractor } from "./types";
 import { getDataLayer } from "./data";
 import { InMemoryDataLayer } from "./data/in-memory";
 import { MOCK_USER_ID } from "./constants/mock";
-import { wipeOfflineCache } from "./offline-cache";
+import { wipeOfflineCache, setOfflineCacheData, cacheImageFile } from "./offline-cache";
 
 // ─── Auth Store ────────────────────────────────────────────
 
@@ -397,14 +397,13 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     if (data) {
       set({ projects: data });
       
-      // Cache projects for offline use
-      const { setOfflineCacheData, cacheImageFile } = await import("./offline-cache");
-      await setOfflineCacheData(userId, "projects", data).catch(() => {
+      // Cache projects for offline use in background
+      setOfflineCacheData(userId, "projects", data).catch(() => {
         // Silently fail offline cache
       });
       
       // Cache project images in background
-      for (const project of data) {
+      for (const project of (data as Project[])) {
         if (project.original_image_url) {
           const fileName = `project_${project.id}_original.jpg`;
           cacheImageFile(userId, fileName, project.original_image_url).catch(() => {
@@ -416,7 +415,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           cacheImageFile(userId, fileName, project.selected_generation_url).catch(() => {});
         }
         if (project.generated_image_urls && Array.isArray(project.generated_image_urls)) {
-          project.generated_image_urls.forEach((url, idx) => {
+          project.generated_image_urls.forEach((url: string, idx: number) => {
             const fileName = `project_${project.id}_gen_${idx}.jpg`;
             cacheImageFile(userId, fileName, url).catch(() => {});
           });
