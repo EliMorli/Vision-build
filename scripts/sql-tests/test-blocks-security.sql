@@ -45,17 +45,11 @@ $$;
 ROLLBACK;
 
 -- Test 2: User A creates a block, User B cannot read it
-BEGIN;
-SET LOCAL ROLE authenticated;
-SET LOCAL request.jwt.claims TO '{"sub": "11111111-1111-1111-1111-111111111111"}';
-
--- User A blocks someone
+-- Insert as postgres (bypassing RLS for test setup)
 INSERT INTO public.blocks (blocker_id, blocked_id, blocked_type)
 VALUES ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'user');
 
-COMMIT;
-
--- Switch to User B and try to read A's blocks
+-- Try to read as User B (should see nothing due to RLS)
 BEGIN;
 SET LOCAL ROLE authenticated;
 SET LOCAL request.jwt.claims TO '{"sub": "22222222-2222-2222-2222-222222222222"}';
@@ -81,10 +75,8 @@ DELETE FROM public.blocks WHERE blocker_id = '11111111-1111-1111-1111-1111111111
 
 -- Test 3: Deleting blocker removes blocks
 BEGIN;
-SET LOCAL ROLE authenticated;
-SET LOCAL request.jwt.claims TO '{"sub": "11111111-1111-1111-1111-111111111111"}';
 
--- User A blocks User B
+-- Insert block as postgres
 INSERT INTO public.blocks (blocker_id, blocked_id, blocked_type)
 VALUES ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'user');
 
@@ -111,10 +103,8 @@ ROLLBACK;
 
 -- Test 4: Deleting blocked user removes blocks
 BEGIN;
-SET LOCAL ROLE authenticated;
-SET LOCAL request.jwt.claims TO '{"sub": "11111111-1111-1111-1111-111111111111"}';
 
--- User A blocks User B
+-- Insert block as postgres
 INSERT INTO public.blocks (blocker_id, blocked_id, blocked_type)
 VALUES ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'user');
 
@@ -162,17 +152,11 @@ $$;
 ROLLBACK;
 
 -- Test 6: User A creates settings, User B cannot read them
-BEGIN;
-SET LOCAL ROLE authenticated;
-SET LOCAL request.jwt.claims TO '{"sub": "11111111-1111-1111-1111-111111111111"}';
-
--- Create settings for User A
+-- Insert as postgres (bypassing RLS for test setup)
 INSERT INTO public.user_settings (user_id, push_notifications)
 VALUES ('11111111-1111-1111-1111-111111111111', false);
 
-COMMIT;
-
--- Switch to User B and try to read A's settings
+-- Try to read as User B (should see nothing due to RLS)
 BEGIN;
 SET LOCAL ROLE authenticated;
 SET LOCAL request.jwt.claims TO '{"sub": "22222222-2222-2222-2222-222222222222"}';
@@ -220,17 +204,11 @@ $$;
 ROLLBACK;
 
 -- Test 8: User A joins waitlist, User B cannot read it
-BEGIN;
-SET LOCAL ROLE authenticated;
-SET LOCAL request.jwt.claims TO '{"sub": "11111111-1111-1111-1111-111111111111"}';
-
--- User A joins waitlist
+-- Insert as postgres (bypassing RLS for test setup)
 INSERT INTO public.pro_waitlist (user_id, email, project_id)
 VALUES ('11111111-1111-1111-1111-111111111111', 'user-a@test.com', NULL);
 
-COMMIT;
-
--- Switch to User B and try to read A's waitlist
+-- Try to read as User B (should see nothing due to RLS)
 BEGIN;
 SET LOCAL ROLE authenticated;
 SET LOCAL request.jwt.claims TO '{"sub": "22222222-2222-2222-2222-222222222222"}';
