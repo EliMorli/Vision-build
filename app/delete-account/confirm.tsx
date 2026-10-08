@@ -2,7 +2,7 @@
 // GET: Validates token and shows confirmation page (does NOT delete)
 // POST: Executes actual deletion when user presses button
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, Platform } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { supabase } from "@/lib/supabase";
@@ -24,48 +24,57 @@ export default function DeleteAccountConfirm() {
 
   useEffect(() => {
     if (!token) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setState("error");
       setData({ error: "Missing confirmation token" });
       return;
     }
+    
+    let cancelled = false;
+    
+    const validateToken = async () => {
+      try {
+        // Use fetch directly to pass token as query param
+        const baseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL?.replace("/rest/v1", "") || "";
+        const response = await fetch(
+          `${baseUrl}/functions/v1/confirm-account-deletion?token=${encodeURIComponent(token as string)}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
+            },
+          }
+        );
 
-    // GET: Validate token without deleting
-    validateToken();
-  }, [token]);
+        const validationResult = await response.json();
 
-  const validateToken = async () => {
-    try {
-      // Use fetch directly to pass token as query param
-      const baseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL?.replace("/rest/v1", "") || "";
-      const response = await fetch(
-        `${baseUrl}/functions/v1/confirm-account-deletion?token=${encodeURIComponent(token as string)}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
-          },
+        if (cancelled) return;
+
+        if (response.ok && validationResult.valid) {
+          setState("valid");
+          setData({ email: validationResult.email });
+        } else {
+          setState("error");
+          setData({
+            error: validationResult.error || "Invalid confirmation link",
+            expired: validationResult.expired,
+            used: validationResult.used,
+          });
         }
-      );
-
-      const validationResult = await response.json();
-
-      if (response.ok && validationResult.valid) {
-        setState("valid");
-        setData({ email: validationResult.email });
-      } else {
+      } catch (error: any) {
+        if (cancelled) return;
+        console.error("Token validation error:", error);
         setState("error");
-        setData({
-          error: validationResult.error || "Invalid confirmation link",
-          expired: validationResult.expired,
-          used: validationResult.used,
-        });
+        setData({ error: "Failed to validate confirmation link" });
       }
-    } catch (error: any) {
-      console.error("Token validation error:", error);
-      setState("error");
-      setData({ error: "Failed to validate confirmation link" });
-    }
-  };
+    };
+
+    validateToken();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
 
   const executeDelete = async () => {
     setState("deleting");
