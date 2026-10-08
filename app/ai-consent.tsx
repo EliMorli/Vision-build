@@ -69,11 +69,10 @@ export default function AIConsentScreen() {
             router.replace("/(tabs)");
           }
         } else if (type === "generate" && projectId && stylePrompt) {
-          // Resume generate designs
+          // Resume generate designs - match the flow from editor screen
           const projectStore = useProjectStore.getState();
-          // Navigate to generating screen first
-          router.replace(`/generating/${projectId}`);
-          // Call generateDesigns - the generating screen will handle the flow
+          router.push(`/generating/${projectId}`);
+          // Start generation after navigation
           await projectStore.generateDesigns(projectId, stylePrompt);
         } else {
           // No valid resume data, just go back
