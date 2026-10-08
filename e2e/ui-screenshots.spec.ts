@@ -167,21 +167,11 @@ test.describe("UI Screenshots", () => {
     await expect(page.getByText("120 XP")).toBeVisible();
     
     await page.screenshot({ path: "e2e/screens/ui-home-with-project.png", fullPage: false });
-  });
 
-  test("mock create loop saves to Home", async ({ page }: { page: Page }) => {
-    // Set up authenticated state - same as screenshot test
-    await page.addInitScript(() => {
-      localStorage.setItem("@visionbuild:intro_seen", "true");
-      localStorage.setItem("@visionbuild:mock_session", "true");
-      localStorage.setItem("@visionbuild:ai_consent", "true");
-      localStorage.setItem("@visionbuild:ai_consent_version", "2026-10-07b");
+    // 9. Test mock create loop: clear seed, go through camera flow, save, verify Home shows card
+    await page.evaluate(() => {
+      localStorage.removeItem("@visionbuild:mock_seed_projects");
     });
-
-    // Start at home
-    await page.goto(BASE_URL);
-    await page.waitForLoadState("networkidle");
-    await expect(page.getByText(/ready to redesign/i)).toBeVisible({ timeout: 10000 });
 
     // Tap Camera tab
     await page.getByTestId("tab-camera").click();
@@ -223,7 +213,7 @@ test.describe("UI Screenshots", () => {
     // Tap Home tab (preserves in-memory state)
     await page.getByTestId("tab-home").click();
 
-    // Assert project card appears
+    // Assert at least one project card appears (the one we just saved)
     await expect(page.getByTestId("home-project-card")).toHaveCount(1, { timeout: 5000 });
   });
 });
