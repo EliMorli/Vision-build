@@ -255,7 +255,7 @@ test.describe("VisionBuild Create Loop", () => {
     // Track all signed URL requests to verify retries
     const signedUrlRequests: string[] = [];
     let requestCount = 0;
-    let resolveHold: (() => void) | null = null;
+    let resolveHold!: () => void;
     const holdPromise = new Promise<void>((resolve) => { resolveHold = resolve; });
     
     // Intercept mock design image URLs
@@ -312,7 +312,7 @@ test.describe("VisionBuild Create Loop", () => {
     
     // Release the hold so retry requests can proceed
     console.log('[TEST] Releasing hold, allowing retry requests through');
-    if (resolveHold) resolveHold();
+    resolveHold();
     
     // Wait for images to load after retry succeeds
     await page.waitForFunction(() => {
