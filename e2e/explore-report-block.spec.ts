@@ -4,16 +4,26 @@ const BASE_URL = process.env.BASE_URL || "http://localhost:19006";
 
 test.describe("VisionBuild Explore Report and Block", () => {
   test("report a design and block user - blocked designs disappear", async ({ page }: { page: Page }) => {
-    // Seed with intro seen, mock session, and multiple public projects from different users
+    // Seed with intro seen, mock session, profile, and public projects from different users
     await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:intro_seen", "true");
       localStorage.setItem("@visionbuild:mock_session", JSON.stringify({
         user: {
           id: "test-user-123",
-          email: "viewer@visionbuild.app",
-          user_metadata: { full_name: "Test Viewer" }
+          email: "viewer@visionbuild.app"
         },
         access_token: "mock-token"
+      }));
+      
+      localStorage.setItem("@visionbuild:mock_seed_profile", JSON.stringify({
+        id: "test-user-123",
+        email: "viewer@visionbuild.app",
+        display_name: "Test Viewer",
+        photo_url: null,
+        created_at: new Date().toISOString(),
+        last_login_at: new Date().toISOString(),
+        xp: 0,
+        level: 1
       }));
       
       // Seed public projects from two different users
@@ -27,6 +37,7 @@ test.describe("VisionBuild Explore Report and Block", () => {
           status: "generated",
           original_image_url: "mock/original.jpg",
           created_at: new Date().toISOString(),
+          generated_image_urls: ["mock/gen1.jpg"]
         },
         {
           id: "project-public-2",
@@ -37,6 +48,7 @@ test.describe("VisionBuild Explore Report and Block", () => {
           status: "generated",
           original_image_url: "mock/original2.jpg",
           created_at: new Date().toISOString(),
+          generated_image_urls: ["mock/gen2.jpg"]
         },
         {
           id: "project-public-3",
@@ -47,22 +59,21 @@ test.describe("VisionBuild Explore Report and Block", () => {
           status: "generated",
           original_image_url: "mock/original3.jpg",
           created_at: new Date().toISOString(),
+          generated_image_urls: ["mock/gen3.jpg"]
         },
       ];
-      localStorage.setItem("@visionbuild:projects", JSON.stringify(projects));
+      localStorage.setItem("@visionbuild:mock_seed_projects", JSON.stringify(projects));
       localStorage.setItem("@visionbuild:blocks", JSON.stringify([]));
     });
 
     await page.goto(BASE_URL);
-    await page.waitForLoadState("networkidle");
 
     // Navigate to Explore tab
     await page.getByRole("button", { name: /Explore/i }).click();
-    await page.waitForTimeout(500);
 
     // Verify we see 3 designs initially
-    const initialDesigns = page.locator('[style*="aspectRatio: 1"]');
-    await expect(initialDesigns).toHaveCount(3, { timeout: 5000 });
+    const exploreCards = page.locator('[data-testid="explore-design-card"]');
+    await expect(exploreCards).toHaveCount(3, { timeout: 5000 });
 
     // Find and click the report button on the first design (from other-user-1)
     const reportButtons = page.getByTestId("explore-report-button");
@@ -104,11 +115,8 @@ test.describe("VisionBuild Explore Report and Block", () => {
     await expect(page.getByText(/won't see designs from this user/i)).toBeVisible();
     await page.getByText("OK").click();
 
-    // Wait for UI to update
-    await page.waitForTimeout(500);
-
     // Verify blocked user's designs are gone (should only see 1 design now - from other-user-2)
-    await expect(initialDesigns).toHaveCount(1, { timeout: 5000 });
+    await expect(exploreCards).toHaveCount(1, { timeout: 5000 });
 
     // Verify the remaining design is from the non-blocked user
     await expect(page.getByText("Farmhouse Kitchen")).toBeVisible();

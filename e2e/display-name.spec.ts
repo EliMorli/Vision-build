@@ -4,105 +4,95 @@ const BASE_URL = process.env.BASE_URL || "http://localhost:19006";
 
 test.describe("VisionBuild Display Name Consistency", () => {
   test("Home and Profile show the same seeded display name", async ({ page }: { page: Page }) => {
-    // Seed with intro seen, mock session, and a specific display name
+    // Seed with intro seen, mock session, and a seeded profile
     await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:intro_seen", "true");
       localStorage.setItem("@visionbuild:mock_session", JSON.stringify({
         user: {
           id: "test-user-123",
-          email: "elimar@visionbuild.app",
-          user_metadata: {
-            full_name: "Elimar Morli"
-          }
+          email: "elimar@visionbuild.app"
         },
         access_token: "mock-token"
+      }));
+      localStorage.setItem("@visionbuild:mock_seed_profile", JSON.stringify({
+        id: "test-user-123",
+        email: "elimar@visionbuild.app",
+        display_name: "Elimar Morli",
+        photo_url: null,
+        created_at: new Date().toISOString(),
+        last_login_at: new Date().toISOString(),
+        xp: 0,
+        level: 1
       }));
     });
 
     await page.goto(BASE_URL);
-    await page.waitForLoadState("networkidle");
 
-    // Check Home screen greeting
-    await expect(page.getByText(/Hey Elimar/i)).toBeVisible({ timeout: 5000 });
+    // Check Home screen greeting with exact text
+    const homeGreeting = page.getByTestId("home-greeting");
+    await expect(homeGreeting).toBeVisible({ timeout: 5000 });
+    await expect(homeGreeting).toHaveText("Hey Elimar");
 
-    // Navigate to Profile
-    await page.getByRole("button", { name: /Profile/i }).click();
-    await page.waitForTimeout(500);
+    // Navigate to Profile by URL
+    await page.goto(`${BASE_URL}/(tabs)/profile`);
 
-    // Check Profile screen name
-    await expect(page.getByText("Elimar Morli")).toBeVisible({ timeout: 5000 });
+    // Check Profile screen name and initial with exact text
+    const profileName = page.getByTestId("profile-display-name");
+    await expect(profileName).toBeVisible({ timeout: 5000 });
+    await expect(profileName).toHaveText("Elimar Morli");
     
-    // Check avatar initial is 'E'
-    await expect(page.locator('text=/^E$/').first()).toBeVisible();
+    const profileInitial = page.getByTestId("profile-avatar-initial");
+    await expect(profileInitial).toBeVisible();
+    await expect(profileInitial).toHaveText("E");
 
     // Take screenshot
     await page.screenshot({ path: "e2e/screens/display-name-profile.png", fullPage: true });
   });
 
   test("fallback to 'User' when no display name exists", async ({ page }: { page: Page }) => {
-    // Seed with no display name or user metadata
+    // Seed with no display name in profile
     await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:intro_seen", "true");
       localStorage.setItem("@visionbuild:mock_session", JSON.stringify({
         user: {
           id: "test-user-no-name",
           email: "noname@visionbuild.app"
-          // No user_metadata
         },
         access_token: "mock-token"
+      }));
+      localStorage.setItem("@visionbuild:mock_seed_profile", JSON.stringify({
+        id: "test-user-no-name",
+        email: "noname@visionbuild.app",
+        display_name: null,
+        photo_url: null,
+        created_at: new Date().toISOString(),
+        last_login_at: new Date().toISOString(),
+        xp: 0,
+        level: 1
       }));
     });
 
     await page.goto(BASE_URL);
-    await page.waitForLoadState("networkidle");
 
-    // Check Home screen greeting - should show first name extracted from email
-    // noname@visionbuild.app -> Noname
-    await expect(page.getByText(/Hey Noname/i)).toBeVisible({ timeout: 5000 });
+    // Check Home screen greeting - should fall back to "User"
+    const homeGreeting = page.getByTestId("home-greeting");
+    await expect(homeGreeting).toBeVisible({ timeout: 5000 });
+    await expect(homeGreeting).toHaveText("Hey User");
 
-    // Navigate to Profile
-    await page.getByRole("button", { name: /Profile/i }).click();
-    await page.waitForTimeout(500);
+    // Navigate to Profile by URL
+    await page.goto(`${BASE_URL}/(tabs)/profile`);
 
-    // Check Profile screen shows "Noname"
-    await expect(page.getByText("Noname")).toBeVisible({ timeout: 5000 });
+    // Check Profile screen shows "User"
+    const profileName = page.getByTestId("profile-display-name");
+    await expect(profileName).toBeVisible({ timeout: 5000 });
+    await expect(profileName).toHaveText("User");
     
-    // Check avatar initial is 'N'
-    await expect(page.locator('text=/^N$/').first()).toBeVisible();
+    // Check avatar initial is 'U'
+    const profileInitial = page.getByTestId("profile-avatar-initial");
+    await expect(profileInitial).toBeVisible();
+    await expect(profileInitial).toHaveText("U");
 
     // Take screenshot
     await page.screenshot({ path: "e2e/screens/display-name-fallback.png", fullPage: true });
-  });
-
-  test("fallback to 'User' when email has no extractable name", async ({ page }: { page: Page }) => {
-    // Seed with minimal email
-    await page.addInitScript(() => {
-      localStorage.setItem("@visionbuild:intro_seen", "true");
-      localStorage.setItem("@visionbuild:mock_session", JSON.stringify({
-        user: {
-          id: "test-user-minimal",
-          email: "u@example.com"
-          // No user_metadata, email has single char before @
-        },
-        access_token: "mock-token"
-      }));
-    });
-
-    await page.goto(BASE_URL);
-    await page.waitForLoadState("networkidle");
-
-    // Check Home screen greeting
-    await expect(page.getByText(/Hey U/i)).toBeVisible({ timeout: 5000 });
-
-    // Navigate to Profile
-    await page.getByRole("button", { name: /Profile/i }).click();
-    await page.waitForTimeout(500);
-
-    // Check Profile screen shows "U"
-    await expect(page.getByText(/^U$/)).toBeVisible({ timeout: 5000 });
-    
-    // Check avatar initial is 'U'
-    const avatarInitials = page.locator('[style*="fontSize: 36"]').filter({ hasText: /^U$/ });
-    await expect(avatarInitials.first()).toBeVisible();
   });
 });

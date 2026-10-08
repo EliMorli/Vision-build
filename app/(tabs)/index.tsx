@@ -99,7 +99,7 @@ export default function DashboardScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.greeting}>Hey {firstName}</Text>
+            <Text style={styles.greeting} testID="home-greeting">Hey {firstName}</Text>
             <Text style={fonts.heading}>Ready to redesign?</Text>
           </View>
           <View style={styles.headerRight}>
@@ -171,7 +171,7 @@ export default function DashboardScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.greeting}>Hey {firstName}</Text>
+          <Text style={styles.greeting} testID="home-greeting">Hey {firstName}</Text>
           <Text style={fonts.heading}>Ready to redesign?</Text>
         </View>
         <View style={styles.headerRight}>

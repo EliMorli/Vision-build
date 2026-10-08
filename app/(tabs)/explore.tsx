@@ -142,6 +142,7 @@ export default function ExploreScreen() {
             style={styles.card}
             accessibilityRole="button"
             accessibilityLabel={`${item.selected_style || 'Unknown'} design`}
+            testID="explore-design-card"
           >
             <View style={styles.cardImageWrapper}>
               <IsoRoom

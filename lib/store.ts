@@ -37,8 +37,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const userId = get().session?.user?.id;
     if (!userId) return;
 
-    // In mock mode, use hardcoded profile and skip Supabase calls
+    // In mock mode, check for seeded mock profile first (for E2E testing)
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      try {
+        const seedJson = await AsyncStorage.getItem("@visionbuild:mock_seed_profile");
+        if (seedJson) {
+          const seedProfile = JSON.parse(seedJson);
+          set({ profile: seedProfile });
+          return;
+        }
+      } catch (e) {
+        console.warn("Failed to load mock seed profile:", e);
+      }
+      
+      // Default mock profile when no seed is provided
       set({
         profile: {
           id: userId,

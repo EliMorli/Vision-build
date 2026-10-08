@@ -111,11 +111,11 @@ export default function ProfileScreen() {
         {/* Profile header */}
         <View style={styles.header}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
+            <Text style={styles.avatarText} testID="profile-avatar-initial">
               {displayInitial}
             </Text>
           </View>
-          <Text style={styles.name}>{displayName}</Text>
+          <Text style={styles.name} testID="profile-display-name">{displayName}</Text>
           <View style={styles.levelBadge}>
             <Text style={styles.levelBadgeText}>
               Level {level} · Rookie Designer

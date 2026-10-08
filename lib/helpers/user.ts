@@ -18,17 +18,6 @@ export function getDisplayName(profile: Profile | null, user?: Session["user"] |
     return user.user_metadata.full_name;
   }
   
-  if (user?.email) {
-    // Extract name from email (e.g., "john.doe@example.com" -> "John Doe")
-    const emailName = user.email.split("@")[0];
-    const parts = emailName.split(/[._-]/);
-    if (parts.length > 1) {
-      return parts
-        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(" ");
-    }
-  }
-  
   return "User";
 }
 
