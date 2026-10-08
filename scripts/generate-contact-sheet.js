@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* global __dirname, Buffer */
 /**
  * Generate a contact sheet from UI screenshots
  * Requires: sharp (npm install sharp)
