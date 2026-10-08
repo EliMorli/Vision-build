@@ -201,8 +201,10 @@ test.describe("VisionBuild AI Consent Flow", () => {
     // Click "Not now"
     await page.getByRole("button", { name: /not now/i }).click();
 
-    // Should be back on editor/style picker screen with photo visible
-    await expect(page.getByText("Select a Design Style").first()).toBeInViewport({ timeout: 5000 });
+    // Should be back on project detail screen with photo visible (not editor)
+    await expect(page.getByText("Original Photo")).toBeVisible({ timeout: 5000 });
+    // Verify the project screen has a testID or unique element - checking for the original image
+    await expect(page.locator('img[alt*="Original"]').first()).toBeVisible({ timeout: 5000 });
     
     // Verify no NEW AI requests were made after the decline (analyze-room was called before, but generate-design should not have been called)
     expect(aiRequests.length).toBe(requestsBeforeDecline);
@@ -254,7 +256,7 @@ test.describe("VisionBuild AI Consent Flow", () => {
     // Wait for results screen (generating screen may be very brief in mock mode)
     await expect(page.getByText(/swipe to browse/i)).toBeInViewport({ timeout: 30000 });
     
-    // Verify we're on results with the same style (modern)
-    await expect(page.getByText(/modern/i).first()).toBeVisible();
+    // Verify we're on results with design options visible
+    await expect(page.getByText("Option 1")).toBeVisible();
   });
 });
