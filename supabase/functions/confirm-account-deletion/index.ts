@@ -124,11 +124,24 @@ export async function handleConfirmGet(
     );
   }
 
+  // Look up user to check if they're an Apple user
+  const { data: userIdResult } = await deps.supabase.rpc(
+    "get_user_id_by_email",
+    { user_email: validation.email }
+  );
+
+  let isAppleUser = false;
+  if (userIdResult) {
+    const { data: { user } } = await deps.supabase.auth.admin.getUserById(userIdResult);
+    isAppleUser = user?.app_metadata?.provider === "apple";
+  }
+
   // Return masked email for confirmation page
   return new Response(
     JSON.stringify({
       valid: true,
       email: maskEmail(validation.email!),
+      isAppleUser,
     }),
     { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
@@ -136,6 +149,7 @@ export async function handleConfirmGet(
 
 export async function handleConfirmPost(
   token: string,
+  appleAuthCode: string | undefined,
   deps: ConfirmDeletionDeps
 ): Promise<Response> {
   // Re-validate token
@@ -214,12 +228,13 @@ export async function handleConfirmPost(
 
   // Execute deletion using shared module
   try {
-    await deps.deleteUser({
+    const result = await deps.deleteUser({
       userId,
       userEmail: email,
       userAppMetadata: user?.app_metadata || {},
       userIdentities: user?.identities || [],
       supabase: deps.supabase,
+      appleAuthCode,
     });
 
     // Mark deletion request as completed
@@ -231,10 +246,15 @@ export async function handleConfirmPost(
       })
       .eq("id", requestId);
 
+    const isAppleUser = user?.app_metadata?.provider === "apple";
+    const needsManualDisconnect = isAppleUser && result.appleRevokeStatus.status !== 'success';
+
     return new Response(
       JSON.stringify({
         success: true,
         message: "Your account has been permanently deleted.",
+        appleRevokeStatus: result.appleRevokeStatus,
+        needsManualDisconnect,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
@@ -285,7 +305,9 @@ serve(async (req: Request) => {
 
     // POST: Execute actual deletion
     if (req.method === "POST") {
-      return await handleConfirmPost(token, deps);
+      const body = await req.json().catch(() => ({}));
+      const appleAuthCode = body.appleAuthCode;
+      return await handleConfirmPost(token, appleAuthCode, deps);
     }
 
     // Method not allowed
