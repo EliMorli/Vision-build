@@ -19,8 +19,12 @@ export default function AIConsentScreen() {
   const userId = useAuthStore((s) => s.session?.user?.id);
   
   // Parse re-consent mode parameters
-  const reason = params.reason as "never" | "outdated" | undefined;
-  const isReconsent = reason === "never" || reason === "outdated";
+  const reason = (params.reason as string | undefined) || undefined;
+  const isOutdated = reason === "outdated";
+  const isNever = reason === "never";
+  const isReconsent = isOutdated || isNever;
+  
+  console.log("[AIConsentScreen] params:", params, "reason:", reason, "isReconsent:", isReconsent, "isOutdated:", isOutdated);
   
   // Parse resume data (encoded as JSON string)
   const resumeData = params.resumeData as string | undefined;
@@ -116,7 +120,7 @@ export default function AIConsentScreen() {
           <Text style={styles.title}>AI-Powered Designs</Text>
 
           {/* Re-consent message (if applicable) */}
-          {isReconsent && reason === "outdated" && (
+          {isReconsent && isOutdated && (
             <View style={styles.updateNotice}>
               <Ionicons name="information-circle" size={20} color={colors.primary} />
               <Text style={styles.updateText}>
