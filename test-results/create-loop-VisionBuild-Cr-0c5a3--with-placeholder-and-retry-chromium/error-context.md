@@ -27,7 +27,7 @@ Call log:
 
 ```yaml
 - link "Choose Style, back":
-  - /url: /editor/mock-project-1791436077539?__EXPO_ROUTER_key=undefined-TbQN_L2SPpyq_osM2KeiJ
+  - /url: /editor/mock-project-1791436124936?__EXPO_ROUTER_key=undefined-ieDx5j-CWzgHZW-ZTDMll
 - heading "Your Designs" [level=1]
 - text:  Room redesigned! Quest complete +50 XP  Swipe to browse. Tap to select your favorite.  AI visualization, not a plan or quote  Long-press any image to compare with original Option 1 Option 2 Option 3 Option 4
 - button "Save Design" [disabled]:  Save Design
@@ -36,6 +36,9 @@ Call log:
 # Test source
 
 ```ts
+  222 |     // So we should land on consent screen directly
+  223 |     // Assert consent screen visible, then screenshot
+  224 |     await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 10000 });
   225 |     await page.screenshot({ path: "e2e/screens/a5-consent.png", fullPage: true });
   226 | 
   227 |     // Navigate back (decline consent)
@@ -92,81 +95,78 @@ Call log:
   278 |       signedUrlRequests.push(url);
   279 |       
   280 |       if (interceptFailures) {
-  281 |         // Return 403 to trigger retry and placeholder display
-  282 |         await route.fulfill({ 
-  283 |           status: 403, 
-  284 |           body: "Forbidden",
-  285 |           contentType: "text/plain"
-  286 |         });
-  287 |       } else {
-  288 |         // Return a green image
-  289 |         await route.fulfill({
-  290 |           status: 200,
-  291 |           contentType: "image/svg+xml",
-  292 |           body: GREEN_IMAGE
-  293 |         });
-  294 |       }
-  295 |     });
-  296 | 
-  297 |     await page.goto(BASE_URL);
-  298 |     await page.waitForLoadState("networkidle");
-  299 |     
-  300 |     await page.getByRole("button", { name: /start your first project/i }).click();
-  301 |     
-  302 |     // Upload test image using filechooser pattern
-  303 |     const [chooser] = await Promise.all([
-  304 |       page.waitForEvent("filechooser"),
-  305 |       page.getByRole("button", { name: /gallery/i }).click(),
-  306 |     ]);
-  307 |     await chooser.setFiles("e2e/fixtures/test-room.jpg");
-  308 |     
-  309 |     await page.getByRole("button", { name: /analyze room/i }).click();
+  281 |         // Abort the request to trigger retry and placeholder display
+  282 |         // Note: abort() triggers onError more reliably than fulfill({status: 403})
+  283 |         await route.abort('failed');
+  284 |       } else {
+  285 |         // Return a green image
+  286 |         await route.fulfill({
+  287 |           status: 200,
+  288 |           contentType: "image/svg+xml",
+  289 |           body: GREEN_IMAGE
+  290 |         });
+  291 |       }
+  292 |     });
+  293 | 
+  294 |     await page.goto(BASE_URL);
+  295 |     await page.waitForLoadState("networkidle");
+  296 |     
+  297 |     await page.getByRole("button", { name: /start your first project/i }).click();
+  298 |     
+  299 |     // Upload test image using filechooser pattern
+  300 |     const [chooser] = await Promise.all([
+  301 |       page.waitForEvent("filechooser"),
+  302 |       page.getByRole("button", { name: /gallery/i }).click(),
+  303 |     ]);
+  304 |     await chooser.setFiles("e2e/fixtures/test-room.jpg");
+  305 |     
+  306 |     await page.getByRole("button", { name: /analyze room/i }).click();
+  307 |     
+  308 |     await page.getByText("Modern", { exact: true }).click();
+  309 |     await page.getByRole("button", { name: /generate 4 designs/i }).click();
   310 |     
-  311 |     await page.getByText("Modern", { exact: true }).click();
-  312 |     await page.getByRole("button", { name: /generate 4 designs/i }).click();
+  311 |     // Wait for generating screen to pass
+  312 |     await page.waitForTimeout(4000);
   313 |     
-  314 |     // Wait for generating screen to pass
-  315 |     await page.waitForTimeout(4000);
-  316 |     
-  317 |     // Wait for results screen
-  318 |     await expect(page.getByText(/swipe to browse/i)).toBeInViewport({ timeout: 30000 });
-  319 | 
-  320 |     // Wait for initial image load attempts to fail and show placeholder
-  321 |     // PrivateImage retries after 500ms, then 1500ms, so wait enough time
-  322 |     await page.waitForTimeout(2500);
-  323 |     
-  324 |     // Assert that placeholder is visible (the IsoRoom clay placeholder)
-> 325 |     await expect(page.getByTestId("private-image-placeholder")).toBeVisible({ timeout: 2000 });
+  314 |     // Wait for results screen
+  315 |     await expect(page.getByText(/swipe to browse/i)).toBeInViewport({ timeout: 30000 });
+  316 | 
+  317 |     // Wait for initial image load attempts to fail and show placeholder
+  318 |     // PrivateImage retries after 500ms, then 1500ms, so wait enough time
+  319 |     await page.waitForTimeout(2500);
+  320 |     
+  321 |     // Assert that placeholder is visible (the IsoRoom clay placeholder)
+> 322 |     await expect(page.getByTestId("private-image-placeholder")).toBeVisible({ timeout: 2000 });
       |                                                                 ^ Error: expect(locator).toBeVisible() failed
-  326 |     
-  327 |     // Verify that multiple signed URL requests were made (initial + retries)
-  328 |     const initialRequestCount = signedUrlRequests.length;
-  329 |     expect(initialRequestCount).toBeGreaterThan(1); // At least one retry happened
-  330 |     
-  331 |     await page.screenshot({ path: "e2e/screens/a5-image-expired-placeholder.png", fullPage: true });
+  323 |     
+  324 |     // Verify that multiple signed URL requests were made (initial + retries)
+  325 |     const initialRequestCount = signedUrlRequests.length;
+  326 |     expect(initialRequestCount).toBeGreaterThan(1); // At least one retry happened
+  327 |     
+  328 |     await page.screenshot({ path: "e2e/screens/a5-image-expired-placeholder.png", fullPage: true });
+  329 |     
+  330 |     // Now allow subsequent requests to succeed
+  331 |     interceptFailures = false;
   332 |     
-  333 |     // Now allow subsequent requests to succeed
-  334 |     interceptFailures = false;
-  335 |     
-  336 |     // The retry logic should eventually request a fresh signed URL (v=2, v=3, etc.)
-  337 |     // Wait for the component to make another retry attempt
-  338 |     await page.waitForTimeout(2000);
-  339 |     
-  340 |     // Assert that design images eventually load after retry
-  341 |     await page.waitForFunction(() => {
-  342 |       const images = Array.from(document.querySelectorAll('img'));
-  343 |       const designImages = images.filter((img: any) => {
-  344 |         const src = img.getAttribute('src');
-  345 |         return src && src.includes('__mock__/design_');
-  346 |       });
-  347 |       return designImages.length > 0 && designImages.some((img: any) => img.naturalWidth > 0);
-  348 |     }, { timeout: 5000 });
-  349 |     
-  350 |     await page.screenshot({ path: "e2e/screens/a5-image-retried.png", fullPage: true });
-  351 | 
-  352 |     // Verify that additional signed URL requests were made (for the retry)
-  353 |     expect(signedUrlRequests.length).toBeGreaterThan(initialRequestCount);
-  354 |   });
-  355 | });
-  356 | 
+  333 |     // The retry logic should eventually request a fresh signed URL (v=2, v=3, etc.)
+  334 |     // Wait for the component to make another retry attempt
+  335 |     await page.waitForTimeout(2000);
+  336 |     
+  337 |     // Assert that design images eventually load after retry
+  338 |     await page.waitForFunction(() => {
+  339 |       const images = Array.from(document.querySelectorAll('img'));
+  340 |       const designImages = images.filter((img: any) => {
+  341 |         const src = img.getAttribute('src');
+  342 |         return src && src.includes('__mock__/design_');
+  343 |       });
+  344 |       return designImages.length > 0 && designImages.some((img: any) => img.naturalWidth > 0);
+  345 |     }, { timeout: 5000 });
+  346 |     
+  347 |     await page.screenshot({ path: "e2e/screens/a5-image-retried.png", fullPage: true });
+  348 | 
+  349 |     // Verify that additional signed URL requests were made (for the retry)
+  350 |     expect(signedUrlRequests.length).toBeGreaterThan(initialRequestCount);
+  351 |   });
+  352 | });
+  353 | 
 ```
