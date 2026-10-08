@@ -1,9 +1,7 @@
-// Web route: /delete-account
-// Form for signed-out users to request account deletion
-
 import { useState } from "react";
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { supabase } from "@/lib/supabase";
+import { DELETED_DATA_SUMMARY } from "@/lib/constants/deletion";
 
 export default function DeleteAccountRequest() {
   const [email, setEmail] = useState("");
@@ -103,7 +101,7 @@ export default function DeleteAccountRequest() {
         </Pressable>
 
         <Text style={styles.warning}>
-          This will permanently delete your account, projects, designs, chats, and quotes. This action cannot be
+          This will permanently delete {DELETED_DATA_SUMMARY}. This action cannot be
           undone.
         </Text>
       </View>

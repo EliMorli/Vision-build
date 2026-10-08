@@ -7,7 +7,6 @@ import {
   TextInput,
   Pressable,
   SafeAreaView,
-  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,19 +22,6 @@ export default function ExploreScreen() {
   // Get only public projects
   const publicDesigns = projects.filter(p => p.is_public);
 
-  const handleReport = (id: string) => {
-    Alert.alert(
-      "Report Design",
-      "Why are you reporting this design?",
-      [
-        { text: "Inappropriate content", onPress: () => {} },
-        { text: "Spam or misleading", onPress: () => {} },
-        { text: "Copyright violation", onPress: () => {} },
-        { text: "Cancel", style: "cancel" },
-      ]
-    );
-  };
-
   // Empty state when no public designs
   if (publicDesigns.length === 0) {
     return (
@@ -50,7 +36,6 @@ export default function ExploreScreen() {
               placeholderTextColor={colors.textSecondary}
               value={searchQuery}
               onChangeText={setSearchQuery}
-              editable={false}
             />
           </View>
         </View>
@@ -110,15 +95,6 @@ export default function ExploreScreen() {
                 importantForAccessibility="no-hide-descendants"
               />
             </View>
-            <Pressable
-              style={styles.moreButton}
-              onPress={() => handleReport(item.id)}
-              accessibilityLabel="Report or block design"
-              accessibilityRole="button"
-              hitSlop={12}
-            >
-              <Ionicons name="ellipsis-horizontal" size={20} color="#fff" />
-            </Pressable>
             <View style={styles.cardOverlay}>
               <Text style={styles.cardTitle} numberOfLines={1}>
                 {item.title}
@@ -200,18 +176,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
-  },
-  moreButton: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1,
   },
   cardOverlay: {
     position: "absolute",

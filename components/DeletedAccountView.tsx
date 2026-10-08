@@ -1,6 +1,7 @@
-import { View, Text, Pressable, StyleSheet } from "react-native";
-import { colors, fonts } from "@/lib/theme";
+import { View, Text, StyleSheet } from "react-native";
+import { colors, fonts, spacing } from "@/lib/theme";
 import { APPLE_DELETION_NOTE } from "@/lib/constants/deletion";
+import { Button } from "./Button";
 
 interface DeletedAccountViewProps {
   showNativeActions: boolean;
@@ -26,13 +27,15 @@ export default function DeletedAccountView({
           </Text>
         )}
         {showNativeActions && (
-          <Pressable
-            style={styles.buttonSecondary}
-            onPress={onDone}
-            testID="delete-done-button"
-          >
-            <Text style={styles.buttonSecondaryText}>Done</Text>
-          </Pressable>
+          <View style={styles.buttonContainer}>
+            <Button
+              label="Done"
+              onPress={onDone}
+              variant="primary"
+              fullWidth
+              testID="delete-done-button"
+            />
+          </View>
         )}
       </View>
     </View>
@@ -83,19 +86,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 20,
   },
-  buttonSecondary: {
-    backgroundColor: colors.surface,
-    borderRadius: 18,
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    borderWidth: 2,
-    borderColor: colors.border,
-    marginTop: 12,
-  },
-  buttonSecondaryText: {
-    ...fonts.label,
-    fontFamily: "Nunito_800ExtraBold",
-    color: colors.primary,
-    fontSize: 15,
+  buttonContainer: {
+    width: "100%",
+    marginTop: spacing.md,
   },
 });

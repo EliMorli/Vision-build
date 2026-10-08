@@ -11,6 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useAuthStore, useProjectStore } from "@/lib/store";
 import { Button } from "@/components";
+import { getDisplayName, getDisplayInitial } from "@/lib/helpers/user";
 
 interface Badge {
   id: string;
@@ -24,8 +25,12 @@ interface Badge {
 export default function ProfileScreen() {
   const router = useRouter();
   const profile = useAuthStore((s) => s.profile);
+  const session = useAuthStore((s) => s.session);
   const signOut = useAuthStore((s) => s.signOut);
   const projects = useProjectStore((s) => s.projects);
+
+  const displayName = getDisplayName(profile, session?.user);
+  const displayInitial = getDisplayInitial(displayName);
 
   // Calculate real counts
   const roomsCount = projects.length;
@@ -97,8 +102,6 @@ export default function ProfileScreen() {
   const menuItems = [
     { icon: "person-outline" as const, label: "Edit Profile", badge: null, route: "/edit-profile" },
     { icon: "settings-outline" as const, label: "Settings & Privacy", badge: null, route: "/profile-settings" },
-    { icon: "home-outline" as const, label: "My Properties", badge: roomsCount > 0 ? String(roomsCount) : null, route: null },
-    { icon: "heart-outline" as const, label: "Saved Designs", badge: null, route: null }, // Will wire in Pass B
     { icon: "help-circle-outline" as const, label: "Help & Contact", badge: null, route: "/help-contact" },
   ];
 
@@ -109,10 +112,10 @@ export default function ProfileScreen() {
         <View style={styles.header}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
-              {profile?.display_name?.[0]?.toUpperCase() ?? "U"}
+              {displayInitial}
             </Text>
           </View>
-          <Text style={styles.name}>{profile?.display_name ?? "User"}</Text>
+          <Text style={styles.name}>{displayName}</Text>
           <View style={styles.levelBadge}>
             <Text style={styles.levelBadgeText}>
               Level {level} · Rookie Designer
