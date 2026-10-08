@@ -18,6 +18,7 @@ import { SUPPORT_EMAIL } from "@/lib/config";
 import { supabase } from "@/lib/supabase";
 import { ConfirmationSheet } from "@/components";
 import { DELETED_DATA_SUMMARY } from "@/lib/constants/deletion";
+import { wipeOfflineCache } from "@/lib/offline-cache";
 
 export default function ProfileSettingsScreen() {
   const router = useRouter();
@@ -156,6 +157,7 @@ export default function ProfileSettingsScreen() {
 
   const confirmDeleteAccount = async () => {
     const profile = useAuthStore.getState().profile;
+    const userId = profile?.id;
     const isAppleUser = profile?.email?.endsWith('@privaterelay.appleid.com') || false;
     
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
@@ -166,6 +168,15 @@ export default function ProfileSettingsScreen() {
           timestamp: new Date().toISOString(),
           userId: profile?.id
         });
+      }
+      
+      // Wipe offline cache BEFORE navigating to deleted screen
+      if (userId) {
+        try {
+          await wipeOfflineCache(userId);
+        } catch (error) {
+          console.error("Failed to wipe offline cache on deletion:", error);
+        }
       }
       
       // Sign out and set mock signed-out flag
@@ -184,6 +195,15 @@ export default function ProfileSettingsScreen() {
       
       if (error) throw error;
       
+      // Wipe offline cache BEFORE navigating to deleted screen
+      if (userId) {
+        try {
+          await wipeOfflineCache(userId);
+        } catch (error) {
+          console.error("Failed to wipe offline cache on deletion:", error);
+        }
+      }
+      
       await signOut();
       
       // Navigate to deleted screen
@@ -192,7 +212,7 @@ export default function ProfileSettingsScreen() {
         params: { variant: isAppleUser ? 'apple' : 'email' }
       });
     } catch {
-      setErrorMessage("Failed to delete account. Please try again or contact support.");
+      setErrorMessage("Failed to delete account");
       setTimeout(() => setErrorMessage(""), 3000);
     }
   };
