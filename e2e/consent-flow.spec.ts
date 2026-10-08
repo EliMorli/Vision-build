@@ -202,7 +202,7 @@ test.describe("VisionBuild AI Consent Flow", () => {
     await page.getByRole("button", { name: /not now/i }).click();
 
     // Should be back on editor/style picker screen with photo visible
-    await expect(page.getByText("Select a Design Style")).toBeInViewport({ timeout: 5000 });
+    await expect(page.getByText("Select a Design Style").first()).toBeInViewport({ timeout: 5000 });
     
     // Verify no NEW AI requests were made after the decline (analyze-room was called before, but generate-design should not have been called)
     expect(aiRequests.length).toBe(requestsBeforeDecline);
