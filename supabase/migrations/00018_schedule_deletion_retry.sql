@@ -12,7 +12,17 @@ CREATE EXTENSION IF NOT EXISTS pg_cron;
 
 -- Enable pg_net extension (idempotent)
 -- Note: In CI or local testing, install postgresql-16-pgnet package
-CREATE EXTENSION IF NOT EXISTS pg_net WITH SCHEMA extensions;
+-- In production Supabase, pg_net is in the extensions schema
+DO $$
+BEGIN
+  -- Try to create in extensions schema if it exists (production Supabase)
+  IF EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'extensions') THEN
+    CREATE EXTENSION IF NOT EXISTS pg_net WITH SCHEMA extensions;
+  ELSE
+    -- Otherwise create in public schema (test environments)
+    CREATE EXTENSION IF NOT EXISTS pg_net;
+  END IF;
+END $$;
 
 -- Unschedule existing job if it exists (idempotent)
 SELECT cron.unschedule('retry-account-deletions')
@@ -24,26 +34,27 @@ WHERE EXISTS (
 -- Runs at the top of every hour (0 * * * *)
 -- Reads secrets from vault.decrypted_secrets at runtime
 -- ERRORS if secrets are missing (shows as failed in cron.job_run_details)
-SELECT cron.schedule(
-  'retry-account-deletions',
-  '0 * * * *',
-  $$
+-- Schedule hourly retry job
+-- Try extensions.http_post (production), fall back to net.http_post (test)
+DO $$
+DECLARE
+  job_sql text;
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'extensions') THEN
+    job_sql := $$
 SELECT extensions.http_post(
-  url := (
-    SELECT COALESCE(
-      (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'project_url'),
-      (SELECT pg_catalog.current_setting('app.project_url', true))
-    )
-  ) || '/functions/v1/retry-account-deletions',
-  headers := jsonb_build_object(
-    'Authorization', 'Bearer ' || (
-      SELECT COALESCE(
-        (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'service_role_key'),
-        (SELECT pg_catalog.current_setting('app.service_role_key', true))
-      )
-    ),
-    'Content-Type', 'application/json'
-  )
+  url := (SELECT COALESCE((SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'project_url'), pg_catalog.current_setting('app.project_url', true))) || '/functions/v1/retry-account-deletions',
+  headers := jsonb_build_object('Authorization', 'Bearer ' || (SELECT COALESCE((SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'service_role_key'), pg_catalog.current_setting('app.service_role_key', true))), 'Content-Type', 'application/json')
 )::text;
-$$
-);
+$$;
+  ELSE
+    job_sql := $$
+SELECT net.http_post(
+  url := (SELECT COALESCE((SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'project_url'), pg_catalog.current_setting('app.project_url', true))) || '/functions/v1/retry-account-deletions',
+  headers := jsonb_build_object('Authorization', 'Bearer ' || (SELECT COALESCE((SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'service_role_key'), pg_catalog.current_setting('app.service_role_key', true))), 'Content-Type', 'application/json')
+)::text;
+$$;
+  END IF;
+
+  PERFORM cron.schedule('retry-account-deletions', '0 * * * *', job_sql);
+END $$;
