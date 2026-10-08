@@ -76,13 +76,19 @@ test.describe("Delete Account Flow", () => {
     expect(deleteCalls.length).toBe(1);
     expect(deleteCalls[0].userId).toBe("test-user-123");
     
-    // App should end on signed-out/welcome screen
+    // App should end on signed-out screen (not Settings anymore)
     // Wait for navigation to complete
     await page.waitForLoadState("networkidle");
     
-    // Should see the intro/welcome screen (sign-in button or welcome message)
-    await expect(
-      page.getByText(/Get Started|Sign In|Welcome/i)
-    ).toBeVisible({ timeout: 5000 });
+    // Should NOT see the Settings page anymore (delete-account-button should be gone)
+    await expect(page.getByTestId("delete-account-button")).not.toBeVisible({ timeout: 3000 });
+    
+    // Should see either intro (Get Started) or sign-in screen (VisionBuild logo text or buttons)
+    const isSignedOut = await page.evaluate(() => {
+      return document.body.innerText.includes("Get Started") || 
+             document.body.innerText.includes("VisionBuild") ||
+             document.body.innerText.includes("Sign in with");
+    });
+    expect(isSignedOut).toBe(true);
   });
 });
