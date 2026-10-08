@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   Alert,
   Linking,
+  Switch,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -212,31 +213,23 @@ export default function ProfileSettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Notifications</Text>
           <View style={styles.settingCard}>
-            <Pressable
-              style={styles.settingRow}
-              onPress={() => handleProsWaitlist(!prosWaitlist)}
-              accessibilityRole="switch"
-              accessibilityState={{ checked: prosWaitlist }}
-              accessibilityLabel={`Pros Waitlist, ${prosWaitlist ? "on" : "off"}. Get notified when local pros can quote your projects.`}
-              disabled={checkingWaitlist}
-              testID="settings-pros-waitlist-toggle"
-            >
+            <View style={styles.settingRow}>
               <View style={styles.settingInfo}>
                 <Text style={styles.settingLabel}>Pros Waitlist</Text>
                 <Text style={styles.settingDescription}>
                   Get notified when local pros can quote your projects
                 </Text>
               </View>
-              <View style={[
-                styles.switch,
-                prosWaitlist && styles.switchOn,
-              ]}>
-                <View style={[
-                  styles.switchThumb,
-                  prosWaitlist && styles.switchThumbOn,
-                ]} />
-              </View>
-            </Pressable>
+              <Switch
+                value={prosWaitlist}
+                onValueChange={handleProsWaitlist}
+                disabled={checkingWaitlist}
+                testID="settings-pros-waitlist-toggle"
+                accessibilityLabel="Pros Waitlist"
+                trackColor={{ false: colors.border, true: colors.success }}
+                thumbColor="#fff"
+              />
+            </View>
           </View>
         </View>
 

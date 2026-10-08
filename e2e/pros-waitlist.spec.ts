@@ -93,8 +93,8 @@ test.describe("Pros Waitlist", () => {
     // Screenshot
     await page.screenshot({ path: "e2e/screenshots/hf-pros-coming-soon.png", fullPage: false });
 
-    // Try to join waitlist using testID
-    await page.getByTestId("pros-coming-soon-join").click();
+    // Try to join waitlist
+    await page.getByRole("button", { name: /join the waitlist/i }).click();
 
     // Should show "You're on the list"
     await expect(page.getByText("You're on the list")).toBeVisible({ timeout: 5000 });
@@ -162,25 +162,19 @@ test.describe("Pros Waitlist", () => {
     // Should see collapsed state
     await expect(page.getByTestId("pros-teaser-joined")).toBeVisible({ timeout: 10000 });
 
-    // Go to Settings - look for settings gear icon or Profile tab then Settings
-    const profileTab = page.getByRole("tab", { name: /profile/i }).or(page.locator('[aria-label*="profile" i]')).first();
-    await profileTab.click();
-    await page.waitForLoadState("networkidle");
-    
-    const settingsButton = page.getByRole("button", { name: /settings/i }).first();
-    await settingsButton.click();
+    // Navigate to Settings directly
+    await page.goto(`${BASE_URL}/profile-settings`);
     await page.waitForLoadState("networkidle");
 
     // Find and screenshot the settings
     await expect(page.getByText("Pros Waitlist")).toBeVisible();
     await page.screenshot({ path: "e2e/screenshots/hf-settings-waitlist.png", fullPage: false });
 
-    // Toggle off using testID
+    // Toggle off using Switch testID
     await page.getByTestId("settings-pros-waitlist-toggle").click();
 
-    // Go back to Home
-    await page.goBack();
-    await page.goBack(); // Back twice: settings -> profile -> home
+    // Navigate back to Home
+    await page.goto(BASE_URL);
     await page.waitForLoadState("networkidle");
 
     // Should see the full card again (not collapsed)

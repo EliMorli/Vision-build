@@ -139,6 +139,7 @@ export default function ProfileScreen() {
                 index === menuItems.length - 1 && styles.lastMenuItem,
               ]}
               onPress={() => item.route && router.push(item.route as any)}
+              testID={item.label === "Settings & Privacy" ? "profile-settings-button" : undefined}
             >
               <View style={styles.menuItemLeft}>
                 <Ionicons name={item.icon} size={22} color={colors.textPrimary} />
