@@ -3,9 +3,10 @@
 // POST: Executes actual deletion when user presses button
 
 import { useState, useEffect } from "react";
-import { View, Text, Pressable, StyleSheet, ActivityIndicator, Platform } from "react-native";
+import { View, Text, Pressable, StyleSheet, ActivityIndicator, Platform, Linking } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as AppleAuthentication from "expo-apple-authentication";
+import { SUPPORT_EMAIL } from "../../lib/config";
 
 type PageState = "loading" | "valid" | "error" | "deleting" | "deleted";
 
@@ -14,6 +15,7 @@ interface PageData {
   error?: string;
   expired?: boolean;
   used?: boolean;
+  canRetry?: boolean;
   isAppleUser?: boolean;
   needsManualDisconnect?: boolean;
 }
@@ -131,12 +133,13 @@ export default function DeleteAccountConfirm() {
           error: result.error || "Failed to delete account",
           expired: result.expired,
           used: result.used,
+          canRetry: result.canRetry,
         });
       }
     } catch (error: any) {
       console.error("Deletion error:", error);
       setState("error");
-      setData({ error: "Failed to delete account. Please try again." });
+      setData({ error: "Failed to delete account. Please try again.", canRetry: false });
     }
   };
 
@@ -181,6 +184,8 @@ export default function DeleteAccountConfirm() {
 
   if (state === "error") {
     const showRequestNew = data.expired || data.used;
+    const canRetry = data.canRetry === true;
+    
     return (
       <View style={styles.container}>
         <View style={styles.card}>
@@ -189,10 +194,31 @@ export default function DeleteAccountConfirm() {
               ? "Link expired"
               : data.used
               ? "Already deleted"
+              : canRetry
+              ? "Deletion incomplete"
               : "Invalid link"}
           </Text>
           <Text style={styles.body}>{data.error}</Text>
-          {showRequestNew && (
+          {canRetry && (
+            <>
+              <Pressable
+                style={styles.buttonDanger}
+                onPress={executeDelete}
+                testID="delete-retry-button"
+              >
+                <Text style={styles.buttonText}>Try again</Text>
+              </Pressable>
+              <Pressable onPress={() => {
+                const supportUrl = `mailto:${SUPPORT_EMAIL || "support@visionbuild.app"}`;
+                Linking.openURL(supportUrl).catch((err) => {
+                  console.error("Failed to open support link:", err);
+                });
+              }}>
+                <Text style={styles.linkText}>Contact support</Text>
+              </Pressable>
+            </>
+          )}
+          {showRequestNew && !canRetry && (
             <Pressable
               style={styles.buttonSecondary}
               onPress={() => router.replace("/delete-account")}
@@ -236,6 +262,8 @@ export default function DeleteAccountConfirm() {
         <Pressable
           style={styles.buttonDanger}
           onPress={executeDelete}
+          testID="delete-confirm-button"
+          accessibilityRole="button"
         >
           <Text style={styles.buttonText}>Delete my account</Text>
         </Pressable>

@@ -256,7 +256,7 @@ serve(async (req: Request) => {
           return bytes;
         },
         sha256: async (data: Uint8Array) => {
-          const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+          const hashBuffer = await crypto.subtle.digest("SHA-256", data as BufferSource);
           return new Uint8Array(hashBuffer);
         },
       },
