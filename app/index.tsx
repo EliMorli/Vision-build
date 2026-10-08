@@ -16,16 +16,16 @@ export default function Index() {
   const setSession = useAuthStore((s) => s.setSession);
   const [introSeen, setIntroSeen] = useState<boolean | null>(null);
 
-  const checkIntroSeen = async () => {
-    try {
-      const seen = await AsyncStorage.getItem(INTRO_SEEN_KEY);
-      setIntroSeen(seen === "true");
-    } catch {
-      setIntroSeen(false);
-    }
-  };
-
   useEffect(() => {
+    const checkIntroSeen = async () => {
+      try {
+        const seen = await AsyncStorage.getItem(INTRO_SEEN_KEY);
+        setIntroSeen(seen === "true");
+      } catch {
+        setIntroSeen(false);
+      }
+    };
+    
     checkIntroSeen();
   }, []);
   

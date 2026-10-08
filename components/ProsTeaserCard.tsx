@@ -96,7 +96,7 @@ export function ProsTeaserCard() {
     return (
       <View style={styles.slimCard}>
         <Ionicons name="checkmark-circle" size={20} color={colors.success} />
-        <Text style={styles.slimText}>You're on the pros waitlist</Text>
+        <Text style={styles.slimText}>✓ You're on the list.</Text>
       </View>
     );
   }

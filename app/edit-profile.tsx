@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -22,17 +22,12 @@ export default function EditProfileScreen() {
   const profile = useAuthStore((s) => s.profile);
   const fetchProfile = useAuthStore((s) => s.fetchProfile);
 
-  const [displayName, setDisplayName] = useState(profile?.display_name || "");
+  // Initialize display name from profile once
+  const initialDisplayName = useMemo(() => profile?.display_name || "", [profile?.display_name]);
+  const [displayName, setDisplayName] = useState(initialDisplayName);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-
-  // Sync display name when profile loads
-  useEffect(() => {
-    if (profile?.display_name && !displayName) {
-      setDisplayName(profile.display_name);
-    }
-  }, [profile?.display_name, displayName]);
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
