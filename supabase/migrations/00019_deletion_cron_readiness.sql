@@ -15,22 +15,37 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, pg_catalog
 AS $$
+DECLARE
+  has_vault boolean;
+  project_url_present boolean;
+  service_role_key_present boolean;
 BEGIN
+  -- Check if vault schema exists
+  has_vault := EXISTS(SELECT 1 FROM information_schema.schemata WHERE schema_name = 'vault');
+  
+  -- Check project_url
+  IF has_vault THEN
+    EXECUTE 'SELECT EXISTS(SELECT 1 FROM vault.decrypted_secrets WHERE name = ''project_url'' AND decrypted_secret IS NOT NULL)'
+    INTO project_url_present;
+  ELSE
+    project_url_present := current_setting('app.project_url', true) IS NOT NULL;
+  END IF;
+  
+  -- Check service_role_key
+  IF has_vault THEN
+    EXECUTE 'SELECT EXISTS(SELECT 1 FROM vault.decrypted_secrets WHERE name = ''service_role_key'' AND decrypted_secret IS NOT NULL)'
+    INTO service_role_key_present;
+  ELSE
+    service_role_key_present := current_setting('app.service_role_key', true) IS NOT NULL;
+  END IF;
+  
   RETURN QUERY
   SELECT
     EXISTS(SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') AS pg_cron_installed,
     EXISTS(SELECT 1 FROM pg_extension WHERE extname = 'pg_net') AS pg_net_installed,
     EXISTS(SELECT 1 FROM cron.job WHERE jobname = 'retry-account-deletions') AS job_scheduled,
-    CASE
-      WHEN EXISTS(SELECT 1 FROM information_schema.schemata WHERE schema_name = 'vault')
-      THEN EXISTS(SELECT 1 FROM vault.decrypted_secrets WHERE name = 'project_url' AND decrypted_secret IS NOT NULL)
-      ELSE current_setting('app.project_url', true) IS NOT NULL
-    END AS vault_project_url_present,
-    CASE
-      WHEN EXISTS(SELECT 1 FROM information_schema.schemata WHERE schema_name = 'vault')
-      THEN EXISTS(SELECT 1 FROM vault.decrypted_secrets WHERE name = 'service_role_key' AND decrypted_secret IS NOT NULL)
-      ELSE current_setting('app.service_role_key', true) IS NOT NULL
-    END AS vault_service_role_key_present;
+    project_url_present AS vault_project_url_present,
+    service_role_key_present AS vault_service_role_key_present;
 END;
 $$;
 
