@@ -150,19 +150,17 @@ BEGIN
 
   -- ─── Test 8: Check fetch_public_designs EXECUTE grants ───
 
-  PERFORM set_config('request.jwt.claims', '{"sub": "' || v_bob_id || '", "role": "authenticated"}', true);
-
   SELECT COUNT(*) INTO v_count
   FROM pg_proc p
   JOIN pg_namespace n ON p.pronamespace = n.oid
   WHERE n.nspname = 'public'
     AND p.proname = 'fetch_public_designs'
-    AND has_function_privilege(v_bob_id, p.oid, 'EXECUTE');
+    AND has_function_privilege('authenticated', p.oid, 'EXECUTE');
 
   IF v_count != 1 THEN
-    RAISE EXCEPTION 'FAIL: Authenticated user should have EXECUTE on fetch_public_designs';
+    RAISE EXCEPTION 'FAIL: Authenticated role should have EXECUTE on fetch_public_designs';
   END IF;
-  RAISE NOTICE 'PASS: Authenticated users have EXECUTE privilege on fetch_public_designs';
+  RAISE NOTICE 'PASS: Authenticated role has EXECUTE privilege on fetch_public_designs';
 
   -- ─── Test 9: Verify fetch_public_designs search_path is secure ───
 
