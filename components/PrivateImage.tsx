@@ -132,6 +132,10 @@ export function PrivateImage({
       `Image failed to load (retry ${retryCountRef.current}/${MAX_RETRIES}), retrying in ${retryDelay}ms...`
     );
 
+    // Immediately set retrying state to show placeholder
+    setIsLoading(true);
+    setImageUrl(null);
+
     // Clear the cache to force a fresh signed URL
     clearSignedUrlCache(bucket, path);
 
@@ -142,8 +146,6 @@ export function PrivateImage({
 
     // Trigger a re-fetch by incrementing retryTrigger (changes hook dependency)
     setRetryTrigger(prev => prev + 1);
-    setImageUrl(null);
-    setIsLoading(true);
   };
 
   const handleImageLoad = () => {
@@ -183,6 +185,7 @@ export function PrivateImage({
   const shouldShowPlaceholder = showPlaceholder || !imageUrl || (isLoading && retryCountRef.current > 0);
 
   if (shouldShowPlaceholder) {
+    console.log(`[PrivateImage] Showing placeholder - showPlaceholder=${showPlaceholder}, imageUrl=${imageUrl}, isLoading=${isLoading}, retryCount=${retryCountRef.current}`);
     return (
       <View
         style={[styles.placeholderContainer, containerStyle]}
