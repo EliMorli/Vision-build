@@ -199,11 +199,27 @@ jobs:
             sudo apt-get install -y imagemagick
           fi
           
+          PLAYWRIGHT_START=$(date -r playwright-report +%s 2>/dev/null || date -r e2e/screens +%s)
+          
           FAIL=0
           for screenshot in e2e/screens/ui-*.png; do
             if [ ! -f "$screenshot" ]; then
               continue
             fi
+            
+            # Skip ui-contact-sheet.png (composite generated after tests)
+            if [[ "$screenshot" == *"ui-contact-sheet.png" ]]; then
+              # Check it's newer than Playwright start
+              SHOT_TIME=$(date -r "$screenshot" +%s)
+              if [ $SHOT_TIME -lt $PLAYWRIGHT_START ]; then
+                echo "❌ $screenshot is stale (older than test run)"
+                FAIL=1
+              else
+                echo "✓ $screenshot (composite, regenerated)"
+              fi
+              continue
+            fi
+            
             # Check if file was modified in this run (within last 10 minutes)
             if [ $(find "$screenshot" -mmin -10 2>/dev/null | wc -l) -eq 0 ]; then
               echo "❌ $screenshot was not regenerated in this test run"
@@ -222,6 +238,11 @@ jobs:
               echo "✓ $screenshot is $DIMS"
             fi
           done
+          
+          # Regenerate ui-contact-sheet.png from all current ui-* shots
+          montage e2e/screens/ui-!(contact-sheet).png -tile 4x -geometry 195x422+2+2 -background white e2e/screens/ui-contact-sheet.png
+          echo "✓ Regenerated ui-contact-sheet.png"
+          
           if [ $FAIL -eq 1 ]; then
             echo ""
             echo "Screenshot check failed. All ui-* screenshots must be 780x1688 and regenerated during the test run."

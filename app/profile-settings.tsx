@@ -156,6 +156,14 @@ export default function ProfileSettingsScreen() {
 
   const confirmDeleteAccount = async () => {
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      // Record mock delete call for E2E testing
+      if (typeof window !== 'undefined') {
+        (window as any).__VB_MOCK_DELETE_CALLS__ = (window as any).__VB_MOCK_DELETE_CALLS__ || [];
+        (window as any).__VB_MOCK_DELETE_CALLS__.push({
+          timestamp: new Date().toISOString(),
+          userId: useAuthStore.getState().profile?.id
+        });
+      }
       await signOut();
       return;
     }

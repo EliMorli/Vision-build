@@ -53,12 +53,36 @@ test.describe("Delete Account Flow", () => {
     await page.getByTestId("delete-account-button").click();
     await expect(page.getByTestId("delete-account-confirm")).toBeVisible({ timeout: 3000 });
 
-    // ─── Part 4: Confirm deletion (mock mode signs out immediately) ───
+    // ─── Part 4: Cancel first - assert no delete call ───
     
+    await page.getByTestId("delete-account-confirm-cancel").click();
+    await expect(page.getByTestId("delete-account-confirm")).not.toBeVisible({ timeout: 3000 });
+    
+    // Verify no delete call was recorded
+    let deleteCalls = await page.evaluate(() => (window as any).__VB_MOCK_DELETE_CALLS__ || []);
+    expect(deleteCalls.length).toBe(0);
+    
+    // ─── Part 5: Reopen and confirm deletion ───
+    
+    await page.getByTestId("delete-account-button").click();
+    await expect(page.getByTestId("delete-account-confirm")).toBeVisible({ timeout: 3000 });
     await page.getByTestId("delete-account-confirm-confirm").click();
     
-    // In mock mode, confirm triggers sign-out and navigates back to intro/auth
-    // Wait for sheet to close first
+    // Wait for sheet to close
     await expect(page.getByTestId("delete-account-confirm")).not.toBeVisible({ timeout: 3000 });
+    
+    // Verify exactly 1 delete call was recorded
+    deleteCalls = await page.evaluate(() => (window as any).__VB_MOCK_DELETE_CALLS__ || []);
+    expect(deleteCalls.length).toBe(1);
+    expect(deleteCalls[0].userId).toBe("test-user-123");
+    
+    // App should end on signed-out/welcome screen
+    // Wait for navigation to complete
+    await page.waitForLoadState("networkidle");
+    
+    // Should see the intro/welcome screen (sign-in button or welcome message)
+    await expect(
+      page.getByText(/Get Started|Sign In|Welcome/i)
+    ).toBeVisible({ timeout: 5000 });
   });
 });
