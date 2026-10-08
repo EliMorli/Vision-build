@@ -30,6 +30,11 @@ test.describe("VisionBuild AI Consent Flow", () => {
 
     // Should see consent screen with update notice
     await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 5000 });
+    
+    // Get all text content for debugging
+    const bodyText = await page.locator('body').textContent();
+    console.log("[TEST] Body text:", bodyText?.substring(0, 500));
+    
     await expect(page.getByText(/We've updated how your photos are handled/i)).toBeVisible();
     
     // Assert screen with update notice
