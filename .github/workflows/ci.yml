@@ -55,6 +55,9 @@ jobs:
       - name: Check dev button gating
         run: npm run check:dev-button
       
+      - name: Check no Alert.alert in app
+        run: bash scripts/check-no-alert.sh
+      
       - name: Check launch copy compliance
         run: npm run check:launch-copy
       
