@@ -88,13 +88,17 @@ export default function DeleteAccountConfirm() {
 
       // Try to get Apple authorization code if this is an Apple user
       // On web/Android, this will be skipped (logged on server)
+      // Note: expo-apple-authentication is not currently installed, so this path
+      // will be skipped. When added, uncomment the implementation below.
       if (data.isAppleUser && Platform.OS === "ios") {
+        // TODO: Implement Apple authorization code flow once expo-apple-authentication is installed
+        // This is NOT a blocker for deletion - account is deleted either way
+        console.log("Apple auth code requested but expo-apple-authentication not available");
+        /*
         try {
-          // eslint-disable-next-line import/no-unresolved
           const AppleAuth = await import("expo-apple-authentication").catch(() => null);
           
           if (AppleAuth) {
-            // Check if Apple auth is available
             const isAvailable = await AppleAuth.isAvailableAsync();
             
             if (isAvailable) {
@@ -106,8 +110,8 @@ export default function DeleteAccountConfirm() {
           }
         } catch (appleError: any) {
           console.log("Apple authorization cancelled or failed:", appleError.code);
-          // Continue with deletion even if Apple auth fails
         }
+        */
       }
 
       const baseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL?.replace("/rest/v1", "") || "";
