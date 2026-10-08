@@ -15,23 +15,33 @@ export default function Index() {
   const loading = useAuthStore((s) => s.loading);
   const setSession = useAuthStore((s) => s.setSession);
   const [introSeen, setIntroSeen] = useState<boolean | null>(null);
+  const [mockSignedOut, setMockSignedOut] = useState<boolean | null>(null);
 
   useEffect(() => {
     const checkIntroSeen = async () => {
       try {
         const seen = await AsyncStorage.getItem(INTRO_SEEN_KEY);
         setIntroSeen(seen === "true");
+        
+        // Check mock signed-out flag
+        if (DEV_MOCK_ENABLED) {
+          const signedOut = await AsyncStorage.getItem("@visionbuild:mock_signed_out");
+          setMockSignedOut(signedOut === "true");
+        } else {
+          setMockSignedOut(false);
+        }
       } catch {
         setIntroSeen(false);
+        setMockSignedOut(false);
       }
     };
     
     checkIntroSeen();
   }, []);
   
-  // Set mock session in dev mode
+  // Set mock session in dev mode (but not if user signed out)
   useEffect(() => {
-    if (DEV_MOCK_ENABLED && !session) {
+    if (DEV_MOCK_ENABLED && !session && mockSignedOut === false) {
       const now = Date.now();
       setSession({
         user: {
@@ -49,9 +59,9 @@ export default function Index() {
         token_type: "bearer",
       } as any);
     }
-  }, [session, setSession]);
+  }, [session, setSession, mockSignedOut]);
 
-  if (loading || introSeen === null) {
+  if (loading || introSeen === null || (DEV_MOCK_ENABLED && mockSignedOut === null)) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color={colors.primary} />

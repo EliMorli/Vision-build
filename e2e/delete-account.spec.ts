@@ -76,19 +76,22 @@ test.describe("Delete Account Flow", () => {
     expect(deleteCalls.length).toBe(1);
     expect(deleteCalls[0].userId).toBe("test-user-123");
     
-    // App should end on signed-out screen (not Settings anymore)
-    // Wait for navigation to complete
-    await page.waitForLoadState("networkidle");
+    // Should navigate to deleted-account screen
+    await expect(page.getByTestId("deleted-account-view")).toBeVisible({ timeout: 5000 });
     
-    // Should NOT see the Settings page anymore (delete-account-button should be gone)
-    await expect(page.getByTestId("delete-account-button")).not.toBeVisible({ timeout: 3000 });
+    // Verify DELETED_DATA_SUMMARY or deleted text is visible
+    await expect(page.getByText(/your projects, photos, designs, chats and pros waitlist signup/i)).toBeVisible();
     
-    // Should see either intro (Get Started) or sign-in screen (VisionBuild logo text or buttons)
-    const isSignedOut = await page.evaluate(() => {
-      return document.body.innerText.includes("Get Started") || 
-             document.body.innerText.includes("VisionBuild") ||
-             document.body.innerText.includes("Sign in with");
+    // Take screenshot of deleted screen
+    await page.screenshot({ 
+      path: "e2e/screens/ui-delete-account-done.png", 
+      fullPage: false 
     });
-    expect(isSignedOut).toBe(true);
+    
+    // Press Done button
+    await page.getByTestId("deleted-account-done").click();
+    
+    // Should navigate to welcome/sign-in screen
+    await expect(page.getByTestId("sign-in-screen")).toBeVisible({ timeout: 5000 });
   });
 });

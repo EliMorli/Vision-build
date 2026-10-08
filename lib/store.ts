@@ -30,7 +30,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   setSession: (session) => {
     set({ session, loading: false });
-    if (session) get().fetchProfile();
+    if (session) {
+      get().fetchProfile();
+      // Clear mock signed-out flag when signing in
+      if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+        AsyncStorage.removeItem("@visionbuild:mock_signed_out").catch(() => {});
+      }
+    }
   },
 
   fetchProfile: async () => {
@@ -152,10 +158,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ session: null, profile: null, loading: false, error: null });
     useProjectStore.getState().clear();
     
-    // Clear mock mode session if applicable
+    // Set mock signed-out flag if in mock mode
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
-      // Just clearing the store state is enough for mock mode
-      // The session null will prevent auth checks from passing
+      await AsyncStorage.setItem("@visionbuild:mock_signed_out", "true");
     }
   },
 }));

@@ -155,16 +155,27 @@ export default function ProfileSettingsScreen() {
   };
 
   const confirmDeleteAccount = async () => {
+    const profile = useAuthStore.getState().profile;
+    const isAppleUser = profile?.email?.endsWith('@privaterelay.appleid.com') || false;
+    
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
       // Record mock delete call for E2E testing
       if (typeof window !== 'undefined') {
         (window as any).__VB_MOCK_DELETE_CALLS__ = (window as any).__VB_MOCK_DELETE_CALLS__ || [];
         (window as any).__VB_MOCK_DELETE_CALLS__.push({
           timestamp: new Date().toISOString(),
-          userId: useAuthStore.getState().profile?.id
+          userId: profile?.id
         });
       }
+      
+      // Sign out and set mock signed-out flag
       await signOut();
+      
+      // Navigate to deleted screen
+      router.replace({
+        pathname: '/deleted-account' as any,
+        params: { variant: isAppleUser ? 'apple' : 'email' }
+      });
       return;
     }
 
@@ -174,6 +185,12 @@ export default function ProfileSettingsScreen() {
       if (error) throw error;
       
       await signOut();
+      
+      // Navigate to deleted screen
+      router.replace({
+        pathname: '/deleted-account' as any,
+        params: { variant: isAppleUser ? 'apple' : 'email' }
+      });
     } catch {
       setErrorMessage("Failed to delete account. Please try again or contact support.");
       setTimeout(() => setErrorMessage(""), 3000);

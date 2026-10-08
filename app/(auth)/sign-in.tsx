@@ -73,7 +73,7 @@ export default function SignInScreen() {
   const viewabilityConfigValue = viewabilityConfig.current;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="sign-in-screen">
       {/* Logo */}
       <View style={styles.logoRow}>
         <Ionicons name="construct" size={22} color={colors.primary} />

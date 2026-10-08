@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as WebBrowser from "expo-web-browser";
 import * as SplashScreen from "expo-splash-screen";
@@ -10,6 +10,7 @@ import {
   Nunito_800ExtraBold,
   Nunito_900Black,
 } from "@expo-google-fonts/nunito";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/lib/store";
 
@@ -21,6 +22,9 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const setSession = useAuthStore((s) => s.setSession);
+  const session = useAuthStore((s) => s.session);
+  const router = useRouter();
+  const segments = useSegments();
 
   const [fontsLoaded, fontError] = useFonts({
     Nunito_600SemiBold,
@@ -49,6 +53,34 @@ export default function RootLayout() {
 
     return () => subscription.unsubscribe();
   }, [setSession]);
+
+  // Guard: redirect to root when session becomes null on protected routes
+  useEffect(() => {
+    const checkSessionGuard = async () => {
+      if (!session && segments.length > 0) {
+        const firstSegment = segments[0];
+        
+        // Protected routes: (tabs) and profile-settings
+        const isProtectedRoute = firstSegment === '(tabs)' || segments.join('/').includes('profile-settings');
+        
+        if (isProtectedRoute) {
+          // In mock mode, check if this is an intentional sign-out
+          if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+            const mockSignedOut = await AsyncStorage.getItem("@visionbuild:mock_signed_out");
+            if (mockSignedOut === "true") {
+              // Intentional sign-out, redirect to root
+              router.replace("/");
+            }
+          } else {
+            // Real mode: always redirect to root when session is null
+            router.replace("/");
+          }
+        }
+      }
+    };
+    
+    checkSessionGuard();
+  }, [session, segments, router]);
 
   useEffect(() => {
     if (fontsLoaded || fontError) {

@@ -15,7 +15,7 @@ export default function DeletedAccountView({
   onDone,
 }: DeletedAccountViewProps) {
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID="deleted-account-view">
       <View style={styles.card}>
         <Text style={styles.title}>Your account has been deleted</Text>
         <Text style={styles.body}>
@@ -33,7 +33,7 @@ export default function DeletedAccountView({
               onPress={onDone}
               variant="primary"
               fullWidth
-              testID="delete-done-button"
+              testID="deleted-account-done"
             />
           </View>
         )}

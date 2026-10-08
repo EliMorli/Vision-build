@@ -4,6 +4,9 @@
 -- No direct RLS - Explore must use the RPC only
 -- ============================================================
 
+-- Drop the old policy if it exists (cleanup from earlier version)
+drop policy if exists "Authenticated users can view public projects" on public.projects;
+
 -- ─── RPC Function: Fetch Public Designs Excluding Blocks ───
 
 create or replace function public.fetch_public_designs()
