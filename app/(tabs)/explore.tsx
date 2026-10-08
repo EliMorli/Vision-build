@@ -24,10 +24,10 @@ export default function ExploreScreen() {
   const [reportingProjectId, setReportingProjectId] = useState<string>("");
   
   // Initialize blocked users from localStorage (for mock mode)
-  const getInitialBlockedUsers = () => {
+  const getInitialBlockedUsers = (): Set<string> => {
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
       const blocks = JSON.parse(localStorage.getItem("@visionbuild:blocks") || "[]");
-      return new Set(blocks.map((b: any) => b.blocked_id));
+      return new Set<string>(blocks.map((b: any) => b.blocked_id));
     }
     return new Set<string>();
   };
