@@ -16,7 +16,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore, useAuthStore } from "@/lib/store";
-import { Button, ReportModal, IsoRoom, PrivateImage } from "@/components";
+import { Button, IsoRoom, PrivateImage } from "@/components";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 import { supabase } from "@/lib/supabase";
 
@@ -34,8 +34,6 @@ export default function ResultScreen() {
   const reduceMotion = useReducedMotion();
   const [showCompare, setShowCompare] = useState(false);
   const [compareUrl, setCompareUrl] = useState("");
-  const [reportModalVisible, setReportModalVisible] = useState(false);
-  const [reportingImageId, setReportingImageId] = useState<string>("");
   const [showXPBanner, setShowXPBanner] = useState(true);
   const [xpBannerScale] = useState(new Animated.Value(reduceMotion ? 1 : 0.9));
   const [isOnWaitlist, setIsOnWaitlist] = useState(false);
