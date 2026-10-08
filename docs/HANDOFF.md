@@ -195,6 +195,94 @@ The owner will plug in real keys later. Focus on:
 
 ---
 
+## ✅ TEST INFRASTRUCTURE COMPLETE (October 8, 2026)
+
+### Database Tests
+**Status**: ✅ COMPLETE and PASSING  
+- Created `scripts/db/shim.sql` - Minimal auth/storage schema for plain PostgreSQL
+- Created `scripts/db/run-tests.sh` - Full database test runner
+- Created `scripts/db/post-migration-grants.sql` - Service role permissions
+- Added `npm run db:test` command
+- **Results**: 2/2 tests passing
+  - `test-deletion-security.sql` - ✅ All 6 tests pass
+  - `test-visibility-privacy.sql` - ✅ All 3 tests pass
+
+### Function Tests
+**Status**: ✅ COMPLETE and PASSING  
+- Created `supabase/functions/deno.json` - Deno configuration
+- Created `scripts/run-function-tests.sh` - Function test runner
+- Added `supabase/functions/confirm-account-deletion/index_test.ts` - Email masking tests
+- Added `npm run fn:test` command
+- **Results**: All functions typecheck, 3/3 unit tests passing
+
+### CI/CD Pipeline
+**Status**: ✅ COMPLETE and GREEN  
+- Created `.github/workflows/ci.yml` - Full CI pipeline
+- Runs on all PRs and pushes to main/develop/cursor/** branches
+- Tests run in parallel with PostgreSQL service container
+- **All checks passing**:
+  - ✅ Lint (0 errors, 47 warnings)
+  - ✅ TypeScript check
+  - ✅ Zod/Database models validation
+  - ✅ Database tests (2/2 passing)
+  - ✅ Function tests (3/3 passing)
+
+### Bugs Fixed
+
+1. **Schema Mismatch in set-project-visibility**
+   - Function used `main_image`/`design_image` but schema has `original_image_url`/`selected_generation_url`
+   - Fixed in commit `b5863a8`
+   - Privacy filter now correctly skips original images
+
+2. **Type Narrowing in Functions**
+   - `verifyAuth()` and `verifyProjectOwnership()` return `T | Response`
+   - TypeScript couldn't narrow types without explicit checks
+   - Fixed in commit `a3022ca`
+
+3. **Rate Limit Function Call**
+   - `assistant-chat` called `checkRateLimit()` with 4 args but only takes 3
+   - Fixed in commit `a3022ca`
+
+4. **TypeScript Errors**
+   - `profile.tsx`: Changed `design_image` → `selected_generation_url`
+   - `confirm.tsx`: Fixed variable shadowing and null type issues
+   - `privacy.tsx`, `terms.tsx`: Fixed color.text → color.textPrimary
+   - `final-retake.js`: Fixed document reference in eval
+   - Fixed in commits `56720c5`
+
+5. **React Hooks Lint Error**
+   - `delete-account/confirm.tsx` called setState synchronously in useEffect
+   - Restructured to async validation inside effect with cancellation
+   - Fixed in commit `2935257`
+
+### Commits in This Pass
+1. `b5863a8` - fix: correct column names in set-project-visibility and tests
+2. `a3022ca` - fix: resolve TypeScript errors in functions and add tests
+3. `56720c5` - feat: add CI workflow and fix TypeScript errors
+4. `2935257` - fix: resolve lint error in confirm page
+5. `d82a6f3` - fix: use deno from PATH in CI
+6. `c18b228` - fix: remove incompatible Deno lockfile
+7. `75da611` - fix: remove deno.lock from git tracking
+
+### Test Summary
+```
+Database Tests: 2 passed, 2 total
+Function Tests: 3 passed, 3 total (all functions typecheck)
+CI Pipeline: ✅ GREEN on PR #2
+```
+
+### Command Summary
+All these commands now work and pass:
+```bash
+npm run lint          # 0 errors, 47 warnings
+npx tsc --noEmit      # 0 errors
+npm run check:models  # All models valid
+npm run db:test       # 2/2 passing
+npm run fn:test       # 3/3 passing
+```
+
+---
+
 ## 📝 Notes
 
 - All code changes follow existing patterns in the codebase
@@ -204,5 +292,6 @@ The owner will plug in real keys later. Focus on:
 - Legal routes are ready (DRAFT disclaimer included)
 - Camera route exists and looks complete
 - uploadAndAnalyze() function is well-structured
+- **Tests are now running in CI and all passing**
 
 The main gap is **wiring** - connecting existing pieces together and adding mock mode for local testing.
