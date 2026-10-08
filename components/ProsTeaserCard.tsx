@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,11 +14,7 @@ export function ProsTeaserCard() {
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
 
-  useEffect(() => {
-    checkWaitlistStatus();
-  }, []);
-
-  const checkWaitlistStatus = async () => {
+  const checkWaitlistStatus = useCallback(async () => {
     const userId = useAuthStore.getState().session?.user?.id;
     
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
@@ -47,7 +43,12 @@ export function ProsTeaserCard() {
     } finally {
       setChecking(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void checkWaitlistStatus();
+  }, [checkWaitlistStatus]);
 
   const handleJoinWaitlist = async () => {
     if (isOnWaitlist) return;

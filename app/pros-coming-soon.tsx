@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -30,11 +30,7 @@ export default function ProsComingSoonScreen() {
   const project = projects.find((p) => p.id === projectId);
   const designUrl = project?.selected_generation_url || project?.generated_image_urls?.[0];
 
-  useEffect(() => {
-    checkWaitlistStatus();
-  }, [projectId]);
-
-  const checkWaitlistStatus = async () => {
+  const checkWaitlistStatus = useCallback(async () => {
     const userId = useAuthStore.getState().session?.user?.id;
     
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
@@ -51,8 +47,8 @@ export default function ProsComingSoonScreen() {
     }
 
     try {
-      const query = supabase
-        .from("pro_waitlist") as any
+      const query = (supabase
+        .from("pro_waitlist") as any)
         .select("id")
         .eq("user_id", userId);
       
@@ -70,10 +66,15 @@ export default function ProsComingSoonScreen() {
     } finally {
       setChecking(false);
     }
-  };
+  }, [projectId]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void checkWaitlistStatus();
+  }, [checkWaitlistStatus]);
 
   const handleNotifyMe = async () => {
-    if (isOnWaitlist || !projectId) return;
+    if (isOnWaitlist) return;
 
     setLoading(true);
 
@@ -83,7 +84,8 @@ export default function ProsComingSoonScreen() {
 
       if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
         await new Promise((resolve) => setTimeout(resolve, 500));
-        localStorage.setItem(`@visionbuild:waitlist:${projectId}`, "true");
+        const key = projectId ? `@visionbuild:waitlist:${projectId}` : "@visionbuild:waitlist:general";
+        localStorage.setItem(key, "true");
         setIsOnWaitlist(true);
         setLoading(false);
         return;
@@ -98,7 +100,7 @@ export default function ProsComingSoonScreen() {
         .from("pro_waitlist") as any)
         .insert({
           user_id: userId,
-          project_id: projectId,
+          project_id: projectId || null,
           email,
         });
 

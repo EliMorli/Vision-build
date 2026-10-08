@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -33,16 +33,7 @@ export default function ProfileSettingsScreen() {
   const [prosWaitlist, setProsWaitlist] = useState(false);
   const [checkingWaitlist, setCheckingWaitlist] = useState(true);
 
-  useEffect(() => {
-    const load = async () => {
-      await loadPrivacySettings();
-      await loadSettings();
-      await checkProsWaitlist();
-    };
-    load();
-  }, [loadPrivacySettings, loadSettings]);
-
-  const checkProsWaitlist = async () => {
+  const checkProsWaitlist = useCallback(async () => {
     const userId = useAuthStore.getState().session?.user?.id;
     
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
@@ -71,7 +62,16 @@ export default function ProfileSettingsScreen() {
     } finally {
       setCheckingWaitlist(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const load = async () => {
+      await loadPrivacySettings();
+      await loadSettings();
+      await checkProsWaitlist();
+    };
+    load();
+  }, [loadPrivacySettings, loadSettings, checkProsWaitlist]);
 
   const handleProsWaitlist = async (enabled: boolean) => {
     const userId = useAuthStore.getState().session?.user?.id;
