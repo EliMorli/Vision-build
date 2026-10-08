@@ -28,10 +28,11 @@ export default function ProfileScreen() {
   const router = useRouter();
   const profile = useAuthStore((s) => s.profile);
   const session = useAuthStore((s) => s.session);
+  const fetchProfile = useAuthStore((s) => s.fetchProfile);
   const signOut = useAuthStore((s) => s.signOut);
   const projects = useProjectStore((s) => s.projects);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const authLoading = useAuthStore((s) => s.loading);
+  const authError = useAuthStore((s) => s.error);
   const networkStatus = useNetworkStatus();
   const isOffline = !networkStatus.isConnected;
 
@@ -111,7 +112,7 @@ export default function ProfileScreen() {
     { icon: "help-circle-outline" as const, label: "Help & Contact", badge: null, route: "/help-contact" },
   ];
 
-  if (loading) {
+  if (authLoading && !profile) {
     return (
       <SafeAreaView style={styles.container}>
         {isOffline && <OfflineBanner testID="offline-banner" />}
@@ -120,13 +121,13 @@ export default function ProfileScreen() {
     );
   }
 
-  if (error) {
+  if (authError && !profile) {
     return (
       <SafeAreaView style={styles.container}>
         {isOffline && <OfflineBanner testID="offline-banner" />}
         <ErrorState
           message="Failed to load profile"
-          onRetry={() => setError(null)}
+          onRetry={() => fetchProfile()}
           testID="profile-error"
         />
       </SafeAreaView>
