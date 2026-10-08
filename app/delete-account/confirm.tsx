@@ -86,20 +86,6 @@ export default function DeleteAccountConfirm() {
   const executeDelete = async () => {
     setState("deleting");
 
-    // Check for mock failure flag (E2E testing only)
-    if (Platform.OS === "web" && typeof localStorage !== "undefined") {
-      const mockFailure = localStorage.getItem("@visionbuild:mock_deletion_failure");
-      if (mockFailure === "true") {
-        console.log("Mock deletion failure triggered");
-        setState("error");
-        setData({
-          error: "We couldn't finish deleting your account. Some of your data may already be removed. Please try again.",
-          canRetry: true,
-        });
-        return;
-      }
-    }
-
     try {
       let appleAuthCode: string | undefined;
 
@@ -276,6 +262,8 @@ export default function DeleteAccountConfirm() {
         <Pressable
           style={styles.buttonDanger}
           onPress={executeDelete}
+          testID="delete-confirm-button"
+          accessibilityRole="button"
         >
           <Text style={styles.buttonText}>Delete my account</Text>
         </Pressable>

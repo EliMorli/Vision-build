@@ -12,17 +12,29 @@ test.describe("Account Deletion Retry Flow", () => {
     const testToken = "test-token-for-e2e";
     let postCallCount = 0;
 
-    // Intercept confirm-account-deletion function calls
-    // Match both with and without query params
-    await page.route(/.*\/functions\/v1\/confirm-account-deletion.*/, async (route) => {
+    // Intercept confirm-account-deletion function calls with CORS headers
+    await page.route('**/functions/v1/confirm-account-deletion**', async (route) => {
       const request = route.request();
       const method = request.method();
 
-      if (method === "GET") {
+      const corsHeaders = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-client-info',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      };
+
+      if (method === "OPTIONS") {
+        // Handle preflight
+        await route.fulfill({
+          status: 204,
+          headers: corsHeaders,
+        });
+      } else if (method === "GET") {
         // Return valid token on GET (validation)
         await route.fulfill({
           status: 200,
           contentType: "application/json",
+          headers: corsHeaders,
           body: JSON.stringify({
             valid: true,
             email: "test@example.com",
@@ -36,6 +48,7 @@ test.describe("Account Deletion Retry Flow", () => {
           await route.fulfill({
             status: 200,
             contentType: "application/json",
+            headers: corsHeaders,
             body: JSON.stringify({
               success: false,
               canRetry: true,
@@ -47,6 +60,7 @@ test.describe("Account Deletion Retry Flow", () => {
           await route.fulfill({
             status: 200,
             contentType: "application/json",
+            headers: corsHeaders,
             body: JSON.stringify({
               success: true,
             }),
@@ -61,14 +75,16 @@ test.describe("Account Deletion Retry Flow", () => {
     await page.goto(`${BASE_URL}/delete-account/confirm?token=${testToken}`);
     await page.waitForLoadState("networkidle");
 
-    // Wait for the page to load and show the confirm button (validates that our mock GET worked)
-    const confirmButton = page.getByRole("button", { name: /confirm deletion/i });
-    await expect(confirmButton).toBeVisible({ timeout: 10000 });
-    
-    // Click confirm button to trigger deletion
-    await confirmButton.click();
+    // Assert the mocked GET worked by checking email and heading are visible
+    await expect(page.getByText("test@example.com")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Delete your account?")).toBeVisible();
 
-    // Wait for error state to appear
+    // Wait for and click the delete button
+    const deleteButton = page.getByTestId("delete-confirm-button");
+    await expect(deleteButton).toBeVisible({ timeout: 10000 });
+    await deleteButton.click();
+
+    // Wait for error state to appear with exact text
     await expect(page.getByText("We couldn't finish deleting your account. Some of your data may already be removed. Please try again.")).toBeVisible({ timeout: 10000 });
 
     // Verify Try again button is visible
@@ -79,31 +95,27 @@ test.describe("Account Deletion Retry Flow", () => {
     const supportLink = page.getByText("Contact support");
     await expect(supportLink).toBeVisible();
 
-    // Take screenshot of failure state
+    // Take screenshot of failure state with device scale factor
     await page.screenshot({ 
-      path: "e2e/screenshots/del-failed.png",
-      fullPage: false 
+      path: "e2e/screens/del-failed.png",
+      fullPage: false,
+      scale: "device"
     });
 
-    console.log("✅ Screenshot saved: e2e/screenshots/del-failed.png");
-
-    // Clear the mock failure flag
-    await page.addInitScript(() => {
-      localStorage.removeItem("@visionbuild:mock_deletion_failure");
-    });
-
-    // Click Try again button
+    // Click Try again
     await retryButton.click();
 
-    // Wait for success state
-    await expect(page.getByText(/your account has been deleted/i)).toBeVisible({ timeout: 10000 });
+    // Wait for success message
+    await expect(page.getByText("Your account has been deleted")).toBeVisible({ timeout: 10000 });
+
+    // Verify exactly 2 POSTs happened
+    expect(postCallCount).toBe(2);
 
     // Take screenshot of success state
-    await page.screenshot({ 
-      path: "e2e/screenshots/del-retry-success.png",
-      fullPage: false 
+    await page.screenshot({
+      path: "e2e/screens/del-retry-success.png",
+      fullPage: false,
+      scale: "device"
     });
-
-    console.log("✅ Screenshot saved: e2e/screenshots/del-retry-success.png");
   });
 });
