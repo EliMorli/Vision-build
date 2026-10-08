@@ -57,6 +57,8 @@ export default function RootLayout() {
         <Stack.Screen name="generating/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="result/[id]" options={{ title: "Your Designs" }} />
         <Stack.Screen name="handoff/[id]" options={{ title: "Get Estimates" }} />
+        <Stack.Screen name="delete-account/index" options={{ title: "Delete Account" }} />
+        <Stack.Screen name="delete-account/confirm" options={{ headerShown: false }} />
       </Stack>
     </>
   );
