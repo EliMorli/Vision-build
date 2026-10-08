@@ -87,3 +87,28 @@ jobs:
       
       - name: Run function tests
         run: npm run fn:test
+      
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+      
+      - name: Run E2E Web Tests
+        run: npm run e2e:web
+        env:
+          EXPO_PUBLIC_DEV_MOCK_SESSION: "true"
+          CI: "true"
+      
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+      
+      - name: Upload E2E Screenshots
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-screenshots
+          path: e2e/screens/
+          retention-days: 30

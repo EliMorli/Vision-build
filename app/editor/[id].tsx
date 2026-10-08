@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { STYLE_OPTIONS, StyleOption } from "@/lib/types";
 import { useProjectStore } from "@/lib/store";
-import { Button, ProgressBar, Banner, IsoRoom } from "@/components";
+import { Button, Banner, IsoRoom } from "@/components";
 
 // Threshold for showing "long-running" UI: Go to Home option and Home Rendering card
 const LONG_RUNNING_THRESHOLD_MS = 45000; // 45 seconds
@@ -22,39 +22,14 @@ export default function EditorScreen() {
   const router = useRouter();
   const [selectedStyle, setSelectedStyle] = useState<StyleOption | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [countdown, setCountdown] = useState(20); // Estimated time in seconds
-  const [showLongRunning, setShowLongRunning] = useState(false);
   
   const { 
     currentProject, 
     loading, 
-    progress, 
-    progressMessage, 
     generateDesigns,
-    generatingStartTime,
   } = useProjectStore();
 
   const analysis = currentProject?.room_analysis;
-
-  // Countdown timer and long-running detection
-  useEffect(() => {
-    if (!loading || !generatingStartTime) {
-      return; // Don't set state in effect body
-    }
-
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - generatingStartTime;
-      const remaining = Math.max(0, Math.ceil((20000 - elapsed) / 1000));
-      setCountdown(remaining);
-
-      // Check if we've crossed the long-running threshold
-      if (elapsed > LONG_RUNNING_THRESHOLD_MS) {
-        setShowLongRunning(true);
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [loading, generatingStartTime]);
 
   const handleGenerate = async () => {
     if (!selectedStyle || !id || isGenerating) return;

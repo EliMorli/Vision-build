@@ -11,7 +11,8 @@
     "supabase:types": "npx supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > lib/database.types.ts",
     "check:models": "node scripts/check-zdr-models.mjs",
     "db:test": "bash scripts/db/run-tests.sh",
-    "fn:test": "bash scripts/run-function-tests.sh"
+    "fn:test": "bash scripts/run-function-tests.sh",
+    "e2e:web": "playwright test"
   },
   "dependencies": {
     "@expo/vector-icons": "~14.0.4",
@@ -50,6 +51,7 @@
   "devDependencies": {
     "@babel/core": "^7.25.0",
     "@eslint/eslintrc": "^3.3.7",
+    "@playwright/test": "^1.64.0",
     "@types/react": "~18.3.0",
     "eslint": "^9.39.5",
     "eslint-config-expo": "~8.0.1",
