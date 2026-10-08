@@ -67,7 +67,7 @@ export default function SignInScreen() {
       </View>
 
       {/* Onboarding carousel */}
-      <View style={{ flex: 1, marginTop: spacing.lg }}>
+      <View style={{ marginTop: spacing.lg, marginBottom: spacing.md }}>
         <FlatList
           data={PAGES}
           horizontal
@@ -76,6 +76,7 @@ export default function SignInScreen() {
           onViewableItemsChanged={onViewableItemsChanged.current}
           viewabilityConfig={viewabilityConfig.current}
           keyExtractor={(_, i) => String(i)}
+          style={{ height: 320 }}
           renderItem={({ item }) => (
             <View style={styles.page}>
               <View style={styles.iconCircle}>
@@ -127,9 +128,13 @@ export default function SignInScreen() {
           icon="logo-apple"
           onPress={() => signInWithOAuth("apple")}
           loading={loading}
-          variant="outline"
+          variant="primary"
           disabled={!ageConfirmed}
-          style={{ backgroundColor: ageConfirmed ? "#000" : "#ccc" }}
+          style={[
+            styles.appleButton,
+            !ageConfirmed && styles.appleButtonDisabled
+          ]}
+          labelStyle={{ color: "#fff" }}
         />
         {error && <Text style={styles.errorText}>{error}</Text>}
       </View>
@@ -226,6 +231,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   buttons: { paddingHorizontal: spacing.xl, gap: spacing.sm },
+  appleButton: {
+    backgroundColor: "#000",
+  },
+  appleButtonDisabled: {
+    backgroundColor: "#ccc",
+    opacity: 0.6,
+  },
   errorText: {
     color: colors.error,
     fontSize: 13,
