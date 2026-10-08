@@ -107,7 +107,7 @@ async function generateWithReplicate(
 }
 
 /**
- * Generate designs using OpenRouter image generation
+ * Generate designs using OpenRouter image generation with Nano Banana 2
  */
 async function generateWithOpenRouter(
   originalImageUrl: string,
@@ -122,9 +122,9 @@ async function generateWithOpenRouter(
   const AI_BASE_URL = Deno.env.get("AI_BASE_URL") || "https://openrouter.ai/api/v1";
   const generatedUrls: string[] = [];
 
-  // Use render-specific models (Nano Banana 2 on OpenRouter's ZDR list)
-  // Preview: 1 quick image for iteration with Vi (google/gemini-3.1-flash-image)
-  // Final: 4 images for full set (google/gemini-3.1-flash-image)
+  // Use Nano Banana 2 (google/gemini-3.1-flash-image) - newest image generation model on OpenRouter
+  // Preview: 1 quick image for iteration with Vi
+  // Final: 4 images for full set
   const model = isPreview
     ? (Deno.env.get("AI_MODEL_RENDER_PREVIEW") || "google/gemini-3.1-flash-image")
     : (Deno.env.get("AI_MODEL_RENDER_FINAL") || "google/gemini-3.1-flash-image");
@@ -133,8 +133,7 @@ async function generateWithOpenRouter(
 
   for (let i = 0; i < count; i++) {
     try {
-      // Call OpenRouter's image generation endpoint
-      // Note: This uses the chat completions API with image output
+      // Call OpenRouter's image generation endpoint with strict provider routing
       const response = await fetch(`${AI_BASE_URL}/chat/completions`, {
         method: "POST",
         headers: {
@@ -162,31 +161,51 @@ async function generateWithOpenRouter(
           ],
           max_tokens: 1000,
           provider: {
-            data_collection: "deny",
-            zdr: true,
+            only: ["google-vertex"],
             allow_fallbacks: false,
+            data_collection: "deny",
           },
         }),
       });
 
       if (!response.ok) {
-        console.error(`OpenRouter request failed: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`OpenRouter request failed: ${response.status} - ${errorText}`);
         continue;
       }
 
       const data = await response.json();
       
-      // For now, OpenRouter with vision models returns text descriptions
-      // In a production implementation, you would use a model that supports image output
-      // or use a separate image generation API
-      // As a fallback, generate a placeholder
-      const placeholderUrl = `https://placehold.co/1024x1024/1A73E8/FFFFFF?text=Design+${i + 1}`;
+      // Extract image from response (Nano Banana returns base64 data URLs in message.images)
+      const message = data.choices?.[0]?.message;
+      const images = message?.images;
       
-      // Store the placeholder in private storage
-      const storagePath = `${userId}/${projectId}/design-${i}.png`;
-      const path = await downloadAndStoreImage(placeholderUrl, storagePath, supabase);
-      if (path) {
-        generatedUrls.push(path);
+      if (images && images.length > 0) {
+        // Images are returned as base64 data URLs
+        const imageDataUrl = images[0];
+        
+        // Parse data URL and extract base64 content
+        const matches = imageDataUrl.match(/^data:image\/(\w+);base64,(.+)$/);
+        if (matches) {
+          const base64Data = matches[2];
+          const imageBuffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+          const imageBlob = new Blob([imageBuffer], { type: 'image/png' });
+          
+          // Upload to storage
+          const storagePath = `${userId}/${projectId}/design-${i}.png`;
+          await supabase.storage
+            .from("room-photos")
+            .upload(storagePath, imageBlob, {
+              contentType: "image/png",
+              upsert: true,
+            });
+          
+          generatedUrls.push(storagePath);
+        } else {
+          console.error(`Invalid image data URL format for design ${i}`);
+        }
+      } else {
+        console.error(`No images returned in OpenRouter response for design ${i}`);
       }
     } catch (error) {
       console.error(`OpenRouter generation ${i} failed:`, error);
@@ -286,7 +305,7 @@ Professional interior design rendering, photorealistic, well-lit, high detail.`;
     const appEnvRaw = Deno.env.get("APP_ENV") || "";
     const appEnv = appEnvRaw.toLowerCase();
     const isProduction = appEnv !== "development" && appEnv !== "staging";
-    const renderProvider = (Deno.env.get("RENDER_PROVIDER") || "replicate").toLowerCase();
+    const renderProvider = (Deno.env.get("RENDER_PROVIDER") || "openrouter").toLowerCase();
     
     // Enforce production restrictions
     if (isProduction && renderProvider === "replicate") {

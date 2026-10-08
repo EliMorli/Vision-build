@@ -70,6 +70,10 @@ function getAIConfig() {
   }
   
   // Model defaults - OpenRouter model IDs (all on ZDR endpoint list)
+  // IMPORTANT: These defaults MUST match lib/ai-models.json
+  // The client consent screen derives provider names from this config.
+  // scripts/check-zdr-models.mjs validates they stay in sync.
+  
   // Vision: Need image understanding for room analysis
   const modelVision = Deno.env.get("AI_MODEL_VISION") || "google/gemini-2.5-pro";
   // Text: High-quality text generation for contractor emails

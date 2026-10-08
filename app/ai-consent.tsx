@@ -1,13 +1,15 @@
-import { useState } from "react";
-import { View, Text, StyleSheet, SafeAreaView, ScrollView } from "react-native";
+import { useState, useRef, useCallback } from "react";
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, Pressable, NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { LinearGradient } from "expo-linear-gradient";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { Button } from "@/components";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore, useProjectStore } from "@/lib/store";
-import { AI_CONSENT_VERSION } from "@/lib/config";
+import { AI_CONSENT_VERSION, CONSENT_CHANGE_NOTE } from "@/lib/config";
+import { getProviderDisclosureText } from "@/lib/ai-models";
 
 const AI_CONSENT_KEY = "@visionbuild:ai_consent";
 const AI_CONSENT_VERSION_KEY = "@visionbuild:ai_consent_version";
@@ -15,6 +17,8 @@ const AI_CONSENT_VERSION_KEY = "@visionbuild:ai_consent_version";
 export default function AIConsentScreen() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [showFade, setShowFade] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
   const userId = useAuthStore((s) => s.session?.user?.id);
   const pendingConsent = useProjectStore((s) => s.pendingConsent);
   const clearPendingConsent = useProjectStore((s) => s.clearPendingConsent);
@@ -26,6 +30,13 @@ export default function AIConsentScreen() {
   const isReconsent = isOutdated || isNever;
   
   console.log("[AIConsentScreen] pendingConsent:", pendingConsent, "reason:", reason, "isReconsent:", isReconsent, "isOutdated:", isOutdated);
+
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const isScrollable = contentSize.height > layoutMeasurement.height;
+    const isAtBottom = contentOffset.y + layoutMeasurement.height >= contentSize.height - 10;
+    setShowFade(isScrollable && !isAtBottom);
+  }, []);
 
   const handleAccept = async () => {
     setIsLoading(true);
@@ -125,53 +136,67 @@ export default function AIConsentScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.content}>
-          {/* Icon */}
-          <View style={styles.iconCircle}>
-            <Ionicons name="sparkles" size={56} color={colors.primary} />
+      <View style={styles.scrollContainer}>
+        <ScrollView 
+          ref={scrollViewRef}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          bounces={true}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+        >
+          <View style={styles.content}>
+            {/* Icon - smaller in outdated state */}
+            <View style={[styles.iconCircle, isOutdated && styles.iconCircleSmall]}>
+              <Ionicons name="sparkles" size={isOutdated ? 40 : 56} color={colors.primary} />
+            </View>
+
+            {/* Title */}
+            <Text style={styles.title}>AI-Powered Designs</Text>
+
+            {/* Re-consent message (if applicable) */}
+            {isReconsent && isOutdated && (
+              <View style={styles.updateNotice}>
+                <Ionicons name="information-circle" size={20} color={colors.primary} />
+                <View style={styles.updateTextContainer}>
+                  <Text style={[styles.updateText, styles.updateTextBold]}>
+                    We've updated how your photos are handled.
+                  </Text>
+                  <Text style={styles.updateText}>
+                    {CONSENT_CHANGE_NOTE}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* Provider disclosure - moved up, above description */}
+            <View style={styles.infoBox} testID="consent-provider-disclosure">
+              <View style={styles.infoRow}>
+                <Ionicons name="lock-closed" size={20} color={colors.primary} />
+                <Text style={styles.infoText}>{getProviderDisclosureText()}</Text>
+              </View>
+            </View>
+
+            {/* Description - tightened spacing */}
+            <Text style={styles.description}>
+              They don't keep or train on your data, and only use it to create your designs.
+            </Text>
+            
+            <Text style={styles.description}>
+              Your designs stay in your projects until you delete them.
+            </Text>
           </View>
-
-          {/* Title */}
-          <Text style={styles.title}>AI-Powered Designs</Text>
-
-          {/* Re-consent message (if applicable) */}
-          {isReconsent && isOutdated && (
-            <View style={styles.updateNotice}>
-              <Ionicons name="information-circle" size={20} color={colors.primary} />
-              <Text style={styles.updateText}>
-                We've updated how your photos are handled. Please review before your next design.
-              </Text>
-            </View>
-          )}
-
-          {/* Description - exact copy as required */}
-          <Text style={styles.description}>
-            Your photos and chats are sent through OpenRouter only to AI providers that don't keep
-            or train on your data, and only to create your designs.
-          </Text>
-          
-          <Text style={styles.description}>
-            Your designs stay in your projects until you delete them.
-          </Text>
-
-          {/* Additional info */}
-          <View style={styles.infoBox}>
-            <View style={styles.infoRow}>
-              <Ionicons name="lock-closed" size={20} color={colors.primary} />
-              <Text style={styles.infoText}>Data encrypted in transit</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Ionicons name="shield-checkmark" size={20} color={colors.primary} />
-              <Text style={styles.infoText}>Privacy-first AI providers only</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Ionicons name="trash" size={20} color={colors.primary} />
-              <Text style={styles.infoText}>No data retention or training</Text>
-            </View>
-          </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+        
+        {/* Gradient fade - only shown when content overflows */}
+        {showFade && (
+          <LinearGradient
+            colors={["rgba(255,255,255,0)", "rgba(255,255,255,1)"]}
+            style={styles.fadeGradient}
+            pointerEvents="none"
+          />
+        )}
+      </View>
 
       {/* Actions */}
       <View style={styles.actions}>
@@ -189,7 +214,10 @@ export default function AIConsentScreen() {
           style={{ marginTop: spacing.sm }}
         />
         <Text style={styles.footerText}>
-          By continuing, you consent to this use of AI services.
+          By continuing, you agree to this use of AI.{" "}
+          <Pressable onPress={() => router.push("/privacy")} accessibilityRole="link">
+            <Text style={styles.privacyLink}>Privacy Policy</Text>
+          </Pressable>
         </Text>
       </View>
     </SafeAreaView>
@@ -201,15 +229,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
   },
+  scrollContainer: {
+    flex: 1,
+    position: "relative",
+  },
   scrollContent: {
     flexGrow: 1,
+    paddingBottom: spacing.md,
   },
   content: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xl,
+    paddingTop: spacing.lg,
   },
   iconCircle: {
     width: 140,
@@ -218,7 +251,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary + "12",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
+  },
+  iconCircleSmall: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: spacing.md,
   },
   title: {
     ...fonts.heading,
@@ -229,9 +268,9 @@ const styles = StyleSheet.create({
   description: {
     ...fonts.body,
     textAlign: "center",
-    lineHeight: 24,
+    lineHeight: 22,
     color: colors.textSecondary,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.md,
   },
   updateNotice: {
     flexDirection: "row",
@@ -239,36 +278,51 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary + "12",
     borderRadius: radius.md,
     padding: spacing.md,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
     gap: spacing.sm,
+  },
+  updateTextContainer: {
+    flex: 1,
+    gap: 4,
   },
   updateText: {
     ...fonts.body,
     fontSize: 14,
     color: colors.textPrimary,
-    flex: 1,
+  },
+  updateTextBold: {
+    fontWeight: "600",
   },
   infoBox: {
     width: "100%",
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     padding: spacing.lg,
-    gap: spacing.md,
+    marginBottom: spacing.md,
   },
   infoRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: spacing.sm,
   },
   infoText: {
     ...fonts.body,
     fontSize: 15,
     flex: 1,
+    lineHeight: 22,
+  },
+  fadeGradient: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 40,
   },
   actions: {
     padding: spacing.lg,
     borderTopWidth: 1,
     borderTopColor: colors.border,
+    backgroundColor: "#fff",
   },
   footerText: {
     ...fonts.regular,
@@ -276,5 +330,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: spacing.sm,
     color: colors.textSecondary,
+  },
+  privacyLink: {
+    color: colors.primary,
+    textDecorationLine: "underline",
   },
 });

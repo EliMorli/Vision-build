@@ -11,7 +11,7 @@
     "doctor": "tsx scripts/doctor.ts",
     "check:hardcoded": "node scripts/check-hardcoded-values.js",
     "supabase:types": "npx supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > lib/database.types.ts",
-    "check:models": "node scripts/check-zdr-models.mjs",
+    "check:models": "node scripts/check-zdr-models.mjs && node scripts/validate-ai-models.mjs",
     "db:test": "bash scripts/db/run-tests.sh",
     "fn:test": "bash scripts/run-function-tests.sh",
     "e2e:web": "playwright test"
@@ -23,6 +23,7 @@
     "@supabase/supabase-js": "^2.45.0",
     "eslint-config-expo": "~8.0.1",
     "expo": "~52.0.49",
+    "expo-apple-authentication": "~7.0.0",
     "expo-asset": "~11.0.5",
     "expo-auth-session": "~6.0.0",
     "expo-camera": "~16.0.0",
