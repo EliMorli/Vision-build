@@ -26,12 +26,18 @@ export default function CameraScreen() {
     useProjectStore();
   const session = useAuthStore((s) => s.session);
 
-  const checkAIConsent = async (): Promise<boolean> => {
+  const checkAIConsent = async (): Promise<{ hasConsent: boolean; reason?: "never" | "outdated" }> => {
     try {
       const storedVersion = await AsyncStorage.getItem(AI_CONSENT_VERSION_KEY);
-      return storedVersion === AI_CONSENT_VERSION;
+      if (!storedVersion) {
+        return { hasConsent: false, reason: "never" };
+      }
+      if (storedVersion !== AI_CONSENT_VERSION) {
+        return { hasConsent: false, reason: "outdated" };
+      }
+      return { hasConsent: true };
     } catch {
-      return false;
+      return { hasConsent: false, reason: "never" };
     }
   };
 
@@ -76,11 +82,11 @@ export default function CameraScreen() {
     if (!imageUri || !session) return;
 
     // Check AI consent before proceeding
-    const hasConsent = await checkAIConsent();
-    if (!hasConsent) {
-      // Set up pending consent state for "never" case (first time)
+    const consentCheck = await checkAIConsent();
+    if (!consentCheck.hasConsent) {
+      // Set up pending consent state with correct reason
       useProjectStore.getState().setPendingConsent({
-        reason: "never",
+        reason: consentCheck.reason!,
         resume: {
           type: "analyze",
           imageUri,
