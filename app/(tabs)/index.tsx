@@ -13,7 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore, useAuthStore } from "@/lib/store";
 import { Project, ProjectStatus } from "@/lib/types";
-import { Button, EmptyState, IsoRoom, PrivateImage } from "@/components";
+import { Button, EmptyState, IsoRoom, PrivateImage, ProsTeaserCard } from "@/components";
 
 // Long-running threshold for showing "Rendering..." card in Home
 const LONG_RUNNING_THRESHOLD_MS = 45000; // 45 seconds
@@ -110,6 +110,19 @@ export default function DashboardScreen() {
 
   // ─── Project list ─────────────────────────────────────────
 
+  const renderHeader = () => (
+    <View style={styles.headerSection}>
+      <Button
+        label="Start a new room"
+        icon="add-circle-outline"
+        onPress={() => router.push("/(tabs)/camera")}
+        fullWidth
+      />
+      
+      <ProsTeaserCard />
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -128,6 +141,7 @@ export default function DashboardScreen() {
       <FlatList
         data={projects}
         keyExtractor={(p) => p.id}
+        ListHeaderComponent={renderHeader}
         contentContainerStyle={styles.list}
         refreshControl={
           <RefreshControl refreshing={false} onRefresh={onRefresh} tintColor={colors.primary} />
@@ -224,6 +238,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "800",
     color: colors.textPrimary,
+  },
+  headerSection: {
+    gap: spacing.md,
+    paddingTop: spacing.md,
   },
   list: { padding: spacing.md, paddingTop: 0 },
   card: {
