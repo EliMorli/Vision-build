@@ -180,8 +180,9 @@ export default function GeneratingScreen() {
             disabled={progress < 0.5}
           />
         )}
-      </View>
-    </SafeAreaView>
+        </View>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 

@@ -197,19 +197,23 @@ export default function AssistantChatScreen() {
 
         {/* Action buttons */}
         <View style={styles.actionsBar}>
-          <Button
-            label="Generate Design"
-            icon="color-palette-outline"
-            onPress={generateDesign}
-            variant="outline"
-            loading={isLoading}
-          />
-          <Button
-            label="Find Me a Pro"
-            icon="people-outline"
-            onPress={() => router.push("/handoff/placeholder")}
-            variant="secondary"
-          />
+          <View style={{ flex: 1 }}>
+            <Button
+              label="Generate Design"
+              icon="color-palette-outline"
+              onPress={generateDesign}
+              variant="outline"
+              loading={isLoading}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Button
+              label="Find Me a Pro"
+              icon="people-outline"
+              onPress={() => router.push("/handoff/placeholder")}
+              variant="secondary"
+            />
+          </View>
         </View>
 
         {/* Input */}

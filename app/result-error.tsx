@@ -7,7 +7,11 @@ export default function ResultErrorScreen() {
   const router = useRouter();
 
   const handleRetry = () => {
-    router.back();
+    if (type === "rate-limit") {
+      router.push("/(tabs)/");
+    } else {
+      router.back();
+    }
   };
 
   const getErrorContent = () => {
@@ -18,6 +22,7 @@ export default function ResultErrorScreen() {
           message:
             "You've used all your free renders for today. Your limit resets at midnight. Please check back tomorrow!",
           icon: "hourglass" as const,
+          retryLabel: "Back to Home",
         };
       case "upload":
         return {
