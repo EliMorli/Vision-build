@@ -55,6 +55,15 @@ Note: If OPS_ALERT_EMAIL or ALERT_FROM_EMAIL are unset, the retry function will 
 
 These secrets must be created in Supabase Vault for the hourly retry cron job to function. The migration reads them at runtime and calls the retry-account-deletions function.
 
+**Deletion Cron Setup Checklist**:
+1. Verify pg_cron and pg_net extensions are installed
+2. Create Vault secrets: `project_url` and `service_role_key`
+3. Run migrations to schedule the cron job
+4. Verify readiness by running: `npm run doctor` or calling `deletion_cron_ready()` via SQL
+5. Check cron job logs in `cron.job_run_details` table
+
+The `deletion_cron_ready()` function returns boolean status for all requirements (service_role only).
+
 ### Legal Routes
 - ✅ `/terms` - Renders `content/legal/terms-of-service.md` (including DRAFT line)
 - ✅ `/privacy` - Renders `content/legal/privacy-policy.md`

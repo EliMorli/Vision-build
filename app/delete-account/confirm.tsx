@@ -9,6 +9,7 @@ import * as AppleAuthentication from "expo-apple-authentication";
 import { SUPPORT_EMAIL } from "../../lib/config";
 import { colors, fonts } from "../../lib/theme";
 import { supabase } from "@/lib/supabase";
+import { APPLE_DELETION_NOTE, shouldShowAppleNote } from "../../lib/constants/deletion";
 
 type PageState = "loading" | "valid" | "error" | "deleting" | "deleted";
 
@@ -168,8 +169,13 @@ export default function DeleteAccountConfirm() {
   }
 
   const handleDone = async () => {
-    // Sign out locally
-    await supabase.auth.signOut();
+    try {
+      // Sign out locally (may fail if session already gone)
+      await supabase.auth.signOut();
+    } catch (error) {
+      // Ignore sign-out errors (account is already deleted)
+      console.log("Sign out error (expected after deletion):", error);
+    }
     // Navigate to welcome/intro screen
     router.replace("/");
   };
@@ -182,9 +188,9 @@ export default function DeleteAccountConfirm() {
           <Text style={styles.body}>
             All your data has been permanently removed. Thank you for using VisionBuild.
           </Text>
-          {data.isAppleUser && Platform.OS !== "web" && (
+          {shouldShowAppleNote(Platform.OS, data.isAppleUser || false) && (
             <Text style={styles.appleSettingsNote}>
-              We've also asked Apple to disconnect VisionBuild from your Apple ID. To check, open Settings, tap your name, then Sign-In & Security, then Sign in with Apple.
+              {APPLE_DELETION_NOTE}
             </Text>
           )}
           {Platform.OS !== "web" && (
