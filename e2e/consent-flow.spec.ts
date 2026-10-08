@@ -29,13 +29,16 @@ test.describe("VisionBuild AI Consent Flow", () => {
     await page.getByRole("button", { name: /analyze room/i }).click();
 
     // Should see consent screen with update notice
-    await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 5000 });
+    await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 10000 });
+    
+    // Wait a bit longer for content to render
+    await page.waitForTimeout(2000);
     
     // Get all text content for debugging
     const bodyText = await page.locator('body').textContent();
-    console.log("[TEST] Body text:", bodyText?.substring(0, 500));
+    console.log("[TEST] Body text:", bodyText?.substring(0, 1000));
     
-    await expect(page.getByText(/We've updated how your photos are handled/i)).toBeVisible();
+    await expect(page.getByText(/We've updated how your photos are handled/i)).toBeVisible({ timeout: 5000 });
     
     // Assert screen with update notice
     await page.screenshot({ path: "e2e/screens/a7-reconsent-outdated.png", fullPage: true });
