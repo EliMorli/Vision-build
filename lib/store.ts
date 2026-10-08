@@ -328,7 +328,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           selected_generation_url: "https://placehold.co/600x400/8BC34A/FFFFFF?text=Yard+1",
           status: "generated",
           lead_info: null,
-          is_public: true,
+          is_public: false,
           created_at: new Date(Date.now() - 14 * 86400000).toISOString(),
           updated_at: new Date(Date.now() - 5 * 86400000).toISOString(),
         },
