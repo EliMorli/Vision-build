@@ -72,6 +72,11 @@ const ENV_CHECKS: CheckResult[] = [
   },
 ];
 
+// Note: Vault secrets (project_url, service_role_key) must be created in Supabase Vault
+// for the hourly retry-account-deletions cron job. They cannot be checked from Node.js
+// because they are only accessible via SQL. Check them manually:
+//   SELECT name FROM vault.decrypted_secrets WHERE name IN ('project_url', 'service_role_key');
+
 function printCheck(check: CheckResult) {
   const icon = check.present ? "✓" : "✗";
   const status = check.present ? "SET" : "MISSING";

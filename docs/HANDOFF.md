@@ -47,7 +47,13 @@ All 6 security issues from review of commit d93632a have been fixed:
 **Client Configuration**:
 - `EXPO_PUBLIC_SUPPORT_EMAIL` - Support email address shown in app (used in Contact support links)
 
-Note: If OPS_ALERT_EMAIL or ALERT_FROM_EMAIL are unset, the retry function will log a warning and skip sending alerts instead of sending to a default address.
+Note: If OPS_ALERT_EMAIL or ALERT_FROM_EMAIL are unset, the retry function will log a warning and skip sending alerts.
+
+**Supabase Vault Secrets** (required for cron job):
+- `project_url` - Your Supabase project URL (e.g., `https://xxxxx.supabase.co`)
+- `service_role_key` - Your Supabase service role key
+
+These secrets must be created in Supabase Vault for the hourly retry cron job to function. The migration reads them at runtime and calls the retry-account-deletions function.
 
 ### Legal Routes
 - ✅ `/terms` - Renders `content/legal/terms-of-service.md` (including DRAFT line)
@@ -513,7 +519,7 @@ All AI operations (`analyze-room`, `generate-design`, `assistant-chat`) enforce 
    - Exponential backoff: 15min, 1h, 6h, 24h, then daily
    - Ops alert via Resend when attempts >= 5 OR first_failed_at > 7 days
    - Alert contains only: user ID, attempts, error code
-   - Configure `OPS_ALERT_EMAIL` (default: ops@visionbuild.app) and `RESEND_API_KEY`
+   - Configure `OPS_ALERT_EMAIL` and `RESEND_API_KEY` (no defaults)
 
 4. **Client retry UX** (`app/delete-account/confirm.tsx`):
    - Failure screen shows: "We couldn't finish deleting your account. Some of your data may already be removed. Please try again."
