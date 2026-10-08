@@ -28,17 +28,9 @@ async function main() {
   // ═══════════════════════════════════════════════════════════
   console.log("📋 Discovering all tables with user_id column...");
   
-  const { data: _userIdTables, error: _schemaError } = await supabase.rpc("exec_sql", {
-    sql: `
-      SELECT DISTINCT table_name
-      FROM information_schema.columns
-      WHERE table_schema = 'public'
-        AND column_name IN ('user_id', 'id')
-        AND table_name NOT LIKE 'pg_%'
-        AND table_name NOT LIKE 'sql_%'
-      ORDER BY table_name;
-    `
-  }).catch(() => ({ data: null, error: null }));
+  // Note: exec_sql RPC doesn't exist, so we'll use the known tables directly
+  const _userIdTables = null;
+  const _schemaError = null;
 
   // Fallback: known tables
   const knownTables = [
