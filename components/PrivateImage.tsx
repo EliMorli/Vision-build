@@ -193,14 +193,13 @@ export function PrivateImage({
         accessible={true}
         accessibilityLabel={accessibilityLabel || "Room placeholder"}
       >
-        <View testID="private-image-placeholder">
-          <IsoRoom
-            palette={palette as any}
-            size={placeholderSize}
-            accessible={false}
-            importantForAccessibility="no-hide-descendants"
-          />
-        </View>
+        <IsoRoom
+          testID="private-image-placeholder"
+          palette={palette as any}
+          size={placeholderSize}
+          accessible={false}
+          importantForAccessibility="no-hide-descendants"
+        />
       </View>
     );
   }

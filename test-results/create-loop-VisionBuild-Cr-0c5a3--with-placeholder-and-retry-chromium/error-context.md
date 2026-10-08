@@ -27,7 +27,7 @@ Call log:
 
 ```yaml
 - link "Choose Style, back":
-  - /url: /editor/mock-project-1791437987962?__EXPO_ROUTER_key=undefined-0Eu_htAbqYNZSWiPHedS4
+  - /url: /editor/mock-project-1791438054959?__EXPO_ROUTER_key=undefined-_V6YItTCVb9WsCqCXIgr_
 - heading "Your Designs" [level=1]
 - text:  Room redesigned! Quest complete +50 XP  Swipe to browse. Tap to select your favorite.  AI visualization, not a plan or quote  Long-press any image to compare with original
 - img "Design option 1"
