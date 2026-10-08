@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore, useAuthStore } from "@/lib/store";
 import { Project, ProjectStatus } from "@/lib/types";
-import { Button, EmptyState, IsoRoom, PrivateImage, ProsTeaserCard } from "@/components";
+import { Button, IsoRoom, PrivateImage, ProsTeaserCard } from "@/components";
 import { getDisplayName, getFirstName } from "@/lib/helpers/user";
 
 // Long-running threshold for showing "Rendering..." card in Home
@@ -49,8 +49,6 @@ export default function DashboardScreen() {
 
   const xp = profile?.xp || 0;
   const level = profile?.level || 1;
-  const xpForNextLevel = level * 200;
-  const xpProgress = (xp % 200) / xpForNextLevel;
 
   useEffect(() => {
     fetchProjects();

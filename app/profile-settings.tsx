@@ -167,7 +167,7 @@ export default function ProfileSettingsScreen() {
       if (error) throw error;
       
       await signOut();
-    } catch (err: any) {
+    } catch {
       setErrorMessage("Failed to delete account. Please try again or contact support.");
       setTimeout(() => setErrorMessage(""), 3000);
     }
