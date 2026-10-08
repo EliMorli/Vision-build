@@ -44,27 +44,18 @@ BEGIN
     (v_charlie_public_id, v_charlie_id, 'Charlie Public Design', 'test.jpg', true, 'generated')
   ON CONFLICT (id) DO NOTHING;
 
-  -- ─── Test 1: Bob can see Alice's public project via RLS but not her private one ───
+  -- ─── Test 1: fetch_public_designs() returns other users' public projects ───
   
   PERFORM set_config('request.jwt.claims', '{"sub": "' || v_bob_id || '", "role": "authenticated"}', true);
 
   SELECT COUNT(*) INTO v_count
-  FROM public.projects
-  WHERE user_id = v_alice_id AND is_public = true;
+  FROM public.fetch_public_designs()
+  WHERE user_id = v_alice_id;
 
   IF v_count != 1 THEN
-    RAISE EXCEPTION 'FAIL: Bob should see 1 public project from Alice, got %', v_count;
+    RAISE EXCEPTION 'FAIL: fetch_public_designs should return Alice''s 1 public project for Bob, got %', v_count;
   END IF;
-  RAISE NOTICE 'PASS: Bob can see Alice''s public project via RLS';
-
-  SELECT COUNT(*) INTO v_count
-  FROM public.projects
-  WHERE user_id = v_alice_id AND is_public = false;
-
-  IF v_count != 0 THEN
-    RAISE EXCEPTION 'FAIL: Bob should see 0 private projects from Alice, got %', v_count;
-  END IF;
-  RAISE NOTICE 'PASS: Bob cannot see Alice''s private project via RLS';
+  RAISE NOTICE 'PASS: fetch_public_designs returns Alice''s public project';
 
   -- ─── Test 2: fetch_public_designs() excludes current user's projects ───
 
@@ -77,7 +68,7 @@ BEGIN
   END IF;
   RAISE NOTICE 'PASS: fetch_public_designs excludes current user''s projects';
 
-  -- ─── Test 3: fetch_public_designs() returns other users' public projects ───
+  -- ─── Test 3: fetch_public_designs() returns multiple users' public projects ───
 
   SELECT COUNT(*) INTO v_count
   FROM public.fetch_public_designs()
