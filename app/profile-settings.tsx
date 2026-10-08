@@ -125,6 +125,27 @@ export default function ProfileSettingsScreen() {
     }
   };
 
+  const handlePrivacyOptOut = async (optOut: boolean) => {
+    if (optOut) {
+      // Revoke AI consent on the server
+      try {
+        if (!(__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true")) {
+          const { error } = await supabase.functions.invoke("revoke-ai-consent");
+          if (error) {
+            console.error("Error revoking AI consent:", error);
+            Alert.alert("Error", "Could not revoke AI consent. Please try again.");
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Error calling revoke-ai-consent:", err);
+        Alert.alert("Error", "Could not revoke AI consent. Please try again.");
+        return;
+      }
+    }
+    await setPrivacyOptOut(optOut);
+  };
+
   const handleDeleteAccount = () => {
     Alert.alert(
       "Delete Account",
@@ -193,59 +214,10 @@ export default function ProfileSettingsScreen() {
           <View style={styles.settingCard}>
             <Pressable
               style={styles.settingRow}
-              onPress={() => updateSetting("pushNotifications", !pushNotifications)}
-              accessibilityRole="switch"
-              accessibilityState={{ checked: pushNotifications }}
-            >
-              <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>Push Notifications</Text>
-                <Text style={styles.settingDescription}>
-                  Get updates about quotes and messages
-                </Text>
-              </View>
-              <View style={[
-                styles.switch,
-                pushNotifications && styles.switchOn,
-              ]}>
-                <View style={[
-                  styles.switchThumb,
-                  pushNotifications && styles.switchThumbOn,
-                ]} />
-              </View>
-            </Pressable>
-
-            <View style={styles.separator} />
-
-            <Pressable
-              style={styles.settingRow}
-              onPress={() => updateSetting("marketingEmails", !marketingEmails)}
-              accessibilityRole="switch"
-              accessibilityState={{ checked: marketingEmails }}
-            >
-              <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>Marketing Emails</Text>
-                <Text style={styles.settingDescription}>
-                  Design tips, trends, and special offers
-                </Text>
-              </View>
-              <View style={[
-                styles.switch,
-                marketingEmails && styles.switchOn,
-              ]}>
-                <View style={[
-                  styles.switchThumb,
-                  marketingEmails && styles.switchThumbOn,
-                ]} />
-              </View>
-            </Pressable>
-
-            <View style={styles.separator} />
-
-            <Pressable
-              style={styles.settingRow}
               onPress={() => handleProsWaitlist(!prosWaitlist)}
               accessibilityRole="switch"
               accessibilityState={{ checked: prosWaitlist }}
+              accessibilityLabel={`Pros Waitlist, ${prosWaitlist ? "on" : "off"}. Get notified when local pros can quote your projects.`}
               disabled={checkingWaitlist}
             >
               <View style={styles.settingInfo}>
@@ -276,6 +248,7 @@ export default function ProfileSettingsScreen() {
               onPress={() => updateSetting("publicProjectsDefault", !publicProjectsDefault)}
               accessibilityRole="switch"
               accessibilityState={{ checked: publicProjectsDefault }}
+              accessibilityLabel={`Public Projects by Default, ${publicProjectsDefault ? "on" : "off"}. New projects visible in Explore.`}
             >
               <View style={styles.settingInfo}>
                 <Text style={styles.settingLabel}>Public Projects by Default</Text>
@@ -311,6 +284,7 @@ export default function ProfileSettingsScreen() {
               onPress={() => handlePrivacyOptOut(!privacyOptOut)}
               accessibilityRole="switch"
               accessibilityState={{ checked: privacyOptOut }}
+              accessibilityLabel={`Opt out of AI processing, ${privacyOptOut ? "on" : "off"}. When on, design generation and chat won't work.`}
             >
               <View style={styles.settingInfo}>
                 <Text style={styles.settingLabel}>Opt out of AI processing</Text>
@@ -334,6 +308,8 @@ export default function ProfileSettingsScreen() {
             <Pressable
               style={styles.settingRow}
               onPress={handleRequestData}
+              accessibilityRole="button"
+              accessibilityLabel="Request my data or deletion"
             >
               <Text style={styles.settingLabel}>Request my data or deletion</Text>
               <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
@@ -350,6 +326,7 @@ export default function ProfileSettingsScreen() {
               onPress={() => updateSetting("reduceMotion", !reduceMotion)}
               accessibilityRole="switch"
               accessibilityState={{ checked: reduceMotion }}
+              accessibilityLabel={`Reduce Motion, ${reduceMotion ? "on" : "off"}. Minimize animations and transitions.`}
             >
               <View style={styles.settingInfo}>
                 <Text style={styles.settingLabel}>Reduce Motion</Text>
@@ -377,6 +354,8 @@ export default function ProfileSettingsScreen() {
             <Pressable
               style={styles.settingRow}
               onPress={() => openLink("https://visionbuild.app/terms")}
+              accessibilityRole="button"
+              accessibilityLabel="Terms of Service, opens in browser"
             >
               <Text style={styles.settingLabel}>Terms of Service</Text>
               <Ionicons name="open-outline" size={20} color={colors.textSecondary} />
@@ -387,6 +366,8 @@ export default function ProfileSettingsScreen() {
             <Pressable
               style={styles.settingRow}
               onPress={() => openLink("https://visionbuild.app/privacy")}
+              accessibilityRole="button"
+              accessibilityLabel="Privacy Policy, opens in browser"
             >
               <Text style={styles.settingLabel}>Privacy Policy</Text>
               <Ionicons name="open-outline" size={20} color={colors.textSecondary} />
@@ -404,6 +385,8 @@ export default function ProfileSettingsScreen() {
                 router.back();
                 useAuthStore.getState().signOut();
               }}
+              accessibilityRole="button"
+              accessibilityLabel="Sign out of your account"
             >
               <Text style={styles.settingLabel}>Sign out</Text>
               <Ionicons name="log-out-outline" size={20} color={colors.textSecondary} />
@@ -414,6 +397,8 @@ export default function ProfileSettingsScreen() {
             <Pressable
               style={styles.settingRow}
               onPress={handleDeleteAccount}
+              accessibilityRole="button"
+              accessibilityLabel="Delete Account. Permanently delete your account and all data."
             >
               <View style={styles.settingInfo}>
                 <Text style={[styles.settingLabel, styles.dangerLabel]}>
