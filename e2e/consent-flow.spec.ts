@@ -141,8 +141,8 @@ test.describe("VisionBuild AI Consent Flow", () => {
     await expect(page.getByText(/take a photo or pick one/i)).toBeInViewport({ timeout: 5000 });
     await expect(page.getByRole("button", { name: /analyze room/i })).toBeVisible();
     
-    // Screenshot showing we're back with photo preserved
-    await page.screenshot({ path: "e2e/screens/a7-reconsent-declined-project.png", fullPage: true });
+    // Screenshot showing we're back on camera with photo preserved
+    await page.screenshot({ path: "e2e/screens/a7-consent-declined-camera.png", fullPage: true });
 
     // Verify no AI requests were made after decline
     expect(aiRequests).toHaveLength(0);
@@ -206,6 +206,9 @@ test.describe("VisionBuild AI Consent Flow", () => {
     // Verify the project screen has a testID or unique element - checking for the original image
     await expect(page.locator('img[alt*="Original"]').first()).toBeVisible({ timeout: 5000 });
     
+    // Screenshot showing project detail with original photo
+    await page.screenshot({ path: "e2e/screens/a7-reconsent-declined-project.png", fullPage: true });
+    
     // Verify no NEW AI requests were made after the decline (analyze-room was called before, but generate-design should not have been called)
     expect(aiRequests.length).toBe(requestsBeforeDecline);
   });
@@ -236,6 +239,23 @@ test.describe("VisionBuild AI Consent Flow", () => {
     await page.getByRole("button", { name: /analyze room/i }).click();
     await expect(page.getByText("Select a Design Style")).toBeInViewport({ timeout: 10000 });
 
+    // Get the project ID from the URL
+    const editorUrl = page.url();
+    const projectIdMatch = editorUrl.match(/\/editor\/([^\/\?]+)/);
+    const projectIdBeforeConsent = projectIdMatch ? projectIdMatch[1] : null;
+    expect(projectIdBeforeConsent).toBeTruthy();
+    
+    // Get the original photo source to verify later
+    const originalPhotoSrc = await page.evaluate(() => {
+      const imgs = Array.from(document.querySelectorAll('img'));
+      for (const img of imgs) {
+        if (img.src.includes('test-room') || img.alt?.includes('room')) {
+          return img.src;
+        }
+      }
+      return null;
+    });
+
     // Now simulate consent becoming outdated (e.g., policy updated between analyze and generate)
     await page.evaluate(() => {
       localStorage.setItem("@visionbuild:mock_consent_version", "2026-10-01"); // Set to old version to trigger outdated check
@@ -256,7 +276,14 @@ test.describe("VisionBuild AI Consent Flow", () => {
     // Wait for results screen (generating screen may be very brief in mock mode)
     await expect(page.getByText(/swipe to browse/i)).toBeInViewport({ timeout: 30000 });
     
-    // Verify we're on results with design options visible
+    // Verify we're on results for the same project (proves resume used correct project & photo)
+    const resultUrl = page.url();
+    expect(resultUrl).toContain(`/result/${projectIdBeforeConsent}`);
+    
+    // Verify design options are visible (proves generation completed successfully)
     await expect(page.getByText("Option 1")).toBeVisible();
+    
+    // Take screenshot showing results screen with designs from the resumed generation
+    await page.screenshot({ path: "e2e/screens/a7-reconsent-resumed-results.png", fullPage: true });
   });
 });
