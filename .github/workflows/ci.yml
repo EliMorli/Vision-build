@@ -91,7 +91,7 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.120.0
       
       - name: Start Supabase local stack
         run: |
@@ -108,7 +108,7 @@ jobs:
       
       - name: Stop Supabase
         if: always()
-        run: supabase stop
+        run: supabase stop || true
       
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
