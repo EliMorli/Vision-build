@@ -197,6 +197,30 @@ export function PrivateImage({
     );
   }
 
+  // If no imageUrl yet and we're not showing placeholder, show loading or placeholder
+  if (!imageUrl && !showPlaceholder) {
+    if (showLoadingSpinner) {
+      return (
+        <View style={[styles.placeholderContainer, containerStyle]} testID={testID}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      );
+    }
+    // If not showing spinner, show placeholder while waiting
+    return (
+      <View style={[styles.placeholderContainer, containerStyle]} testID={testID}>
+        <View testID="private-image-placeholder">
+          <IsoRoom
+            palette={palette as any}
+            size={placeholderSize}
+            accessible={true}
+            accessibilityLabel={accessibilityLabel || "Loading..."}
+          />
+        </View>
+      </View>
+    );
+  }
+
   // Show the image
   return (
     <View style={containerStyle} testID={testID}>
