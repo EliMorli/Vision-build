@@ -11,6 +11,7 @@ INSERT INTO public.deletion_completion_log (user_id, completed_at, retry_attempt
 VALUES (:'test_user_id'::uuid, now(), 0);
 
 -- Test 1: Anon SELECT blocked
+BEGIN;
 SET LOCAL ROLE anon;
 DO $$
 BEGIN
@@ -20,9 +21,10 @@ EXCEPTION
   WHEN insufficient_privilege THEN
     RAISE NOTICE 'PASS: Anon SELECT blocked';
 END $$;
-RESET ROLE;
+COMMIT;
 
 -- Test 2: Authenticated SELECT blocked
+BEGIN;
 SET LOCAL ROLE authenticated;
 SET LOCAL request.jwt.claims TO '{"sub": "00000000-0000-0000-0000-000000000001", "role": "authenticated"}';
 DO $$
@@ -33,7 +35,7 @@ EXCEPTION
   WHEN insufficient_privilege THEN
     RAISE NOTICE 'PASS: Authenticated SELECT blocked';
 END $$;
-RESET ROLE;
+COMMIT;
 
 -- Test 3: Service role SELECT allowed
 DO $$
