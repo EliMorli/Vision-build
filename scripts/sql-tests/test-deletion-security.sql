@@ -73,13 +73,13 @@ $$;
 
 ROLLBACK;
 
--- Test 5: auth.get_user_id_by_email is callable by service_role only
+-- Test 5: public.get_user_id_by_email is callable by service_role only
 BEGIN;
 SET LOCAL ROLE service_role;
 
 DO $$
 BEGIN
-  PERFORM auth.get_user_id_by_email('test@example.com');
+  PERFORM public.get_user_id_by_email('test@example.com');
   
   RAISE NOTICE 'PASS: Service role can call get_user_id_by_email';
 END;
@@ -87,13 +87,13 @@ $$;
 
 ROLLBACK;
 
--- Test 6: Anon cannot call auth.get_user_id_by_email
+-- Test 6: Anon cannot call public.get_user_id_by_email
 BEGIN;
 SET LOCAL ROLE anon;
 
 DO $$
 BEGIN
-  PERFORM auth.get_user_id_by_email('test@example.com');
+  PERFORM public.get_user_id_by_email('test@example.com');
   
   RAISE EXCEPTION 'FAIL: Anon was able to call get_user_id_by_email';
 EXCEPTION
