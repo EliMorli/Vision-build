@@ -13,6 +13,10 @@ function createMockSupabase(opts: {
 }) {
   return {
     storage: {
+      listBuckets: async () => ({
+        data: [{ id: "room-photos", name: "room-photos" }],
+        error: null,
+      }),
       from: (bucket: string) => ({
         list: async (prefix: string) => {
           return { data: opts.storageFiles || [], error: null };
@@ -31,6 +35,7 @@ function createMockSupabase(opts: {
       delete: () => ({
         eq: () => Promise.resolve({ error: null }),
       }),
+      insert: (data: any) => Promise.resolve({ error: null }),
     }),
     auth: {
       admin: {
