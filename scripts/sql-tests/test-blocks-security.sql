@@ -44,15 +44,20 @@ $$;
 
 ROLLBACK;
 
--- Test 2: User A cannot read User B's blocks
+-- Test 2: User A creates a block, User B cannot read it
 BEGIN;
+SET LOCAL ROLE authenticated;
 SET LOCAL request.jwt.claims TO '{"sub": "11111111-1111-1111-1111-111111111111"}';
 
 -- User A blocks someone
 INSERT INTO public.blocks (blocker_id, blocked_id, blocked_type)
 VALUES ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'user');
 
--- Switch to User B
+COMMIT;
+
+-- Switch to User B and try to read A's blocks
+BEGIN;
+SET LOCAL ROLE authenticated;
 SET LOCAL request.jwt.claims TO '{"sub": "22222222-2222-2222-2222-222222222222"}';
 
 DO $$
@@ -71,8 +76,12 @@ $$;
 
 ROLLBACK;
 
+-- Clean up the block
+DELETE FROM public.blocks WHERE blocker_id = '11111111-1111-1111-1111-111111111111';
+
 -- Test 3: Deleting blocker removes blocks
 BEGIN;
+SET LOCAL ROLE authenticated;
 SET LOCAL request.jwt.claims TO '{"sub": "11111111-1111-1111-1111-111111111111"}';
 
 -- User A blocks User B
@@ -102,6 +111,7 @@ ROLLBACK;
 
 -- Test 4: Deleting blocked user removes blocks
 BEGIN;
+SET LOCAL ROLE authenticated;
 SET LOCAL request.jwt.claims TO '{"sub": "11111111-1111-1111-1111-111111111111"}';
 
 -- User A blocks User B
@@ -151,15 +161,20 @@ $$;
 
 ROLLBACK;
 
--- Test 6: User A cannot read User B's settings
+-- Test 6: User A creates settings, User B cannot read them
 BEGIN;
+SET LOCAL ROLE authenticated;
 SET LOCAL request.jwt.claims TO '{"sub": "11111111-1111-1111-1111-111111111111"}';
 
 -- Create settings for User A
 INSERT INTO public.user_settings (user_id, push_notifications)
 VALUES ('11111111-1111-1111-1111-111111111111', false);
 
--- Switch to User B
+COMMIT;
+
+-- Switch to User B and try to read A's settings
+BEGIN;
+SET LOCAL ROLE authenticated;
 SET LOCAL request.jwt.claims TO '{"sub": "22222222-2222-2222-2222-222222222222"}';
 
 DO $$
@@ -178,6 +193,9 @@ END;
 $$;
 
 ROLLBACK;
+
+-- Clean up the settings
+DELETE FROM public.user_settings WHERE user_id = '11111111-1111-1111-1111-111111111111';
 
 -- ============================================================
 -- PRO_WAITLIST TESTS
@@ -201,15 +219,20 @@ $$;
 
 ROLLBACK;
 
--- Test 8: User A cannot read User B's waitlist entries
+-- Test 8: User A joins waitlist, User B cannot read it
 BEGIN;
+SET LOCAL ROLE authenticated;
 SET LOCAL request.jwt.claims TO '{"sub": "11111111-1111-1111-1111-111111111111"}';
 
 -- User A joins waitlist
 INSERT INTO public.pro_waitlist (user_id, email, project_id)
 VALUES ('11111111-1111-1111-1111-111111111111', 'user-a@test.com', NULL);
 
--- Switch to User B
+COMMIT;
+
+-- Switch to User B and try to read A's waitlist
+BEGIN;
+SET LOCAL ROLE authenticated;
 SET LOCAL request.jwt.claims TO '{"sub": "22222222-2222-2222-2222-222222222222"}';
 
 DO $$
@@ -228,6 +251,9 @@ END;
 $$;
 
 ROLLBACK;
+
+-- Clean up the waitlist entry
+DELETE FROM public.pro_waitlist WHERE user_id = '11111111-1111-1111-1111-111111111111';
 
 -- ============================================================
 -- CLEANUP
