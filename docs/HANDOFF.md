@@ -475,3 +475,65 @@ All AI operations (`analyze-room`, `generate-design`, `assistant-chat`) enforce 
 12. `9c08d84` - fix: unskip and fix generate-design re-consent test, add re-consent decline test
 13. `9b9323b` - test: add e2e screenshots for AI consent flows
 
+
+## 🚨 DELETION RETRY SYSTEM
+
+**Migration 00011**: Added retry tracking for failed deletions (California CCPA requires completion within 45 days)
+
+### Core Changes
+
+1. **delete-user-data.ts** now returns typed failures:
+   - Storage errors abort BEFORE auth/DB deletion
+   - Returns `{success: false, stage: 'storage'|'database'|'auth', error, bucket?}`
+   - No email in logs (only user ID + reason codes)
+   - Fixed pagination: cap 100 attempts to prevent infinite loops
+
+2. **account_deletion_requests** table extended:
+   - `status`: 'pending', 'confirmed', 'failed_pending_retry', 'completed', 'expired', 'used'
+   - `retry_attempts`, `next_retry_at`, `last_error_code` (no PII), `first_failed_at`, `completed_at`
+
+3. **retry-account-deletions** edge function:
+   - Exponential backoff: 15min, 1h, 6h, 24h, then daily
+   - Ops alert via Resend when attempts >= 5 OR first_failed_at > 7 days
+   - Alert contains only: user ID, attempts, error code
+   - Configure `OPS_ALERT_EMAIL` (default: ops@visionbuild.app) and `RESEND_API_KEY`
+
+4. **Client retry UX** (`app/delete-account/confirm.tsx`):
+   - Failure screen shows: "We couldn't finish deleting your account. Some of your data may already be removed. Please try again."
+   - "Try again" button + "Contact support" link
+   - Token stays valid for retry within 24h window
+
+### Scheduling Setup (REQUIRED)
+
+**Option A: pg_cron (recommended)**
+```sql
+-- Run hourly
+SELECT cron.schedule(
+  'retry-failed-deletions',
+  '0 * * * *',
+  $$
+  SELECT net.http_post(
+    url:='<SUPABASE_URL>/functions/v1/retry-account-deletions',
+    headers:=jsonb_build_object('Authorization', 'Bearer <SERVICE_ROLE_KEY>')
+  );
+  $$
+);
+```
+
+**Option B: Supabase Dashboard Cron**
+- Go to Database → Cron Jobs
+- Create job: `retry-failed-deletions`, schedule `0 * * * *`
+- SQL: Call `retry-account-deletions` via `net.http_post` with service role key
+
+**Fill-ins**:
+- Replace `<SUPABASE_URL>` with your project URL
+- Replace `<SERVICE_ROLE_KEY>` with vault-stored or env var reference
+- Test with: `curl -X POST <SUPABASE_URL>/functions/v1/retry-account-deletions -H "Authorization: Bearer <SERVICE_ROLE_KEY>"`
+
+### Testing TODO
+
+- [ ] Add Deno test: console capture, assert email never logged
+- [ ] Extend storage integration test: seed all user-data tables, verify all empty after deletion
+- [ ] Add E2E test: mock storage failure, verify retry flow + screenshots (del-failed.png, del-retry-success.png)
+- [ ] Test actual retry with failed storage + successful retry after fault clears
+
