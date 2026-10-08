@@ -42,7 +42,10 @@ function createFakeDeps(overrides: Partial<ConfirmDeletionDeps> = {}): ConfirmDe
     clock: { now: () => new Date("2024-01-01T12:00:00Z") },
     deleteUser: async (params) => {
       deletedUsers.push(params.userId);
-      return true;
+      return { 
+        success: true, 
+        appleRevokeStatus: { status: 'skipped', reason: 'not_apple_user' } 
+      };
     },
     crypto: {
       sha256: async (data: Uint8Array) => {
