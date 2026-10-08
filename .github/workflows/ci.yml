@@ -192,20 +192,30 @@ jobs:
       - name: Verify screenshot dimensions
         run: |
           echo "Checking screenshot dimensions (expected 780x1688 at DSF 2)..."
+          
+          # Install ImageMagick if not present
+          if ! command -v identify &> /dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y imagemagick
+          fi
+          
           FAIL=0
           for screenshot in e2e/screens/ui-*.png; do
             if [ ! -f "$screenshot" ]; then
               continue
             fi
-            # Check if file was modified in this run (within last 5 minutes)
-            if [ $(find "$screenshot" -mmin -5 2>/dev/null | wc -l) -eq 0 ]; then
+            # Check if file was modified in this run (within last 10 minutes)
+            if [ $(find "$screenshot" -mmin -10 2>/dev/null | wc -l) -eq 0 ]; then
               echo "❌ $screenshot was not regenerated in this test run"
               FAIL=1
               continue
             fi
             # Check dimensions with identify (ImageMagick)
             DIMS=$(identify -format "%wx%h" "$screenshot" 2>/dev/null || echo "error")
-            if [ "$DIMS" != "780x1688" ]; then
+            if [ "$DIMS" = "error" ]; then
+              echo "❌ $screenshot could not be read (corrupted?)"
+              FAIL=1
+            elif [ "$DIMS" != "780x1688" ]; then
               echo "❌ $screenshot is $DIMS (expected 780x1688)"
               FAIL=1
             else
