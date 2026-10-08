@@ -125,7 +125,7 @@ test.describe("VisionBuild Create Loop", () => {
     await page.getByText("Option 1").click();
 
     // Click "Save to my project"
-    await page.getByRole("button", { name: /save to my project/i }).click();
+    await page.getByTestId("results-save").click();
 
     // Assert Project Detail screen, then screenshot
     await expect(page.getByText("Original Photo")).toBeInViewport({ timeout: 5000 });

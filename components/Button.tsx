@@ -16,6 +16,8 @@ interface ButtonProps {
   style?: ViewStyle;
   textColor?: string;
   iconColor?: string;
+  testID?: string;
+  accessibilityLabel?: string;
 }
 
 export function Button({
@@ -29,6 +31,8 @@ export function Button({
   style,
   textColor,
   iconColor,
+  testID,
+  accessibilityLabel,
 }: ButtonProps) {
   const isDisabled = disabled || loading;
   const bg = VARIANT_STYLES[variant];
@@ -48,8 +52,9 @@ export function Button({
         pressed && !isDisabled && !reduceMotion && { borderBottomWidth: 2, marginTop: 3 },
         style,
       ]}
+      testID={testID}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel || label}
       accessibilityState={{ disabled: isDisabled, busy: loading }}
     >
       {loading ? (

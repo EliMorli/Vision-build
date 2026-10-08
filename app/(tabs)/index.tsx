@@ -28,7 +28,7 @@ const STATUS_MAP: Record<ProjectStatus, { label: string; color: string; icon: ke
 };
 
 const SHOW_DEV_BUTTON = 
-  typeof __DEV__ !== 'undefined' && __DEV__ && process.env.EXPO_PUBLIC_SHOW_DEV_TOOLS === 'true';
+  (typeof __DEV__ !== 'undefined' && __DEV__) || process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === 'true';
 
 export default function DashboardScreen() {
   const router = useRouter();

@@ -216,6 +216,7 @@ export default function ResultScreen() {
           disabled={!selectedUrl || isSaving}
           loading={isSaving}
           variant="secondary"
+          testID="results-save"
         />
       </View>
 

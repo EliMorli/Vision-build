@@ -180,30 +180,33 @@ export default function CameraScreen() {
               <View style={styles.buttonSpacer} />
             </>
           ) : (
-            <View style={styles.buttonRow}>
-              <Pressable
-                style={styles.cameraButton}
-                onPress={() => pickImage(true)}
-                accessibilityRole="button"
-                accessibilityLabel="Take photo with camera"
-              >
-                <View style={styles.cameraButtonInner}>
-                  <Ionicons name="camera" size={28} color="#fff" />
-                </View>
-                <Text style={styles.cameraButtonText}>Camera</Text>
-              </Pressable>
-              <Pressable
-                style={styles.galleryButton}
-                onPress={() => pickImage(false)}
-                accessibilityRole="button"
-                accessibilityLabel="Choose from gallery"
-              >
-                <View style={styles.galleryButtonInner}>
-                  <Ionicons name="images" size={28} color={colors.primary} />
-                </View>
-                <Text style={styles.galleryButtonText}>Gallery</Text>
-              </Pressable>
-            </View>
+            <>
+              <View style={styles.buttonRow}>
+                <Pressable
+                  style={styles.cameraButton}
+                  onPress={() => pickImage(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Take photo with camera"
+                >
+                  <View style={styles.cameraButtonInner}>
+                    <Ionicons name="camera" size={28} color="#fff" />
+                  </View>
+                  <Text style={styles.cameraButtonText}>Camera</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.galleryButton}
+                  onPress={() => pickImage(false)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Choose from gallery"
+                >
+                  <View style={styles.galleryButtonInner}>
+                    <Ionicons name="images" size={28} color={colors.primary} />
+                  </View>
+                  <Text style={styles.galleryButtonText}>Gallery</Text>
+                </Pressable>
+              </View>
+              <View style={styles.buttonSpacer} />
+            </>
           )}
         </View>
       )}
