@@ -37,5 +37,6 @@ as $$
   limit 100;
 $$;
 
--- Grant execute to authenticated users
+-- Grant execute to authenticated users only
+revoke all on function public.fetch_public_designs from public;
 grant execute on function public.fetch_public_designs to authenticated;
