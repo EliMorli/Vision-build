@@ -59,9 +59,9 @@ export default function ResultScreen() {
         setCurrentIndex(viewableItems[0].index);
       }
     }
-  ).current;
+  );
 
-  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
+  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 });
 
   const handleSelect = (url: string) => {
     setSelectedUrl(url);
@@ -122,8 +122,8 @@ export default function ResultScreen() {
         snapToInterval={CARD_WIDTH + spacing.md}
         decelerationRate="fast"
         contentContainerStyle={{ paddingHorizontal: (width - CARD_WIDTH) / 2 }}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
+        onViewableItemsChanged={onViewableItemsChanged.current}
+        viewabilityConfig={viewabilityConfig.current}
         keyExtractor={(_, i) => String(i)}
         renderItem={({ item: url, index }) => {
           const isSelected = selectedUrl === url;

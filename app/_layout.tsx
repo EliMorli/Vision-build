@@ -54,6 +54,7 @@ export default function RootLayout() {
         <Stack.Screen name="result-error" options={{ headerShown: false }} />
         <Stack.Screen name="project/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="editor/[id]" options={{ title: "Choose Style" }} />
+        <Stack.Screen name="generating/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="result/[id]" options={{ title: "Your Designs" }} />
         <Stack.Screen name="handoff/[id]" options={{ title: "Get Estimates" }} />
       </Stack>

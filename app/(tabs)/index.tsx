@@ -49,8 +49,9 @@ export default function DashboardScreen() {
   // Only show "Rendering..." card if generation has been running > 45 seconds
   useEffect(() => {
     if (!generatingStartTime) {
-      setShowRenderingCard(false);
-      return;
+      // Use setTimeout to avoid sync setState
+      const timeout = setTimeout(() => setShowRenderingCard(false), 0);
+      return () => clearTimeout(timeout);
     }
 
     const checkLongRunning = () => {
@@ -58,9 +59,14 @@ export default function DashboardScreen() {
       setShowRenderingCard(elapsed > LONG_RUNNING_THRESHOLD_MS);
     };
 
-    checkLongRunning();
+    // Check initially after a brief delay to avoid sync setState
+    const initialTimeout = setTimeout(checkLongRunning, 100);
     const interval = setInterval(checkLongRunning, 5000);
-    return () => clearInterval(interval);
+    
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+    };
   }, [generatingStartTime]);
 
   const onRefresh = useCallback(() => {

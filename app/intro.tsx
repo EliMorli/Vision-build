@@ -45,7 +45,7 @@ const PAGES = [
 // Before/After Slider Component
 function BeforeAfterSlider() {
   const sliderPosition = useRef(new Animated.Value(0.5)).current;
-  const [dividerX, setDividerX] = useState(width * 0.4 * 0.5); // center of the image width
+  const [dividerX, setDividerX] = useState(width * 0.8 * 0.5); // center of the image width
   const imageWidth = width * 0.8;
 
   const panResponder = useRef(
@@ -81,20 +81,16 @@ function BeforeAfterSlider() {
       <Text style={sliderStyles.subtitle}>Drag the slider to reveal the power of AI redesign</Text>
 
       <View style={sliderStyles.sliderContainer} {...panResponder.panHandlers}>
-        {/* Before image - full width */}
-        <Image
-          source={{ uri: "https://placehold.co/600x400/E0E0E0/808080?text=Before" }}
-          style={sliderStyles.image}
-          accessibilityLabel="Before: dated room with old fixtures"
-        />
+        {/* Before image - full width, neutral palette */}
+        <View style={sliderStyles.beforeImage}>
+          <Text style={sliderStyles.imageLabel}>Before</Text>
+        </View>
 
-        {/* After image - clipped based on slider */}
+        {/* After image - clipped based on slider, modern palette */}
         <View style={[sliderStyles.afterContainer, { width: dividerX }]}>
-          <Image
-            source={{ uri: "https://placehold.co/600x400/1A73E8/FFFFFF?text=After" }}
-            style={sliderStyles.image}
-            accessibilityLabel="After: modern redesigned room"
-          />
+          <View style={sliderStyles.afterImage}>
+            <Text style={sliderStyles.imageLabel}>After</Text>
+          </View>
         </View>
 
         {/* Divider line */}
@@ -291,10 +287,26 @@ const sliderStyles = StyleSheet.create({
     overflow: "hidden",
     position: "relative",
   },
-  image: {
+  beforeImage: {
     width: "100%",
     height: "100%",
-    resizeMode: "cover",
+    backgroundColor: "#E8E8E8",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  afterImage: {
+    width: width * 0.8,
+    height: 260,
+    backgroundColor: "#C8E6F5",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  imageLabel: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.textPrimary,
+    textTransform: "uppercase",
+    letterSpacing: 1,
   },
   afterContainer: {
     position: "absolute",

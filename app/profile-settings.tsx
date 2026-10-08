@@ -38,8 +38,11 @@ export default function ProfileSettingsScreen() {
   });
 
   useEffect(() => {
-    loadPrivacySettings();
-  }, []);
+    const load = async () => {
+      await loadPrivacySettings();
+    };
+    load();
+  }, [loadPrivacySettings]);
 
   const toggleSetting = (key: keyof typeof settings) => {
     setSettings(prev => ({ ...prev, [key]: !prev[key] }));

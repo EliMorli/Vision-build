@@ -44,11 +44,15 @@ export default function GeneratingScreen() {
   // Countdown timer and long-running detection
   useEffect(() => {
     if (!loading || !generatingStartTime) {
-      setCountdown(20);
-      setShowLongRunning(false);
-      return;
+      // Use setTimeout to avoid sync setState in effect body
+      const timeout = setTimeout(() => {
+        setCountdown(20);
+        setShowLongRunning(false);
+      }, 0);
+      return () => clearTimeout(timeout);
     }
 
+    // Update on interval only to avoid sync setState
     const interval = setInterval(() => {
       const elapsed = Date.now() - generatingStartTime;
       const remaining = Math.max(0, Math.ceil((20000 - elapsed) / 1000));
@@ -57,7 +61,7 @@ export default function GeneratingScreen() {
       if (elapsed > LONG_RUNNING_THRESHOLD_MS) {
         setShowLongRunning(true);
       }
-    }, 1000);
+    }, 100); // Start immediately with 100ms
 
     return () => clearInterval(interval);
   }, [loading, generatingStartTime]);
