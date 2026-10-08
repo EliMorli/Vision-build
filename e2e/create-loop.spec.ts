@@ -108,7 +108,7 @@ test.describe("VisionBuild Create Loop", () => {
     await expect(page.getByText("Option 1")).toBeVisible();
     
     // Wait for at least one design image to actually load (naturalWidth > 0)
-    // Note: testID is on the Image element itself in React Native Web
+    // Note: Design images are SVG files served from public/__mock__/
     await page.waitForFunction(() => {
       const images = Array.from(document.querySelectorAll('img'));
       // Filter to only images in the design cards (not the XP banner icon, etc.)
@@ -262,7 +262,7 @@ test.describe("VisionBuild Create Loop", () => {
     // First request: return 403 to trigger error
     // Retry requests: hold on a promise so we can capture the placeholder state
     // After release: let requests through to succeed
-    await page.route(/\/__mock__\/design_\d+\.png/, async (route) => {
+    await page.route(/\/__mock__\/design_\d+\.svg/, async (route) => {
       const url = route.request().url();
       requestCount++;
       const reqNum = requestCount;

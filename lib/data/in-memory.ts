@@ -46,7 +46,8 @@ export class InMemoryDataLayer implements DataLayer {
       // Use relative path so it works regardless of the dev server port
       // Extract index from path like "mock/proj-123/design_0.png"
       const designNumber = path.match(/design_(\d+)/)?.[1] || '0';
-      return `/__mock__/design_${designNumber}.png?v=${requestCount}`;
+      // Return SVG files which scale properly in React Native Web
+      return `/__mock__/design_${designNumber}.svg?v=${requestCount}`;
     }
     
     // Default: return the placeholder
