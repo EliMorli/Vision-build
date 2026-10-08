@@ -669,6 +669,575 @@ Failed to load resource: net::ERR_NAME_NOT_RESOLVED
 
 ---
 
+## 9. Designer & Compliance Review Findings
+
+### Verified Issues from Design Review
+
+#### A. Inbox Contractor Tap - No Conversation Screen
+**Code Location:** `app/(tabs)/inbox.tsx:164`
+```typescript
+<Pressable style={styles.thread}>  // No onPress handler
+```
+
+**Current State:**
+- ✅ Inbox shows list of contractor threads
+- ❌ Pressable has no `onPress` prop
+- ❌ No conversation/thread detail screen exists
+- ⚠️ Mock data exists (`PLACEHOLDER_THREADS`) but can't be opened
+
+**What's Missing:**
+1. Route: `app/inbox/[threadId].tsx` - Conversation screen
+2. Components needed:
+   - Message bubble list (user vs. contractor messages)
+   - Quote card component (attached quotes with accept/decline)
+   - Reply text input with send button
+   - Report/Block action menu
+3. Data layer:
+   - `contractor_threads` table (doesn't exist)
+   - `messages` table (doesn't exist)
+   - `quotes` table (doesn't exist)
+
+**Effort: L** (Large - requires new screen, 3 new tables, message persistence)
+
+---
+
+#### B. Explore Design Tap - No Detail View
+**Code Location:** `app/(tabs)/explore.tsx:66`
+```typescript
+<Pressable style={styles.card}>  // No onPress handler
+```
+
+**Current State:**
+- ✅ Explore shows grid of designs
+- ❌ Card Pressable has no `onPress` prop
+- ❌ No design detail screen exists
+- ⚠️ Report button calls `handleReport()` but empty Alert options (lines 34-36)
+- ⚠️ Like counts are random: `Math.floor(Math.random() * 500) + 50` (line 22)
+
+**What's Missing:**
+1. Route: `app/explore/[designId].tsx` - Design detail view
+2. Features needed:
+   - Full-size design image
+   - Project description and metadata
+   - Save/bookmark button → `user_saves` table
+   - Remix button → create new project with same style
+   - Report button → use existing `ReportModal`
+3. Data fixes:
+   - Replace random like counts with real `COUNT(likes.id)` query
+   - Add `user_likes` table
+   - Add `user_saves` table
+
+**Effort: M** (Medium - new screen, 2 new tables, query updates)
+
+---
+
+#### C. Profile Tab - Dead Rows and Missing Gamification
+**Code Location:** `app/(tabs)/profile.tsx:21-27`
+
+**Current State:**
+- ❌ **"Edit Profile"** (line 22) - `route: null`, does nothing
+- ❌ **"Payment Methods"** (line 24) - `route: null`, **MUST BE REMOVED**
+- ❌ **"My Properties"** (line 25) - `route: null`, shows fake badge "3"
+- ❌ **"Saved Designs"** (line 26) - `route: null`, shows fake badge "12"
+- ❌ **No level/XP bar** - Header shows only avatar, name, email
+- ❌ **No badges** - Gamification system missing from UI
+- ❌ **No quests** - Quest system not implemented
+
+**What's Missing:**
+1. Remove "Payment Methods" row entirely (no payment system in MVP)
+2. Wire "Edit Profile" → new route `app/profile/edit.tsx`
+3. Wire "My Properties" → query user's projects, real count
+4. Wire "Saved Designs" → query `user_saves` table, real count
+5. Add XP bar component to header (data already exists from `user_xp` view)
+6. Design + implement badges system (table + UI)
+7. Design + implement quests system (table + UI)
+
+**Effort Breakdown:**
+- Remove Payment Methods: **S** (Small - delete one row)
+- Edit Profile screen: **M** (Medium - form with avatar upload, name edit)
+- Wire Properties/Saved counts: **S** (Small - query + display)
+- Add XP bar to header: **S** (Small - component already styled elsewhere)
+- Badges system: **L** (Large - schema, logic, UI)
+- Quests system: **L** (Large - schema, logic, UI)
+
+---
+
+#### D. Home Empty State - No IsoRoom
+**Code Location:** `app/(tabs)/index.tsx:97-107`
+
+**Current State:**
+- ✅ Empty state shows when `projects.length === 0`
+- ⚠️ Uses generic `EmptyState` component with `icon="home-outline"`
+- ⚠️ Button navigates to `/(tabs)/camera` which doesn't exist
+- ❌ No IsoRoom preview as specified in mockup
+
+**What's Missing:**
+1. Replace `<EmptyState icon="home-outline" />` with custom layout
+2. Add `<IsoRoom palette="modern" size={200} />` above text
+3. Update button to work with actual camera flow (or placeholder)
+
+**Effort: S** (Small - swap component, add IsoRoom)
+
+---
+
+### Verified Issues from Compliance Review
+
+#### E. Explore Report Options - Empty Functions
+**Code Location:** `app/(tabs)/explore.tsx:29-38`
+
+**Current State:**
+```typescript
+const handleReport = (id: string) => {
+  Alert.alert(
+    "Report Design",
+    "Why are you reporting this design?",
+    [
+      { text: "Inappropriate content", onPress: () => {} },  // ❌ Empty
+      { text: "Spam or misleading", onPress: () => {} },    // ❌ Empty
+      { text: "Copyright violation", onPress: () => {} },   // ❌ Empty
+      { text: "Cancel", style: "cancel" },
+    ]
+  );
+};
+```
+
+**What's Missing:**
+- ✅ `ReportModal` component exists and is fully functional (`components/ReportModal.tsx`)
+- ✅ `reports` table exists with RLS (`supabase/migrations/00003_compliance_tables.sql:16`)
+- ✅ `submitReport()` in store works (`lib/store.ts:602`)
+- ❌ Explore doesn't import or use `ReportModal`
+- ❌ Uses Alert with empty callbacks instead
+
+**Fix Required:**
+1. Import `ReportModal` from `@/components`
+2. Add state: `const [reportModalVisible, setReportModalVisible] = useState(false)`
+3. Add state: `const [reportDesignId, setReportDesignId] = useState("")`
+4. Replace `Alert.alert()` with modal open: `setReportDesignId(id); setReportModalVisible(true);`
+5. Render modal: `<ReportModal visible={reportModalVisible} onClose={...} type="design" itemId={reportDesignId} />`
+
+**Effort: S** (Small - wire existing modal, no new code needed)
+
+---
+
+#### F. Block Functionality - Console.log Only
+**Code Location:** `app/(tabs)/inbox.tsx:56-58`
+
+**Current State:**
+```typescript
+{
+  text: "Block",
+  onPress: () => {
+    console.log("Block contractor:", contractorId);  // ❌ Only logs
+    Alert.alert("Blocked", `You have blocked ${contractorName}`);
+  },
+  style: "destructive",
+},
+```
+
+**What's Missing:**
+1. **Database:** No `blocks` table exists (must be created)
+2. **RLS:** Need policies to enforce blocking
+3. **Filtering:** Inbox and Explore must filter out blocked users
+4. **Mutual blocks:** User can block contractor, contractor can block user (GDPR right to refuse service)
+
+**Schema Needed:**
+```sql
+create table public.blocks (
+  id uuid primary key default uuid_generate_v4(),
+  blocker_id uuid references public.profiles(id) on delete cascade not null,
+  blocked_id uuid not null,  -- Can be user ID or contractor ID
+  blocked_type text not null check (blocked_type in ('user', 'contractor')),
+  created_at timestamptz not null default now(),
+  unique(blocker_id, blocked_id, blocked_type)
+);
+
+create index idx_blocks_blocker on public.blocks(blocker_id);
+create index idx_blocks_blocked on public.blocks(blocked_id, blocked_type);
+```
+
+**Implementation:**
+1. Add migration: `00007_blocks_table.sql`
+2. Add RLS policies (user can insert own blocks, view own blocks)
+3. Update Inbox query: `WHERE contractor_id NOT IN (SELECT blocked_id FROM blocks WHERE blocker_id = auth.uid())`
+4. Update Explore query: `WHERE user_id NOT IN (SELECT blocked_id FROM blocks WHERE blocker_id = auth.uid())`
+5. Wire block button to `supabase.from("blocks").insert()`
+
+**Effort: M** (Medium - new table, migration, RLS, query updates)
+
+---
+
+#### G. Moderation System - No Admin Path
+**Code Location:** Reports saved to `reports` table, but no action taken
+
+**Current State:**
+- ✅ Users can submit reports via `ReportModal`
+- ✅ Reports saved to `reports` table with user_id, target_type, target_id, reason
+- ❌ No admin interface to review reports
+- ❌ No way to hide/remove reported content
+- ❌ No way to ban users
+- ❌ Reported designs still show in Explore
+- ❌ Reported messages still show in Inbox
+
+**What's Missing - Two Options:**
+
+**Option A: Service-Role Edge Function (Minimal)**
+- Function: `supabase/functions/moderate/index.ts`
+- Authenticated via service-role key
+- Endpoints:
+  - `POST /moderate/hide-design` - Sets `projects.is_hidden = true`
+  - `POST /moderate/ban-user` - Sets `profiles.is_banned = true`
+  - `GET /moderate/reports` - Lists pending reports
+- Access control: Hardcoded admin user IDs in function
+- **Effort: M** (Medium - new function, new columns, RLS updates)
+
+**Option B: Protected Admin Screen (Better UX)**
+- Route: `app/admin/reports.tsx` (protected by admin RLS policy)
+- Features:
+  - List all reports grouped by status
+  - View reported content inline
+  - One-click actions: Hide, Ban, Dismiss
+  - Audit log of moderation actions
+- Database:
+  - Add `is_hidden` column to `projects`
+  - Add `is_banned` column to `profiles`
+  - Add `moderation_log` table
+  - Add `admin` role or `is_admin` flag on `profiles`
+- **Effort: L** (Large - full admin UI, permissions, audit trail)
+
+**Recommended:** Start with Option A (edge function) for MVP, add Option B post-launch.
+
+**Effort: M** (for Option A)
+
+---
+
+#### H. Contractors Table - Empty, No Seed Data
+**Code Location:** 
+- Schema: `supabase/migrations/00001_initial_schema.sql:80`
+- Function: `supabase/functions/dispatch-lead/index.ts` (hardcoded mock contractors)
+
+**Current State:**
+- ✅ Table exists with proper schema (business_name, email, phone, zip, specialties, rating)
+- ✅ RLS policy: authenticated users can read active contractors
+- ❌ Table is empty (no `INSERT` statements in migrations)
+- ❌ `dispatch-lead` function uses hardcoded array of 5 mock contractors
+- ⚠️ **Decision pending:** How to source contractors
+
+**Two Sourcing Options:**
+
+**Option 1: California Public License Board Data**
+**Pros:**
+- Free, public data (contractors.cslb.ca.gov)
+- 400,000+ licensed contractors
+- Verified credentials
+- Legal to use for business purposes
+
+**Cons:**
+- No email addresses (CSLB doesn't publish emails)
+- Phone numbers are business phones (many outdated)
+- No opt-in consent (cold outreach)
+- Requires robust unsubscribe mechanism
+- Higher spam risk / deliverability issues
+
+**What's Needed:**
+1. Scrape CSLB data (or buy cleaned dataset)
+2. ETL pipeline: CSV → Supabase `contractors` table
+3. Email append service (Clearbit, Hunter.io) to find emails
+4. Strong unsubscribe system (already exists: `contractor_optouts` table)
+5. Comply with CAN-SPAM (clear sender ID, unsubscribe link, privacy notice)
+6. **Privacy notice for contractors** (see below)
+7. Monitor deliverability and unsubscribe rate
+
+**Effort: L** (Large - data acquisition, email append, compliance)
+
+---
+
+**Option 2: Contractor Self-Signup**
+**Pros:**
+- Explicit opt-in (no spam risk)
+- Fresh, accurate contact info
+- Contractors can set preferences (zip range, specialties, availability)
+- Higher engagement (they want leads)
+- GDPR/CCPA compliant by design
+
+**Cons:**
+- Requires separate contractor-facing app or portal
+- Cold-start problem (need contractors before users)
+- May need incentives (free trial, referral bonus)
+
+**What's Needed:**
+1. Contractor signup flow:
+   - Landing page (visionbuild.app/contractors)
+   - Form: business_name, email, phone, zip, specialties
+   - Email verification
+   - Profile setup (photos, bio, portfolio)
+2. Contractor dashboard:
+   - View incoming leads
+   - Accept/decline leads
+   - Reply to users
+   - View ratings/reviews
+3. Admin approval workflow (prevent spam signups)
+4. Marketing to recruit contractors
+
+**Effort: XL** (Extra Large - separate app, marketing, chicken-egg problem)
+
+---
+
+**Recommended for MVP:** Neither option is ready. Current approach:
+1. Keep mock contractors in `dispatch-lead` function for MVP
+2. Manually add 10-20 real contractors to DB (friends, partners, test accounts)
+3. Post-MVP: Decide on Option 1 vs. Option 2 based on user feedback
+
+**Effort to Add Manual Seed Data: S** (Small - write INSERT statements)
+
+---
+
+#### I. Inbound Contractor Replies - No Webhook
+**Code Location:** `supabase/functions/dispatch-lead/index.ts` sends email via Resend
+
+**Current State:**
+- ✅ Outbound email works (Resend API)
+- ✅ Email includes user's project details
+- ❌ Replies go to contractor's email thread
+- ❌ No way to ingest replies into app
+- ❌ User never sees contractor responses in Inbox
+- ❌ `messages` table doesn't exist
+
+**What's Missing:**
+
+**1. Resend Inbound Webhook**
+- Set up Resend inbound route (e.g., `replies@mail.visionbuild.app`)
+- Configure webhook to POST to: `https://<project>.supabase.co/functions/v1/ingest-message`
+- Parse inbound email:
+  - Extract sender (contractor email)
+  - Extract recipient (match to user via `outreach_log.provider_message_id`)
+  - Extract body (strip quoted text, HTML)
+  - Detect quote (regex for $X,XXX-$Y,YYY patterns)
+
+**2. New Tables**
+```sql
+-- Messages between users and contractors
+create table public.messages (
+  id uuid primary key default uuid_generate_v4(),
+  thread_id uuid references public.contractor_threads(id) not null,
+  sender_type text not null check (sender_type in ('user', 'contractor')),
+  sender_id uuid not null,  -- user_id or contractor_id
+  body text not null,
+  created_at timestamptz not null default now()
+);
+
+-- Threads group messages by project + contractor
+create table public.contractor_threads (
+  id uuid primary key default uuid_generate_v4(),
+  project_id uuid references public.projects(id) not null,
+  user_id uuid references public.profiles(id) not null,
+  contractor_id uuid references public.contractors(id) not null,
+  created_at timestamptz not null default now(),
+  unique(project_id, contractor_id)
+);
+
+-- Quotes extracted from messages
+create table public.quotes (
+  id uuid primary key default uuid_generate_v4(),
+  thread_id uuid references public.contractor_threads(id) not null,
+  message_id uuid references public.messages(id) not null,
+  low_estimate numeric(10,2),
+  high_estimate numeric(10,2),
+  timeline_days int,
+  notes text,
+  created_at timestamptz not null default now()
+);
+```
+
+**3. Edge Function: `ingest-message`**
+- Verify Resend webhook signature
+- Parse email
+- Look up thread by contractor email + project
+- Create `message` record
+- If quote detected, create `quote` record
+- Award XP (+30) on first contractor reply (implement TODO in dispatch-lead)
+- Send push notification to user (if enabled)
+
+**Effort: L** (Large - webhook setup, 3 new tables, parsing logic, quote extraction)
+
+---
+
+#### J. Privacy Notice for Contractors
+**Code Location:** `supabase/functions/dispatch-lead/index.ts` - email template
+
+**Current State:**
+- ❌ No privacy notice in outbound emails
+- ⚠️ GDPR/CCPA violation: sharing user data without informing contractors
+
+**What's Needed:**
+Email footer must include:
+```
+---
+VisionBuild Privacy Notice:
+This email contains a lead from a homeowner seeking renovation services.
+By responding, you agree to:
+- Use this information solely to provide a quote
+- Not share or sell this contact information
+- Delete all data if the project is closed or upon request
+
+To opt out of future leads: [unsubscribe link]
+Contractor data handling: visionbuild.app/contractor-privacy
+```
+
+**Implementation:**
+1. Add footer to email template in `dispatch-lead/index.ts`
+2. Create `app/contractor-privacy.tsx` page explaining:
+   - What data we share (project details, user first name, location)
+   - What data we don't share (full address until they're selected)
+   - Contractor's right to opt out
+   - Deletion upon request
+3. Wire unsubscribe link to existing `unsubscribe` function
+4. Update main Privacy Policy to include contractor data handling
+
+**Effort: S** (Small - email template update, one new page)
+
+---
+
+#### K. Contractor Data Deletion
+**Code Location:** No deletion logic exists
+
+**Current State:**
+- ✅ User data deletion exists (`supabase/functions/delete-account/index.ts`)
+- ❌ Contractor deletion not implemented
+- ⚠️ **Compliance gap:** GDPR Article 17 (Right to Erasure) applies to contractors too
+
+**What's Needed:**
+
+**For User Deletion (already implemented):**
+- ✅ Deletes user profile
+- ✅ Cascades to projects, leads, reports, consents, etc.
+- ⚠️ **Missing:** Should also delete contractor data from `outreach_log`
+
+**For Contractor Deletion (new):**
+- Contractors who were contacted must be able to request deletion
+- Need `supabase/functions/delete-contractor-data/index.ts`
+- Delete or anonymize:
+  - `contractors` record (if self-signup model)
+  - `outreach_log` records (or anonymize email)
+  - `leads` records
+  - `messages` in threads
+  - `quotes`
+- Keep audit trail: replace with `[deleted contractor]` in UI
+
+**Implementation:**
+1. Add contractor deletion endpoint
+2. Update user deletion to also anonymize `outreach_log.contractor_email`
+3. Add "Delete my data" link in contractor email footers
+4. Create `app/contractor-delete-request.tsx` form
+
+**Effort: M** (Medium - new function, cascade logic, anonymization)
+
+---
+
+### Updated Priority List with Designer & Compliance Findings
+
+#### Front End - Critical (Must Have)
+
+| # | Task | Effort | Source | Description |
+|---|------|--------|--------|-------------|
+| 1 | **Camera Capture Flow** | L | Original | Implement photo capture with expo-image-picker, upload to storage, create project |
+| 2 | **Contractor Conversation Screen** | L | Designer | New route `app/inbox/[threadId].tsx` with message bubbles, quote cards, reply box, Report/Block |
+| 3 | **Explore Design Detail View** | M | Designer | New route `app/explore/[designId].tsx` with full image, Save, Remix, Report |
+| 4 | **Project Creation** | M | Original | Wire camera → analyze → create project record with photo |
+| 5 | **Design Generation Flow** | M | Original | Enable "Generate 4 Designs" button, call function, show progress |
+| 6 | **Design Selection & Save** | S | Original | Allow user to tap design, mark as selected, save to DB |
+| 7 | **Fix Home Empty State** | S | Designer | Add IsoRoom preview to empty state instead of icon |
+| 8 | **Wire Explore Report** | S | Compliance | Replace Alert with existing ReportModal component |
+| 9 | **Remove Payment Methods** | S | Designer | Delete "Payment Methods" row from Profile tab |
+| 10 | **Fix Profile Properties/Saved Counts** | S | Designer | Query real counts instead of hardcoded "3" and "12" |
+| 11 | **Add Profile XP Bar** | S | Designer | Add level/XP bar component to Profile header |
+| 12 | **OAuth Sign-In (Real)** | S | Original | Remove mock session guard, test Google/Apple OAuth end-to-end |
+
+#### Front End - Important (Should Have)
+
+| # | Task | Effort | Source | Description |
+|---|------|--------|-------------|
+| 13 | **Block System UI** | M | Compliance | Wire block button to save to `blocks` table, filter blocked content |
+| 14 | **Inbox Real Data** | L | Original | Replace mock threads with queries to `contractor_threads` + `messages` tables |
+| 15 | **Edit Profile Screen** | M | Designer | New route `app/profile/edit.tsx` with avatar upload, name edit |
+| 16 | **Vi Chat Wiring** | M | Original | Connect chat form to `assistant-chat` function, persist messages |
+| 17 | **Settings Persistence** | M | Original | Save all toggle states to DB (notifications, marketing, public default) |
+| 18 | **Like/Save System** | M | Original | Add like button, save to `user_likes` table, filter by liked |
+| 19 | **Project Visibility Toggle** | S | Original | Wire toggle to `set-project-visibility` function |
+| 20 | **Delete Account UI** | S | Original | Add button in Settings, confirm modal, call function |
+| 21 | **Fix Explore Like Counts** | S | Designer | Replace random counts with real query or show zero |
+
+#### Front End - Nice to Have
+
+| # | Task | Effort | Source | Description |
+|---|------|--------|-------------|
+| 22 | **Badges System** | L | Designer | Design + implement badges schema, award logic, Profile UI |
+| 23 | **Quests System** | L | Designer | Design + implement quests schema, tracking logic, Profile UI |
+| 24 | **Realtime Progress** | M | Original | Subscribe to Realtime channel for design generation updates |
+| 25 | **Push Notifications** | M | Original | Register Expo push token, show permission prompt |
+| 26 | **Data Export Request** | S | Original | Add button to request data export (GDPR) |
+| 27 | **Daily Limit UI** | S | Original | Show remaining renders count, countdown to reset |
+
+---
+
+#### Back End - Critical (Must Have)
+
+| # | Task | Effort | Source | Description |
+|---|------|--------|-------------|
+| 28 | **Contractor Message Ingestion** | L | Compliance | Resend inbound webhook → parse emails → insert into `messages` table |
+| 29 | **Moderation System (Edge Function)** | M | Compliance | Service-role function to hide designs, ban users, review reports |
+| 30 | **Blocks Table** | M | Compliance | New table + RLS + filter blocked users from Inbox/Explore |
+| 31 | **Contractor Threads Table** | M | Designer | New `contractor_threads` table to group messages |
+| 32 | **Messages Table** | M | Designer | New `messages` table for user ↔ contractor communication |
+| 33 | **Quotes Table** | M | Designer | New `quotes` table with low/high estimates, timeline |
+| 34 | **Migration Testing** | M | Original | `supabase start` locally, apply all migrations, verify schema |
+| 35 | **Storage Bucket Creation** | S | Original | Ensure `project-photos` and `public-designs` buckets exist in prod |
+| 36 | **Chat Messages Table** | S | Original | Create `chat_messages` table with RLS, wire to assistant-chat function |
+| 37 | **RLS Policy Audit** | M | Original | Review all RLS policies, test with non-owner user accounts |
+| 38 | **Contractor Privacy Notice** | S | Compliance | Add footer to dispatch-lead email with privacy notice + unsubscribe |
+
+#### Back End - Important (Should Have)
+
+| # | Task | Effort | Source | Description |
+|---|------|--------|-------------|
+| 39 | **Contractor Reply XP** | S | Original | Implement TODO in dispatch-lead, award +30 XP on reply |
+| 40 | **Contractor Data Deletion** | M | Compliance | Add deletion/anonymization for contractor data (GDPR) |
+| 41 | **User Likes Table** | S | Designer | New `user_likes` table for liking public designs |
+| 42 | **User Saves Table** | S | Designer | New `user_saves` table for bookmarking designs |
+| 43 | **Contractor Manual Seed** | S | Compliance | Add 10-20 real contractor records for MVP testing |
+| 44 | **Rate Limiting** | M | Original | Add usage tracking, enforce daily limits, return 429 errors |
+| 45 | **Public Feed Algorithm** | M | Original | Implement trending/recent sort, pagination, search |
+| 46 | **Realtime Channels** | M | Original | Set up channels for design progress, new messages, quotes |
+| 47 | **Consent Migration** | S | Original | Populate `user_consents` table on first login, use instead of AsyncStorage |
+
+#### Back End - Nice to Have
+
+| # | Task | Effort | Source | Description |
+|---|------|--------|-------------|
+| 48 | **Contractor Sourcing Decision** | XL | Compliance | Decide CSLB data vs. self-signup, implement chosen path |
+| 49 | **Admin Moderation UI** | L | Compliance | Protected admin screen for reviewing reports (post-MVP) |
+| 50 | **Push Notification Service** | M | Original | Cloud Function to send Expo push notifications on events |
+| 51 | **Data Export Pipeline** | M | Original | Generate ZIP of user data, upload to storage, email link |
+| 52 | **Analytics & Monitoring** | S | Original | Add observability (Sentry, LogRocket, etc.) |
+
+---
+
+### Summary of Additions
+
+**New Tasks Added:** 25
+- **From Designer:** 11 tasks (conversation screen, design detail, Profile fixes, empty state)
+- **From Compliance:** 14 tasks (blocks, moderation, contractor privacy, message ingestion, deletion)
+
+**Updated Totals:**
+- **Front End:** 27 tasks (was 18) - +9 tasks
+- **Back End:** 25 tasks (was 15) - +10 tasks
+- **Total:** 52 tasks (was 33) - +19 net new tasks
+
+**Critical Path Extended:**
+- MVP was estimated at 2.5-3 weeks
+- With new findings: **3.5-4 weeks** (assuming contractor sourcing deferred)
+
+---
+
 ## 10. Final Recommendation
 
 **Current State:** App is a high-fidelity prototype with impressive UI but minimal working functionality.
