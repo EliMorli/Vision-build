@@ -150,6 +150,9 @@ export default function ResultScreen() {
                 }
               }}
               disabled={!url}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isSelected }}
+              accessibilityLabel={`Design option ${index + 1}${isSelected ? ", selected" : ""}`}
             >
               {url ? (
                 <>
@@ -164,7 +167,7 @@ export default function ResultScreen() {
                   />
                   {isSelected && (
                     <View style={styles.checkBadge}>
-                      <Ionicons name="checkmark" size={18} color="#fff" />
+                      <Ionicons name="checkmark" size={22} color="#fff" />
                     </View>
                   )}
                   <View style={styles.optionLabel}>
@@ -202,7 +205,7 @@ export default function ResultScreen() {
       {/* CTA */}
       <View style={styles.cta}>
         <Button
-          label="Save Design"
+          label={selectedUrl ? "Save Design" : "Tap a design to choose it"}
           icon="checkmark-circle"
           onPress={handleContinue}
           disabled={!selectedUrl || isSaving}
@@ -344,18 +347,28 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     backgroundColor: "#fff",
   },
-  cardSelected: { borderWidth: 3, borderColor: colors.primary },
+  cardSelected: { 
+    borderWidth: 4, 
+    borderColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.3,
+  },
   cardImage: { width: "100%", height: "100%" },
   checkBadge: {
     position: "absolute",
-    top: 12,
-    right: 12,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    top: 16,
+    right: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
+    elevation: 6,
   },
   optionLabel: {
     position: "absolute",

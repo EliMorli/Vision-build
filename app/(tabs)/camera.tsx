@@ -105,10 +105,24 @@ export default function CameraScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header hint */}
-      <Text style={styles.hint}>
-        Take a photo or pick one from your gallery to get started.
-      </Text>
+      {/* Quick tips */}
+      {!imageUri && (
+        <View style={styles.tipsContainer}>
+          <Text style={styles.tipsTitle}>Quick Tips</Text>
+          <View style={styles.tipRow}>
+            <Ionicons name="sunny-outline" size={16} color={colors.primary} />
+            <Text style={styles.tipText}>Good lighting works best</Text>
+          </View>
+          <View style={styles.tipRow}>
+            <Ionicons name="expand-outline" size={16} color={colors.primary} />
+            <Text style={styles.tipText}>Shoot from a corner</Text>
+          </View>
+          <View style={styles.tipRow}>
+            <Ionicons name="layers-outline" size={16} color={colors.primary} />
+            <Text style={styles.tipText}>Include the floor and a wall</Text>
+          </View>
+        </View>
+      )}
 
       {/* Image preview area */}
       <View style={styles.previewArea}>
@@ -157,22 +171,28 @@ export default function CameraScreen() {
             />
           ) : (
             <View style={styles.buttonRow}>
-              <Button
-                label="Camera"
-                icon="camera"
+              <Pressable
+                style={styles.cameraButton}
                 onPress={() => pickImage(true)}
-                variant="primary"
-                fullWidth={false}
-                style={styles.flexBtn}
-              />
-              <Button
-                label="Gallery"
-                icon="images"
+                accessibilityRole="button"
+                accessibilityLabel="Take photo with camera"
+              >
+                <View style={styles.cameraButtonInner}>
+                  <Ionicons name="camera" size={28} color="#fff" />
+                </View>
+                <Text style={styles.cameraButtonText}>Camera</Text>
+              </Pressable>
+              <Pressable
+                style={styles.galleryButton}
                 onPress={() => pickImage(false)}
-                variant="outline"
-                fullWidth={false}
-                style={styles.flexBtn}
-              />
+                accessibilityRole="button"
+                accessibilityLabel="Choose from gallery"
+              >
+                <View style={styles.galleryButtonInner}>
+                  <Ionicons name="images" size={28} color={colors.primary} />
+                </View>
+                <Text style={styles.galleryButtonText}>Gallery</Text>
+              </Pressable>
             </View>
           )}
         </View>
@@ -183,11 +203,27 @@ export default function CameraScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff", padding: spacing.lg },
-  hint: {
-    ...fonts.body,
-    color: colors.textSecondary,
-    textAlign: "center",
+  tipsContainer: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.md,
     marginBottom: spacing.md,
+  },
+  tipsTitle: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+  },
+  tipRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  tipText: {
+    fontSize: 14,
+    color: colors.textSecondary,
   },
   previewArea: { flex: 1, marginBottom: spacing.md },
   imageFill: { flex: 1, borderRadius: radius.lg, overflow: "hidden" },
@@ -234,6 +270,58 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   buttons: { paddingBottom: spacing.sm },
-  buttonRow: { flexDirection: "row", gap: spacing.sm },
-  flexBtn: { flex: 1 },
+  buttonRow: { 
+    flexDirection: "row", 
+    gap: spacing.md,
+    justifyContent: "center",
+  },
+  cameraButton: {
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  cameraButtonInner: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+    borderBottomWidth: 5,
+    borderBottomColor: "#0F4FB0",
+  },
+  cameraButtonText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
+  galleryButton: {
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  galleryButtonInner: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
+    borderWidth: 3,
+    borderColor: colors.border,
+    borderBottomWidth: 5,
+  },
+  galleryButtonText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
 });
