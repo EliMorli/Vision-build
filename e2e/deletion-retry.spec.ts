@@ -9,13 +9,55 @@ test.describe("Account Deletion Retry Flow", () => {
   });
 
   test("deletion failure shows retry UI and allows retry", async ({ page }: { page: Page }) => {
-    // Seed localStorage to mock deletion failure
-    await page.addInitScript(() => {
-      localStorage.setItem("@visionbuild:mock_deletion_failure", "true");
+    const testToken = "test-token-for-e2e";
+    let postCallCount = 0;
+
+    // Intercept confirm-account-deletion function calls
+    await page.route("**/functions/v1/confirm-account-deletion*", async (route) => {
+      const request = route.request();
+      const method = request.method();
+
+      if (method === "GET") {
+        // Return valid token on GET (validation)
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            valid: true,
+            email: "test@example.com",
+            isAppleUser: false,
+          }),
+        });
+      } else if (method === "POST") {
+        postCallCount++;
+        if (postCallCount === 1) {
+          // First POST: return failure with retry
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              success: false,
+              canRetry: true,
+              error: "We couldn't finish deleting your account. Some of your data may already be removed. Please try again.",
+            }),
+          });
+        } else {
+          // Second POST: return success
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              success: true,
+            }),
+          });
+        }
+      } else {
+        await route.continue();
+      }
     });
 
-    // Navigate to confirm page (use a mock token)
-    await page.goto(`${BASE_URL}/delete-account/confirm?token=test-token-for-e2e`);
+    // Navigate to confirm page
+    await page.goto(`${BASE_URL}/delete-account/confirm?token=${testToken}`);
     await page.waitForLoadState("networkidle");
 
     // Click confirm button to trigger deletion

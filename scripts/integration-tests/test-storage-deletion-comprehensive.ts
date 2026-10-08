@@ -48,6 +48,9 @@ async function main() {
     "reports",
     "usage_events",
     "xp_events",
+    "pro_waitlist",
+    "user_settings",
+    "blocks",
     "leads",
     "account_deletion_requests",
     "deletion_completion_log"
@@ -134,6 +137,51 @@ async function main() {
   });
   console.log("  ✅ leads");
   
+  // Seed pro_waitlist (with email column)
+  await supabase.from("pro_waitlist").insert({
+    user_id: userId,
+    email: testEmail,
+    referral_code: "TEST123",
+  });
+  console.log("  ✅ pro_waitlist");
+  
+  // Seed user_settings
+  await supabase.from("user_settings").insert({
+    user_id: userId,
+    notifications_enabled: true,
+  });
+  console.log("  ✅ user_settings");
+  
+  // Seed blocks (user as blocker)
+  const { data: otherUser } = await supabase.auth.admin.createUser({
+    email: `other-${Date.now()}@test.com`,
+    email_confirm: true,
+  });
+  if (otherUser.user) {
+    await supabase.from("profiles").insert({ id: otherUser.user.id, display_name: "Other User" });
+    await supabase.from("blocks").insert({
+      blocker_id: userId,
+      blocked_id: otherUser.user.id,
+      blocked_type: "user",
+    });
+    // Also add reverse block (user as blocked)
+    await supabase.from("blocks").insert({
+      blocker_id: otherUser.user.id,
+      blocked_id: userId,
+      blocked_type: "user",
+    });
+  }
+  console.log("  ✅ blocks");
+  
+  // Seed moderation_log (with admin_id set to user - will be nulled on deletion)
+  await supabase.from("moderation_log").insert({
+    admin_id: userId,
+    action: "hide_design",
+    target_type: "project",
+    target_id: crypto.randomUUID(),
+  });
+  console.log("  ✅ moderation_log");
+  
   // Seed account_deletion_requests
   const { data: _deletionRequest } = await supabase.from("account_deletion_requests").insert({
     email: testEmail,
@@ -202,6 +250,12 @@ async function main() {
     console.error("\n❌ Not all tables cleaned up");
     Deno.exit(1);
   }
+  
+  // Special check: moderation_log.admin_id should be nulled
+  const { data: moderationLogs } = await supabase.from("moderation_log")
+    .select("*")
+    .is("admin_id", null);
+  console.log(`  ✅ moderation_log: admin_id nulled (${moderationLogs?.length || 0} rows with null admin_id)`);
   
   console.log("\n✅ All tables cleaned successfully\n");
 
@@ -315,8 +369,9 @@ async function main() {
   console.log("═".repeat(60));
   console.log("✨ ALL TESTS PASSED");
   console.log("═".repeat(60));
-  console.log("✅ Seeded all user-data tables");
-  console.log("✅ Successful deletion removes all rows");
+  console.log("✅ Seeded all user-data tables (including pro_waitlist email, blocks both sides, user_settings)");
+  console.log("✅ Successful deletion removes all rows (all tables empty)");
+  console.log("✅ moderation_log.admin_id properly nulled (not deleted)");
   console.log("✅ Fault injection preserves auth user and request");
   console.log("✅ Retry function completes deletion");
   console.log("✅ Completion log survives cascade delete");

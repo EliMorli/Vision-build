@@ -115,34 +115,35 @@ Deno.test("deleteUserData - DB error returns stage 'database' with table name an
   assertEquals(authDeleteCalled, false, "Auth user should NOT be deleted on DB error");
 });
 
-// TODO: Fix this test - the mock structure doesn't correctly simulate the infinite loop condition
-Deno.test.ignore("deleteUserData - remove that keeps returning same files hits max attempts", async () => {
+Deno.test("deleteUserData - remove that keeps returning same files hits max attempts", async () => {
   const testUserId = "test-infinite-loop";
   let authDeleteCalled = false;
   let listCallCount = 0;
+  let removeCallCount = 0;
 
   const mockSupabase = createMockSupabase({});
 
   // Override storage to always return files to trigger max attempts in the deletion loop
-  const originalStorageFrom = mockSupabase.storage.from;
+  // The key is that list ALWAYS returns the same files, simulating a scenario where
+  // files can't be deleted (e.g., permission issue, S3 eventual consistency, etc.)
   (mockSupabase.storage as any).from = function(bucket: string) {
-    console.log(`storage.from called with bucket: ${bucket}`);
     return {
       list: async (prefix: string, options?: any) => {
         listCallCount++;
-        console.log(`list called: bucket=${bucket}, prefix=${prefix}, listCallCount=${listCallCount}`);
-        // Always return files to force the loop to continue
+        // Return exactly 1000 files (the page size) so the loop doesn't exit early
+        // and continues until hitting maxAttempts (100 iterations)
+        const files = [];
+        for (let i = 0; i < 1000; i++) {
+          files.push({ name: `stuck${i}.jpg`, id: `file-${i}` });
+        }
         return {
-          data: [
-            { name: "stuck1.jpg", id: "file-1" },
-            { name: "stuck2.jpg", id: "file-2" }
-          ],
+          data: files,
           error: null,
         };
       },
       remove: async (paths: string[]) => {
-        console.log(`remove called: paths=${JSON.stringify(paths)}`);
-        // Remove succeeds but files reappear on next list
+        removeCallCount++;
+        // Remove "succeeds" but files reappear on next list
         return { data: null, error: null };
       },
     };
@@ -163,16 +164,12 @@ Deno.test.ignore("deleteUserData - remove that keeps returning same files hits m
     supabase: mockSupabase,
   });
 
-  console.log(`Test result: success=${result.success}, listCallCount=${listCallCount}`);
-  if (result.success) {
-    console.log(`ERROR: Expected failure but got success. listCallCount=${listCallCount}`);
-  }
-  
   assertEquals(result.success, false);
   if (result.success) throw new Error("Result should be failure");
   assertEquals(result.stage, "storage");
   assertEquals(result.error, "storage:max_attempts_exceeded");
   assertEquals(authDeleteCalled, false, "Auth user should NOT be deleted when stuck in loop");
-  // The loop should hit max attempts (100) before succeeding
-  assertEquals(listCallCount >= 100, true, `Should hit max list attempts, got ${listCallCount}`);
+  // The loop should hit max attempts (100) before throwing
+  assertEquals(listCallCount >= 100, true, `Should hit max list attempts (100), got ${listCallCount}`);
+  assertEquals(removeCallCount >= 100, true, `Should hit max remove attempts (100), got ${removeCallCount}`);
 });
