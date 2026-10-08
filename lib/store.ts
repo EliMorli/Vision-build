@@ -34,14 +34,41 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const userId = get().session?.user?.id;
     if (!userId) return;
 
-    const { data, error } = await supabase
+    // Fetch profile
+    const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
       .single();
 
-    if (data) set({ profile: data });
-    if (error) console.warn("fetchProfile:", error.message);
+    if (profileError) {
+      console.warn("fetchProfile:", profileError.message);
+      return;
+    }
+
+    // Fetch XP data
+    let xp = 0;
+    let level = 1;
+
+    // In mock mode, use hardcoded values
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      xp = 120;
+      level = 1;
+    } else {
+      // Call the get_user_xp function
+      const { data: xpData, error: xpError } = await supabase
+        .rpc("get_user_xp", { target_user_id: userId });
+
+      if (!xpError && xpData && xpData.length > 0) {
+        xp = parseInt(xpData[0].total_xp) || 0;
+        level = xpData[0].level || 1;
+      }
+    }
+
+    // Merge XP data into profile
+    if (profileData) {
+      set({ profile: { ...profileData, xp, level } });
+    }
   },
 
   signInWithOAuth: async (provider) => {

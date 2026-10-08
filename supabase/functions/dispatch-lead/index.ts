@@ -247,6 +247,22 @@ To unsubscribe from future project leads, click here: ${unsubscribeBaseUrl}?emai
     // Record usage
     await recordUsage(anonClient, userId, "dispatch-lead");
 
+    // Award XP for requesting pros (once per project)
+    // Service role bypasses RLS; unique constraint prevents duplicates
+    try {
+      await supabase
+        .from("xp_events")
+        .insert({
+          user_id: userId,
+          event_type: "pro_requested",
+          project_id: projectId,
+          amount: 30,
+        });
+    } catch (xpError) {
+      // Ignore duplicate key errors
+      console.log("XP award skipped (may already exist):", xpError);
+    }
+
     return new Response(
       JSON.stringify({ success: true, leadsCreated: leadIds.length, leadIds }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -258,3 +274,29 @@ To unsubscribe from future project leads, click here: ${unsubscribeBaseUrl}?emai
     );
   }
 });
+
+// ============================================================================
+// TODO: Award XP when contractor replies
+// ============================================================================
+// When implementing the inbound contractor reply handler (e.g., Resend webhook
+// or manual reply recording), award XP with the following code:
+//
+//   const supabase = getServiceRoleClient();
+//   try {
+//     await supabase
+//       .from("xp_events")
+//       .insert({
+//         user_id: userId,
+//         event_type: "contractor_replied",
+//         project_id: projectId,
+//         amount: 20,
+//       });
+//   } catch (xpError) {
+//     // Ignore duplicate key errors (already awarded)
+//     console.log("XP award skipped (may already exist):", xpError);
+//   }
+//
+// This should be called once per project when the FIRST contractor reply is
+// recorded. The unique constraint on (user_id, event_type, project_id) ensures
+// XP is only awarded once regardless of how many contractors reply.
+// ============================================================================

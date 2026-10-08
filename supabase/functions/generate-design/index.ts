@@ -346,6 +346,22 @@ Professional interior design rendering, photorealistic, well-lit, high detail.`;
     // Record usage
     await recordUsage(anonClient, userId, "generate-design");
 
+    // Award XP for completing design (service role bypasses RLS)
+    // This is idempotent thanks to the unique constraint on (user_id, event_type, project_id)
+    try {
+      await supabase
+        .from("xp_events")
+        .insert({
+          user_id: userId,
+          event_type: "design_completed",
+          project_id: projectId,
+          amount: 50,
+        });
+    } catch (xpError) {
+      // Ignore duplicate key errors (already awarded)
+      console.log("XP award skipped (may already exist):", xpError);
+    }
+
     return new Response(
       JSON.stringify({ success: true, generatedUrls }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
