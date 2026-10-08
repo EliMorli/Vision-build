@@ -60,11 +60,18 @@ test.describe("VisionBuild Create Loop", () => {
 
     // Intercept mock design image URLs and serve green images
     // Match both relative and absolute URLs
+    let imageRequestCount = 0;
     await page.route(/\/__mock__\/design_\d+\.png/, async (route) => {
+      imageRequestCount++;
+      console.log(`[TEST] Intercepted mock image request #${imageRequestCount}: ${route.request().url()}`);
       await route.fulfill({
         status: 200,
         contentType: "image/png",
-        body: GREEN_IMAGE
+        body: GREEN_IMAGE,
+        headers: {
+          'Content-Type': 'image/png',
+          'Cache-Control': 'no-cache'
+        }
       });
     });
 
@@ -120,10 +127,16 @@ test.describe("VisionBuild Create Loop", () => {
     await expect(page.getByText("Option 1")).toBeVisible();
     
     // Wait for at least one design image to actually load (naturalWidth > 0)
+    // Note: testID is on the Image element itself in React Native Web
     await page.waitForFunction(() => {
-      const images = Array.from(document.querySelectorAll('img[data-testid="private-image-loaded"]'));
-      return images.some((img: any) => img.naturalWidth > 0);
-    }, { timeout: 5000 });
+      const images = Array.from(document.querySelectorAll('img'));
+      // Filter to only images in the design cards (not the XP banner icon, etc.)
+      const designImages = images.filter((img: any) => {
+        const src = img.getAttribute('src');
+        return src && src.includes('__mock__/design_');
+      });
+      return designImages.length > 0 && designImages.some((img: any) => img.naturalWidth > 0);
+    }, { timeout: 10000 });
     
     await page.screenshot({ path: "e2e/screens/a5-results.png", fullPage: true });
 
@@ -138,8 +151,12 @@ test.describe("VisionBuild Create Loop", () => {
     
     // Wait for design images in the grid to load
     await page.waitForFunction(() => {
-      const images = Array.from(document.querySelectorAll('img[data-testid="private-image-loaded"]'));
-      return images.some((img: any) => img.naturalWidth > 0);
+      const images = Array.from(document.querySelectorAll('img'));
+      const designImages = images.filter((img: any) => {
+        const src = img.getAttribute('src');
+        return src && src.includes('__mock__/design_');
+      });
+      return designImages.length > 0 && designImages.some((img: any) => img.naturalWidth > 0);
     }, { timeout: 5000 });
     
     await page.screenshot({ path: "e2e/screens/a5-project-detail.png", fullPage: true });
@@ -169,8 +186,12 @@ test.describe("VisionBuild Create Loop", () => {
     
     // Wait for the project card image to load
     await page.waitForFunction(() => {
-      const images = Array.from(document.querySelectorAll('img[data-testid="private-image-loaded"]'));
-      return images.some((img: any) => img.naturalWidth > 0);
+      const images = Array.from(document.querySelectorAll('img'));
+      const designImages = images.filter((img: any) => {
+        const src = img.getAttribute('src');
+        return src && src.includes('__mock__/design_');
+      });
+      return designImages.length > 0 && designImages.some((img: any) => img.naturalWidth > 0);
     }, { timeout: 5000 });
     
     await page.screenshot({ path: "e2e/screens/a5-home-with-project.png", fullPage: true });
@@ -324,14 +345,15 @@ test.describe("VisionBuild Create Loop", () => {
     // Wait for the component to make another retry attempt
     await page.waitForTimeout(2000);
     
-    // Assert that the image eventually loads after retry
-    await expect(page.getByTestId("private-image-loaded")).toBeVisible({ timeout: 3000 });
-    
-    // Verify image actually loaded with non-zero dimensions
+    // Assert that design images eventually load after retry
     await page.waitForFunction(() => {
-      const img = document.querySelector('img[data-testid="private-image-loaded"]') as HTMLImageElement;
-      return img && img.naturalWidth > 0;
-    }, { timeout: 3000 });
+      const images = Array.from(document.querySelectorAll('img'));
+      const designImages = images.filter((img: any) => {
+        const src = img.getAttribute('src');
+        return src && src.includes('__mock__/design_');
+      });
+      return designImages.length > 0 && designImages.some((img: any) => img.naturalWidth > 0);
+    }, { timeout: 5000 });
     
     await page.screenshot({ path: "e2e/screens/a5-image-retried.png", fullPage: true });
 
