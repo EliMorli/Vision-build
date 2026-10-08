@@ -49,9 +49,11 @@ function getAIConfig() {
   // Fail closed: only explicit "development" or "staging" unlock non-prod behavior
   const isProduction = appEnv !== "development" && appEnv !== "staging";
   
-  // Check for mock mode (development/staging only with AI_MOCK=true)
+  // Check for mock mode (development ONLY with AI_MOCK=true)
+  // Staging and production MUST use real OpenRouter
   const aiMockRaw = Deno.env.get("AI_MOCK") || "";
-  const isMockMode = !isProduction && aiMockRaw.toLowerCase() === "true";
+  const isDevelopment = appEnv === "development";
+  const isMockMode = isDevelopment && aiMockRaw.toLowerCase() === "true";
   
   const baseUrl = Deno.env.get("AI_BASE_URL") || "https://openrouter.ai/api/v1";
   const apiKey = Deno.env.get("AI_API_KEY") || Deno.env.get("OPENAI_API_KEY") || "";
