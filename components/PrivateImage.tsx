@@ -176,8 +176,13 @@ export function PrivateImage({
     );
   }
 
-  // Show placeholder if image failed to load after retries OR while loading/retrying
-  if (showPlaceholder || !imageUrl) {
+  // Show placeholder in these cases:
+  // 1. Permanently failed (showPlaceholder = true after MAX_RETRIES)
+  // 2. No imageUrl yet (initial loading)
+  // 3. Currently retrying (isLoading = true after error)
+  const shouldShowPlaceholder = showPlaceholder || !imageUrl || (isLoading && retryCountRef.current > 0);
+
+  if (shouldShowPlaceholder) {
     return (
       <View
         style={[styles.placeholderContainer, containerStyle]}
