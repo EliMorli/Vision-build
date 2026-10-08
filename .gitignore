@@ -23,6 +23,12 @@ web-build/
 # Supabase local
 supabase/.temp/
 
+# Supabase CLI binaries and downloads
+supabase-go
+supabase-*
+*.tar.gz
+!**/vendor/**/*.tar.gz
+
 # Build outputs
 *.tsbuildinfo
 

@@ -53,16 +53,27 @@ serve(async (req) => {
       
       // Add design_image (the final selected design)
       if (project.design_image) {
-        filesToCopy.push(project.design_image);
+        // Skip if it's the main_image or contains 'original'
+        if (project.design_image !== project.main_image && !project.design_image.includes("original")) {
+          filesToCopy.push(project.design_image);
+        } else {
+          console.warn(`Skipping design_image copy (matches main_image or is original): ${project.design_image}`);
+        }
       }
       
       // Add any generated_image_urls (array of all generated designs)
       if (project.generated_image_urls && Array.isArray(project.generated_image_urls)) {
         for (const url of project.generated_image_urls) {
           if (url && typeof url === "string") {
-            // Extract path from URL if it's a full URL, otherwise use as-is
-            const path = url.includes("/") ? url.split("/").pop() || url : url;
-            filesToCopy.push(path);
+            // Skip if it's the main_image or contains 'original'
+            if (url === project.main_image || url.includes("original")) {
+              console.warn(`Skipping generated image copy (matches main_image or is original): ${url}`);
+              continue;
+            }
+            
+            // Keep full storage path (do NOT split('/').pop())
+            // Paths should be like "userId/projectId/design-1.jpg"
+            filesToCopy.push(url);
           }
         }
       }
@@ -76,7 +87,14 @@ serve(async (req) => {
 
           if (downloadError) {
             console.error(`Failed to download ${path}:`, downloadError);
-            continue;
+            // Log error and fail instead of silently continuing
+            return new Response(
+              JSON.stringify({ 
+                error: "Failed to make project public", 
+                details: `Could not download ${path}: ${downloadError.message}` 
+              }),
+              { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
+            );
           }
 
           // Upload to public-designs (same path)
@@ -89,26 +107,42 @@ serve(async (req) => {
 
           if (uploadError) {
             console.error(`Failed to upload ${path} to public-designs:`, uploadError);
+            // Log error and fail instead of silently continuing
+            return new Response(
+              JSON.stringify({ 
+                error: "Failed to make project public", 
+                details: `Could not upload ${path}: ${uploadError.message}` 
+              }),
+              { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
+            );
           }
-        } catch (err) {
+          
+          console.log(`Successfully copied ${path} to public-designs`);
+        } catch (err: any) {
           console.error(`Error copying ${path}:`, err);
+          return new Response(
+            JSON.stringify({ 
+              error: "Failed to make project public", 
+              details: `Error copying ${path}: ${err.message}` 
+            }),
+            { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
+          );
         }
       }
     } else {
       // Remove from public-designs (generated designs + defensively remove main_image if it was copied)
       const filesToRemove = [];
       
-      // Add design_image
+      // Add design_image (keep full path)
       if (project.design_image) {
         filesToRemove.push(project.design_image);
       }
       
-      // Add generated_image_urls
+      // Add generated_image_urls (keep full paths, do NOT split)
       if (project.generated_image_urls && Array.isArray(project.generated_image_urls)) {
         for (const url of project.generated_image_urls) {
           if (url && typeof url === "string") {
-            const path = url.includes("/") ? url.split("/").pop() || url : url;
-            filesToRemove.push(path);
+            filesToRemove.push(url);
           }
         }
       }
@@ -125,7 +159,16 @@ serve(async (req) => {
 
         if (removeError) {
           console.error("Failed to remove files from public-designs:", removeError);
+          return new Response(
+            JSON.stringify({ 
+              error: "Failed to make project private", 
+              details: `Could not remove files: ${removeError.message}` 
+            }),
+            { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
+          );
         }
+        
+        console.log(`Successfully removed ${filesToRemove.length} files from public-designs`);
       }
     }
 

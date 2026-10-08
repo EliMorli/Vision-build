@@ -118,15 +118,20 @@ serve(async (req: Request) => {
     const confirmUrl = `${baseUrl}/delete-account/confirm?token=${token}`;
 
     if (!RESEND_API_KEY) {
-      // In local/mock mode without RESEND_API_KEY: log the link and fail closed
-      console.log(`[LOCAL MODE] Account deletion confirmation link for ${normalizedEmail}:`);
-      console.log(confirmUrl);
-      
-      if (!isDev) {
-        console.error("RESEND_API_KEY not set in production - deletion request will not be sent");
+      if (isDev) {
+        // Log the link ONLY in development/staging, never in production
+        console.log(`[DEV MODE] Account deletion confirmation link for ${normalizedEmail}:`);
+        console.log(confirmUrl);
+      } else {
+        // Production without RESEND_API_KEY: fail closed with server error, no token logging
+        console.error("SECURITY: RESEND_API_KEY not set in production - cannot send deletion emails");
+        return new Response(
+          JSON.stringify({ error: "Email service unavailable" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
       
-      // Always return the same success message
+      // Dev/staging: return success message
       return new Response(
         JSON.stringify({
           success: true,
