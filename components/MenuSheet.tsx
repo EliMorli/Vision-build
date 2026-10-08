@@ -37,10 +37,11 @@ export function MenuSheet({
       transparent
       animationType="fade"
       onRequestClose={onClose}
+      testID={testID}
     >
       <Pressable style={styles.overlay} onPress={onClose}>
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-          <View style={styles.header} testID={testID}>
+          <View style={styles.header}>
             <Text style={styles.title}>{title}</Text>
             <Pressable
               onPress={onClose}
