@@ -2,12 +2,10 @@
 // Called hourly via pg_cron to process failed deletions with exponential backoff
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { deleteUserData } from "../_shared/delete-user-data.ts";
+import { deleteUserData, type DeleteUserDataParams } from "../_shared/delete-user-data.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const OPS_ALERT_EMAIL = Deno.env.get("OPS_ALERT_EMAIL");
 
 // Backoff schedule: 15min, 1h, 6h, 24h, then daily
 const RETRY_DELAYS_MS = [
@@ -15,7 +13,6 @@ const RETRY_DELAYS_MS = [
   60 * 60 * 1000,      // 1 hour
   6 * 60 * 60 * 1000,  // 6 hours
   24 * 60 * 60 * 1000, // 24 hours
-  // After 4th attempt, retry daily
 ];
 
 function getNextRetryDelay(attempts: number): number {
@@ -25,7 +22,139 @@ function getNextRetryDelay(attempts: number): number {
   return 24 * 60 * 60 * 1000; // Daily after exhausting schedule
 }
 
+export interface RetryDeps {
+  supabase: any;
+  clock: { now: () => Date };
+  deleteUser: (params: DeleteUserDataParams) => Promise<any>;
+  sendAlert: (userId: string, attempts: number, errorCode: string, firstFailedAt: string) => Promise<void>;
+  env: {
+    resendApiKey?: string;
+    opsAlertEmail?: string;
+    alertFromEmail?: string;
+  };
+}
+
+export interface RetryRequest {
+  id: string;
+  user_id: string;
+  email: string;
+  retry_attempts: number;
+  next_retry_at: string;
+  last_error_code: string | null;
+  first_failed_at: string | null;
+  alerted_at: string | null;
+  status: string;
+}
+
+export interface RetryResult {
+  processed: number;
+  succeeded: number;
+  failed: number;
+  alerted: number;
+}
+
+export async function handleRetry(requests: RetryRequest[], deps: RetryDeps): Promise<RetryResult> {
+  const results: RetryResult = {
+    processed: 0,
+    succeeded: 0,
+    failed: 0,
+    alerted: 0,
+  };
+
+  for (const request of requests) {
+    results.processed++;
+    
+    console.log(`Retrying deletion for user ${request.user_id} (attempt ${request.retry_attempts + 1})`);
+
+    // Get user details
+    const { data: { user }, error: getUserError } = await deps.supabase.auth.admin.getUserById(request.user_id);
+
+    if (getUserError || !user) {
+      console.log(`User ${request.user_id} no longer exists, marking as completed`);
+      await deps.supabase
+        .from("account_deletion_requests")
+        .update({
+          status: "completed",
+          completed_at: deps.clock.now().toISOString(),
+        })
+        .eq("id", request.id);
+      results.succeeded++;
+      continue;
+    }
+
+    // Attempt deletion
+    const deleteResult = await deps.deleteUser({
+      userId: request.user_id,
+      userEmail: user.email!,
+      userAppMetadata: user.app_metadata,
+      userIdentities: user.identities || [],
+      supabase: deps.supabase,
+    });
+
+    if (deleteResult.success) {
+      console.log(`Successfully deleted user ${request.user_id} on retry`);
+      
+      // Mark request as completed
+      await deps.supabase
+        .from("account_deletion_requests")
+        .update({
+          status: "completed",
+          completed_at: deps.clock.now().toISOString(),
+        })
+        .eq("id", request.id);
+      
+      // Log completion for compliance
+      await deps.supabase.from("deletion_completion_log").insert({
+        user_id: request.user_id,
+        request_id: request.id,
+        retry_attempts: request.retry_attempts + 1,
+      });
+      
+      results.succeeded++;
+    } else {
+      const newAttempts = request.retry_attempts + 1;
+      const nextRetryAt = new Date(deps.clock.now().getTime() + getNextRetryDelay(newAttempts)).toISOString();
+
+      console.log(`Deletion failed for user ${request.user_id} (attempt ${newAttempts}): ${deleteResult.error}`);
+
+      await deps.supabase
+        .from("account_deletion_requests")
+        .update({
+          retry_attempts: newAttempts,
+          next_retry_at: nextRetryAt,
+          last_error_code: deleteResult.error,
+          first_failed_at: request.first_failed_at || deps.clock.now().toISOString(),
+        })
+        .eq("id", request.id);
+
+      results.failed++;
+
+      // Check if we need to alert ops
+      const daysSinceFirstFailed = request.first_failed_at
+        ? (deps.clock.now().getTime() - new Date(request.first_failed_at).getTime()) / (1000 * 60 * 60 * 24)
+        : 0;
+
+      // Alert if attempts >= 5 OR first failure > 7 days ago
+      if ((newAttempts >= 5 || daysSinceFirstFailed > 7) && !request.alerted_at) {
+        await deps.sendAlert(request.user_id, newAttempts, deleteResult.error, request.first_failed_at || deps.clock.now().toISOString());
+        
+        // Mark as alerted
+        await deps.supabase
+          .from("account_deletion_requests")
+          .update({ alerted_at: deps.clock.now().toISOString() })
+          .eq("id", request.id);
+        
+        results.alerted++;
+      }
+    }
+  }
+
+  return results;
+}
+
 async function sendOpsAlert(userId: string, attempts: number, errorCode: string, firstFailedAt: string) {
+  const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+  const OPS_ALERT_EMAIL = Deno.env.get("OPS_ALERT_EMAIL");
   const ALERT_FROM = Deno.env.get("ALERT_FROM_EMAIL");
   
   if (!RESEND_API_KEY) {
@@ -101,7 +230,7 @@ Deno.serve(async (req) => {
       .eq("status", "failed_pending_retry")
       .lte("next_retry_at", now)
       .order("next_retry_at", { ascending: true })
-      .limit(10); // Process up to 10 per run
+      .limit(10);
 
     if (fetchError) {
       console.error("Error fetching pending deletions:", fetchError);
@@ -121,102 +250,17 @@ Deno.serve(async (req) => {
 
     console.log(`Found ${pendingDeletions.length} deletion(s) to retry`);
 
-    const results = {
-      processed: 0,
-      succeeded: 0,
-      failed: 0,
-      alerted: 0,
-    };
-
-    for (const request of pendingDeletions) {
-      results.processed++;
-      
-      console.log(`Retrying deletion for user ${request.user_id} (attempt ${request.retry_attempts + 1})`);
-
-      // Get user details
-      const { data: { user }, error: getUserError } = await supabase.auth.admin.getUserById(request.user_id);
-
-      if (getUserError || !user) {
-        console.log(`User ${request.user_id} no longer exists, marking as completed`);
-        await supabase
-          .from("account_deletion_requests")
-          .update({
-            status: "completed",
-            completed_at: new Date().toISOString(),
-          })
-          .eq("id", request.id);
-        results.succeeded++;
-        continue;
-      }
-
-      // Attempt deletion
-      const deleteResult = await deleteUserData({
-        userId: request.user_id,
-        userEmail: user.email!,
-        userAppMetadata: user.app_metadata,
-        userIdentities: user.identities || [],
-        supabase,
-        // No Apple auth code on retry
-      });
-
-      if (deleteResult.success) {
-        console.log(`Successfully deleted user ${request.user_id} on retry`);
-        
-        // Mark request as completed
-        await supabase
-          .from("account_deletion_requests")
-          .update({
-            status: "completed",
-            completed_at: new Date().toISOString(),
-          })
-          .eq("id", request.id);
-        
-        // Log completion for compliance (account_deletion_requests will CASCADE delete, this survives)
-        await supabase.from("deletion_completion_log").insert({
-          user_id: request.user_id,
-          request_id: request.id,
-          retry_attempts: request.retry_attempts + 1,
-        });
-        
-        results.succeeded++;
-      } else {
-        const newAttempts = request.retry_attempts + 1;
-        const nextRetryAt = new Date(Date.now() + getNextRetryDelay(newAttempts)).toISOString();
-
-        console.log(`Deletion failed for user ${request.user_id} (attempt ${newAttempts}): ${deleteResult.error}`);
-
-        await supabase
-          .from("account_deletion_requests")
-          .update({
-            retry_attempts: newAttempts,
-            next_retry_at: nextRetryAt,
-            last_error_code: deleteResult.error,
-            first_failed_at: request.first_failed_at || new Date().toISOString(),
-          })
-          .eq("id", request.id);
-
-        results.failed++;
-
-        // Check if we need to alert ops
-        const daysSinceFirstFailed = request.first_failed_at
-          ? (Date.now() - new Date(request.first_failed_at).getTime()) / (1000 * 60 * 60 * 24)
-          : 0;
-
-        // Alert if attempts >= 5 OR first failure > 7 days ago
-        // Only alert once per request (check if we haven't alerted before)
-        if ((newAttempts >= 5 || daysSinceFirstFailed > 7) && !request.alerted_at) {
-          await sendOpsAlert(request.user_id, newAttempts, deleteResult.error, request.first_failed_at || new Date().toISOString());
-          
-          // Mark as alerted
-          await supabase
-            .from("account_deletion_requests")
-            .update({ alerted_at: new Date().toISOString() })
-            .eq("id", request.id);
-          
-          results.alerted++;
-        }
-      }
-    }
+    const results = await handleRetry(pendingDeletions, {
+      supabase,
+      clock: { now: () => new Date() },
+      deleteUser: deleteUserData,
+      sendAlert: sendOpsAlert,
+      env: {
+        resendApiKey: Deno.env.get("RESEND_API_KEY"),
+        opsAlertEmail: Deno.env.get("OPS_ALERT_EMAIL"),
+        alertFromEmail: Deno.env.get("ALERT_FROM_EMAIL"),
+      },
+    });
 
     return new Response(
       JSON.stringify(results),
