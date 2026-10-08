@@ -17,9 +17,15 @@ export type AppleRevokeStatus =
   | { status: 'skipped'; reason: 'not_apple_user' | 'no_auth_code' | 'missing_credentials' }
   | { status: 'failed'; reason: 'token_exchange_failed' | 'revoke_failed'; errorCode?: string };
 
+export type DeleteUserDataResult =
+  | { success: true; appleRevokeStatus: AppleRevokeStatus }
+  | { success: false; stage: 'storage' | 'database' | 'auth'; bucket?: string; error: string };
+
 /**
  * Recursively delete all objects under a prefix in a storage bucket, with pagination.
- * Returns the total number of objects deleted.
+ * Returns the total number of objects deleted, or throws on error.
+ * 
+ * Fixed pagination: tracks progress to prevent infinite loops on failed removes.
  */
 async function deleteStoragePrefix(
   supabase: any,
@@ -27,21 +33,22 @@ async function deleteStoragePrefix(
   prefix: string
 ): Promise<number> {
   let totalDeleted = 0;
-  let hasMore = true;
   const pageSize = 1000;
+  const maxAttempts = 100; // Cap attempts to prevent infinite loops
+  let attempts = 0;
 
-  while (hasMore) {
+  while (attempts < maxAttempts) {
+    attempts++;
+    
     const { data: files, error } = await supabase.storage
       .from(bucketId)
       .list(prefix, { limit: pageSize, offset: 0 });
 
     if (error) {
-      console.error(`Error listing files in ${bucketId}/${prefix}:`, error);
-      break;
+      throw new Error(`Storage list error in ${bucketId}/${prefix}: ${error.message}`);
     }
 
     if (!files || files.length === 0) {
-      hasMore = false;
       break;
     }
 
@@ -64,13 +71,21 @@ async function deleteStoragePrefix(
         .remove(filePaths);
 
       if (removeError) {
-        console.error(`Error removing files from ${bucketId}:`, removeError);
-      } else {
-        totalDeleted += filePaths.length;
+        throw new Error(`Storage remove error in ${bucketId}: ${removeError.message}`);
       }
+      
+      totalDeleted += filePaths.length;
+      console.log(`Deleted ${filePaths.length} object(s) from ${bucketId}/${prefix}`);
     }
 
-    hasMore = files.length === pageSize;
+    // If we got fewer files than the page size, we're done
+    if (files.length < pageSize) {
+      break;
+    }
+  }
+
+  if (attempts >= maxAttempts) {
+    throw new Error(`Storage deletion exceeded max attempts (${maxAttempts}) in ${bucketId}/${prefix}`);
   }
 
   return totalDeleted;
@@ -79,50 +94,74 @@ async function deleteStoragePrefix(
 /**
  * Deletes all user data: storage, database rows, and auth account.
  * Also revokes Apple Sign-In token if applicable (but NEVER blocks deletion).
- * Returns true if deletion succeeded, throws on error.
+ * 
+ * On storage or database errors, returns a typed failure WITHOUT deleting auth user.
+ * This allows the caller to persist a retry record.
  */
-export async function deleteUserData(params: DeleteUserDataParams): Promise<{ 
-  success: true; 
-  appleRevokeStatus: AppleRevokeStatus 
-}> {
-  const { userId, userEmail, userAppMetadata, userIdentities, supabase, appleAuthCode } = params;
+export async function deleteUserData(params: DeleteUserDataParams): Promise<DeleteUserDataResult> {
+  const { userId, userAppMetadata, userIdentities, supabase, appleAuthCode } = params;
 
   // ─── Delete storage objects ────────────────────────────
   // All storage buckets in the system (from migrations)
   const buckets = ['room-photos', 'public-designs'];
   
-  for (const bucketId of buckets) {
-    const deletedCount = await deleteStoragePrefix(supabase, bucketId, userId);
-    if (deletedCount > 0) {
-      console.log(`Deleted ${deletedCount} object(s) from ${bucketId}/${userId}`);
-    }
-  }
-
-  // Also delete public-designs by projectId
-  const { data: projects } = await supabase
-    .from("projects")
-    .select("id")
-    .eq("user_id", userId);
-
-  if (projects && projects.length > 0) {
-    for (const project of projects) {
-      const deletedCount = await deleteStoragePrefix(supabase, 'public-designs', project.id);
+  try {
+    for (const bucketId of buckets) {
+      const deletedCount = await deleteStoragePrefix(supabase, bucketId, userId);
       if (deletedCount > 0) {
-        console.log(`Deleted ${deletedCount} object(s) from public-designs/${project.id}`);
+        console.log(`Deleted ${deletedCount} object(s) from ${bucketId}/${userId}`);
       }
     }
+
+    // Also delete public-designs by projectId
+    const { data: projects } = await supabase
+      .from("projects")
+      .select("id")
+      .eq("user_id", userId);
+
+    if (projects && projects.length > 0) {
+      for (const project of projects) {
+        const deletedCount = await deleteStoragePrefix(supabase, 'public-designs', project.id);
+        if (deletedCount > 0) {
+          console.log(`Deleted ${deletedCount} object(s) from public-designs/${project.id}`);
+        }
+      }
+    }
+  } catch (storageError: any) {
+    // Extract bucket name from error if present
+    const bucketMatch = storageError.message?.match(/in ([^/]+)\//);
+    const bucket = bucketMatch ? bucketMatch[1] : undefined;
+    
+    console.error(`Storage deletion failed for user ${userId}: ${storageError.message}`);
+    return {
+      success: false,
+      stage: 'storage',
+      bucket,
+      error: storageError.message
+    };
   }
 
   // ─── Delete database rows ──────────────────────────────
   // RLS + cascade delete handles most of these automatically,
   // but we delete explicitly for clarity and logging
 
-  await supabase.from("leads").delete().eq("user_id", userId);
-  await supabase.from("reports").delete().eq("user_id", userId);
-  await supabase.from("consents").delete().eq("user_id", userId);
-  await supabase.from("usage_events").delete().eq("user_id", userId);
-  await supabase.from("projects").delete().eq("user_id", userId);
-  await supabase.from("profiles").delete().eq("id", userId);
+  try {
+    await supabase.from("xp_events").delete().eq("user_id", userId);
+    await supabase.from("leads").delete().eq("user_id", userId);
+    await supabase.from("reports").delete().eq("user_id", userId);
+    await supabase.from("consents").delete().eq("user_id", userId);
+    await supabase.from("usage_events").delete().eq("user_id", userId);
+    await supabase.from("account_deletion_requests").delete().eq("user_id", userId);
+    await supabase.from("projects").delete().eq("user_id", userId);
+    await supabase.from("profiles").delete().eq("id", userId);
+  } catch (dbError: any) {
+    console.error(`Database deletion failed for user ${userId}: ${dbError.message}`);
+    return {
+      success: false,
+      stage: 'database',
+      error: dbError.message
+    };
+  }
 
   // ─── Revoke Apple Sign-In token (if applicable) ────────
   // IMPORTANT: Apple revocation NEVER blocks deletion. The account is deleted regardless.
@@ -139,11 +178,11 @@ export async function deleteUserData(params: DeleteUserDataParams): Promise<{
   if (!isAppleUser) {
     appleRevokeStatus = { status: 'skipped', reason: 'not_apple_user' };
   } else if (!appleAuthCode) {
-    console.log(`Apple revocation skipped for ${userId}: no authorization code provided (user may have cancelled)`);
+    console.log(`Apple revocation skipped for user ${userId}: no authorization code provided (user may have cancelled)`);
     appleRevokeStatus = { status: 'skipped', reason: 'no_auth_code' };
   } else if (!APPLE_TEAM_ID || !APPLE_KEY_ID || !APPLE_PRIVATE_KEY || !APPLE_SERVICES_ID) {
     console.warn(
-      `Apple revocation skipped for ${userId}: missing credentials. ` +
+      `Apple revocation skipped for user ${userId}: missing credentials. ` +
       "Set APPLE_TEAM_ID, APPLE_KEY_ID, APPLE_PRIVATE_KEY, and APPLE_SERVICES_ID to enable."
     );
     appleRevokeStatus = { status: 'skipped', reason: 'missing_credentials' };
@@ -189,8 +228,7 @@ export async function deleteUserData(params: DeleteUserDataParams): Promise<{
       });
 
       if (!tokenRes.ok) {
-        const errorText = await tokenRes.text();
-        console.error(`Apple token exchange failed for ${userId}: ${tokenRes.status}`);
+        console.error(`Apple token exchange failed for user ${userId}: ${tokenRes.status}`);
         appleRevokeStatus = { status: 'failed', reason: 'token_exchange_failed', errorCode: String(tokenRes.status) };
       } else {
         const tokenData = await tokenRes.json();
@@ -208,15 +246,15 @@ export async function deleteUserData(params: DeleteUserDataParams): Promise<{
         });
 
         if (!revokeRes.ok) {
-          console.error(`Apple token revocation failed for ${userId}: ${revokeRes.status}`);
+          console.error(`Apple token revocation failed for user ${userId}: ${revokeRes.status}`);
           appleRevokeStatus = { status: 'failed', reason: 'revoke_failed', errorCode: String(revokeRes.status) };
         } else {
-          console.log(`Apple token revoked successfully for ${userId}`);
+          console.log(`Apple token revoked successfully for user ${userId}`);
           appleRevokeStatus = { status: 'success' };
         }
       }
     } catch (appleErr: any) {
-      console.error(`Apple revocation error for ${userId}:`, appleErr.message);
+      console.error(`Apple revocation error for user ${userId}:`, appleErr.message);
       appleRevokeStatus = { status: 'failed', reason: 'token_exchange_failed' };
     }
   }
@@ -226,9 +264,14 @@ export async function deleteUserData(params: DeleteUserDataParams): Promise<{
   const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
 
   if (deleteError) {
-    throw new Error(`Failed to delete auth user ${userId}: ${deleteError.message}`);
+    console.error(`Auth user deletion failed for user ${userId}: ${deleteError.message}`);
+    return {
+      success: false,
+      stage: 'auth',
+      error: deleteError.message
+    };
   }
 
-  console.log(`Successfully deleted account for ${userEmail} (${userId})`);
+  console.log(`Successfully deleted account for user ${userId}`);
   return { success: true, appleRevokeStatus };
 }

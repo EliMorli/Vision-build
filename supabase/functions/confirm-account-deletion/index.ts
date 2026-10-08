@@ -227,47 +227,64 @@ export async function handleConfirmPost(
   }
 
   // Execute deletion using shared module
-  try {
-    const result = await deps.deleteUser({
-      userId,
-      userEmail: email,
-      userAppMetadata: user?.app_metadata || {},
-      userIdentities: user?.identities || [],
-      supabase: deps.supabase,
-      appleAuthCode,
-    });
+  const result = await deps.deleteUser({
+    userId,
+    userEmail: email,
+    userAppMetadata: user?.app_metadata || {},
+    userIdentities: user?.identities || [],
+    supabase: deps.supabase,
+    appleAuthCode,
+  });
 
-    // Mark deletion request as completed
+  if (!result.success) {
+    // Deletion failed - persist for retry
+    const now = deps.clock.now();
+    const nextRetryAt = new Date(now.getTime() + 15 * 60 * 1000).toISOString(); // 15 minutes
+    const errorCode = `${result.stage}:${result.error.substring(0, 50)}`;
+
     await deps.supabase
       .from("account_deletion_requests")
       .update({
-        status: "completed",
-        completed_at: deps.clock.now().toISOString(),
+        status: "failed_pending_retry",
+        retry_attempts: 0,
+        next_retry_at: nextRetryAt,
+        last_error_code: errorCode,
+        first_failed_at: now.toISOString(),
       })
       .eq("id", requestId);
 
-    const isAppleUser = user?.app_metadata?.provider === "apple";
-    const needsManualDisconnect = isAppleUser && result.appleRevokeStatus.status !== 'success';
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: "Your account has been permanently deleted.",
-        appleRevokeStatus: result.appleRevokeStatus,
-        needsManualDisconnect,
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  } catch (deleteError: any) {
-    console.error(`Deletion failed for ${email} (${userId}):`, deleteError);
+    console.error(`Deletion failed for user ${userId} at stage ${result.stage}: ${result.error}`);
     return new Response(
       JSON.stringify({
         success: false,
-        error: deleteError.message,
+        error: "We couldn't finish deleting your account. Some of your data may already be removed. Please try again.",
+        canRetry: true,
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
+
+  // Deletion succeeded - mark as completed
+  await deps.supabase
+    .from("account_deletion_requests")
+    .update({
+      status: "completed",
+      completed_at: deps.clock.now().toISOString(),
+    })
+    .eq("id", requestId);
+
+  const isAppleUser = user?.app_metadata?.provider === "apple";
+  const needsManualDisconnect = isAppleUser && result.appleRevokeStatus.status !== 'success';
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      message: "Your account has been permanently deleted.",
+      appleRevokeStatus: result.appleRevokeStatus,
+      needsManualDisconnect,
+    }),
+    { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
 }
 
 serve(async (req: Request) => {
