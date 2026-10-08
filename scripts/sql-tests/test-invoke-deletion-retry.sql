@@ -36,48 +36,46 @@ BEGIN
   END;
 
   -- Test 4: Raises error when project_url secret is missing
+  DELETE FROM vault.decrypted_secrets WHERE name = 'project_url';
+  
   BEGIN
-    SAVEPOINT before_delete_url;
-    DELETE FROM vault.decrypted_secrets WHERE name = 'project_url';
-    
-    BEGIN
-      SET ROLE service_role;
-      PERFORM public.invoke_deletion_retry();
+    SET ROLE service_role;
+    PERFORM public.invoke_deletion_retry();
+    SET ROLE postgres;
+    RAISE EXCEPTION 'FAIL: Function did not raise error for missing project_url';
+  EXCEPTION
+    WHEN OTHERS THEN
       SET ROLE postgres;
-      RAISE EXCEPTION 'FAIL: Function did not raise error for missing project_url';
-    EXCEPTION
-      WHEN OTHERS THEN
-        SET ROLE postgres;
-        IF SQLERRM LIKE '%vault secret project_url missing%' THEN
-          RAISE NOTICE 'PASS: Function raises error for missing project_url';
-        ELSE
-          RAISE EXCEPTION 'FAIL: Wrong error message for missing project_url: %', SQLERRM;
-        END IF;
-    END;
-    
-    ROLLBACK TO SAVEPOINT before_delete_url;
+      IF SQLERRM LIKE '%vault secret project_url missing%' THEN
+        RAISE NOTICE 'PASS: Function raises error for missing project_url';
+      ELSE
+        RAISE EXCEPTION 'FAIL: Wrong error message for missing project_url: %', SQLERRM;
+      END IF;
   END;
+  
+  -- Restore secret
+  INSERT INTO vault.decrypted_secrets (name, decrypted_secret) 
+  VALUES ('project_url', 'http://localhost:54321');
 
   -- Test 5: Raises error when service_role_key secret is missing
+  DELETE FROM vault.decrypted_secrets WHERE name = 'service_role_key';
+  
   BEGIN
-    SAVEPOINT before_delete_key;
-    DELETE FROM vault.decrypted_secrets WHERE name = 'service_role_key';
-    
-    BEGIN
-      SET ROLE service_role;
-      PERFORM public.invoke_deletion_retry();
+    SET ROLE service_role;
+    PERFORM public.invoke_deletion_retry();
+    SET ROLE postgres;
+    RAISE EXCEPTION 'FAIL: Function did not raise error for missing service_role_key';
+  EXCEPTION
+    WHEN OTHERS THEN
       SET ROLE postgres;
-      RAISE EXCEPTION 'FAIL: Function did not raise error for missing service_role_key';
-    EXCEPTION
-      WHEN OTHERS THEN
-        SET ROLE postgres;
-        IF SQLERRM LIKE '%vault secret service_role_key missing%' THEN
-          RAISE NOTICE 'PASS: Function raises error for missing service_role_key';
-        ELSE
-          RAISE EXCEPTION 'FAIL: Wrong error message for missing service_role_key: %', SQLERRM;
-        END IF;
-    END;
-    
-    ROLLBACK TO SAVEPOINT before_delete_key;
+      IF SQLERRM LIKE '%vault secret service_role_key missing%' THEN
+        RAISE NOTICE 'PASS: Function raises error for missing service_role_key';
+      ELSE
+        RAISE EXCEPTION 'FAIL: Wrong error message for missing service_role_key: %', SQLERRM;
+      END IF;
   END;
+  
+  -- Restore secret
+  INSERT INTO vault.decrypted_secrets (name, decrypted_secret) 
+  VALUES ('service_role_key', 'test-service-role-key-ci');
 END $$;
