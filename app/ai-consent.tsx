@@ -102,9 +102,20 @@ export default function AIConsentScreen() {
     // Clear pending consent
     clearPendingConsent();
     
-    // If we have resume data with a project, return to that project
-    if (pendingConsent?.resume?.projectId) {
-      router.replace(`/project/${pendingConsent.resume.projectId}`);
+    // If we have resume data, return to appropriate screen
+    if (pendingConsent?.resume) {
+      const { type, projectId } = pendingConsent.resume;
+      if (type === "generate" && projectId) {
+        // For generate flow, go back to editor/style picker
+        router.replace(`/editor/${projectId}`);
+      } else if (projectId) {
+        // For other flows with project, go to project detail
+        router.replace(`/project/${projectId}`);
+      } else if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace("/(tabs)");
+      }
     } else if (router.canGoBack()) {
       router.back();
     } else {
