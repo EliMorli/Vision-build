@@ -171,10 +171,18 @@ test.describe("Pros Waitlist", () => {
     await page.screenshot({ path: "e2e/screenshots/hf-settings-waitlist.png", fullPage: false });
 
     // Toggle off using Switch testID
-    await page.getByTestId("settings-pros-waitlist-toggle").click();
+    const toggle = page.getByTestId("settings-pros-waitlist-toggle");
+    await toggle.click();
+    
+    // Wait for toggle state to update (Switch should now be unchecked)
+    await page.waitForTimeout(500);
 
     // Navigate back to Home
     await page.goto(BASE_URL);
+    await page.waitForLoadState("networkidle");
+    
+    // Reload to ensure fresh state
+    await page.reload();
     await page.waitForLoadState("networkidle");
 
     // Should see the full card again (not collapsed)
