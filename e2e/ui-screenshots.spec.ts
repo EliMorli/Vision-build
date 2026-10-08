@@ -163,8 +163,8 @@ test.describe("UI Screenshots", () => {
     await expect(page.getByTestId("home-project-card")).toBeVisible({ timeout: 5000 });
     await expect(page.getByText("Living room refresh")).toBeVisible();
     
-    // XP should reflect the project activity (120 XP from initial seed)
-    await expect(page.getByText("120 XP")).toBeVisible();
+    // XP should reflect the profile (0 XP from initial state)
+    await expect(page.getByText("0 XP")).toBeVisible();
     
     await page.screenshot({ path: "e2e/screens/ui-home-with-project.png", fullPage: false });
     
@@ -221,7 +221,25 @@ test.describe("UI Screenshots", () => {
     
     await page.goto(`${BASE_URL}/project/mock-project-brief`);
     await page.waitForLoadState("networkidle");
-    await expect(page.getByTestId("project-brief")).toBeVisible({ timeout: 10000 });
-    await page.screenshot({ path: "e2e/screens/ui-project-brief.png", fullPage: false });
+    
+    // Scroll to the brief section and verify it's visible
+    const briefSection = page.getByTestId("project-brief");
+    await briefSection.scrollIntoViewIfNeeded();
+    await expect(briefSection).toBeVisible({ timeout: 10000 });
+    
+    // Verify the seeded brief text is present
+    await expect(page.getByText(/modern kitchen remodel with new fixtures/i)).toBeVisible();
+    
+    // Verify the waitlist button
+    const waitlistButton = page.getByTestId("project-brief-waitlist");
+    await expect(waitlistButton).toBeVisible();
+    
+    await page.screenshot({ path: "e2e/screens/ui-project-brief.png", fullPage: true });
+    
+    // Click the button and verify navigation
+    await waitlistButton.click();
+    await page.waitForLoadState("networkidle");
+    await expect(page).toHaveURL(/pros-coming-soon\?projectId=mock-project-brief/);
+    await expect(page.getByText("Local pros are coming soon", { exact: true })).toBeVisible();
   });
 });

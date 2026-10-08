@@ -74,7 +74,13 @@ export default function ProfileScreen() {
       color: "#FF7A59", 
       earnedDescription: "Exterior design created",
       lockedHint: "Redesign an outdoor space.",
-      earned: false 
+      earned: projects.some(p => {
+        const roomType = p.room_analysis?.roomType?.toLowerCase() || "";
+        return roomType.includes("backyard") || roomType.includes("patio") || 
+               roomType.includes("deck") || roomType.includes("outdoor") || 
+               roomType.includes("exterior") || roomType.includes("yard") ||
+               roomType.includes("garden");
+      })
     },
     { 
       id: "builder", 
