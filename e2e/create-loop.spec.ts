@@ -185,9 +185,10 @@ test.describe("VisionBuild Create Loop", () => {
   });
 
   test("handles consent decline correctly", async ({ page }: { page: Page }) => {
-    // Seed intro seen but NOT consented
+    // Seed intro seen but NOT consented - set mock_consent_version to empty to trigger server-side check
     await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:intro_seen", "true");
+      localStorage.setItem("@visionbuild:mock_consent_version", ""); // Trigger consent check
     });
 
     // Track requests to verify no analyze or generate requests are made
@@ -202,40 +203,40 @@ test.describe("VisionBuild Create Loop", () => {
     await page.goto(BASE_URL);
     await page.waitForLoadState("networkidle");
 
-    // With intro seen but no consent, and mock session enabled,
-    // app will navigate to Home -> AI consent check triggers -> consent screen
-    // So we should land on consent screen directly
-    // Assert consent screen visible, then screenshot
-    await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 10000 });
-    await page.screenshot({ path: "e2e/screens/a5-consent.png", fullPage: true });
-
-    // Navigate back (decline consent)
-    await page.goBack();
-
-    // Should be back on Home screen now
-    await expect(page.getByText("No projects yet")).toBeInViewport({ timeout: 5000 });
-
-    // Try to start a project again
+    // Start a project
     await page.getByRole("button", { name: /start your first project/i }).click();
 
     // Should be on camera screen
     await expect(page.getByText(/take a photo or pick one/i)).toBeInViewport();
 
-    // Upload test image using filechooser pattern
+    // Upload test image
     const [chooser] = await Promise.all([
       page.waitForEvent("filechooser"),
       page.getByRole("button", { name: /gallery/i }).click(),
     ]);
     await chooser.setFiles("e2e/fixtures/test-room.jpg");
 
-    // Click Analyze - this should trigger consent check again
+    // Click Analyze - this should trigger consent check
+    await page.getByRole("button", { name: /analyze room/i }).click();
+
+    // Should see consent screen
+    await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 10000 });
+    await page.screenshot({ path: "e2e/screens/a5-consent.png", fullPage: true });
+
+    // Decline consent
+    await page.getByRole("button", { name: /decline/i }).click();
+
+    // Should be back on camera screen
+    await expect(page.getByText(/take a photo or pick one/i)).toBeInViewport({ timeout: 5000 });
+
+    // Try to analyze again
     await page.getByRole("button", { name: /analyze room/i }).click();
 
     // Should be on consent screen again
     await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 5000 });
 
-    // Navigate back again (decline again)
-    await page.goBack();
+    // Decline again
+    await page.getByRole("button", { name: /decline/i }).click();
 
     // Should be back on camera screen
     await expect(page.getByText(/take a photo or pick one/i)).toBeInViewport();
@@ -270,17 +271,13 @@ test.describe("VisionBuild Create Loop", () => {
       
       if (reqNum <= 4) {
         // First batch: return 403 to trigger handleImageError
-        console.log(`[TEST] Request #${reqNum}: returning 403`);
         await route.fulfill({ status: 403, body: 'Forbidden' });
       } else if (reqNum <= 8) {
         // Retry batch: hold on promise so placeholder shows
-        console.log(`[TEST] Request #${reqNum}: holding on promise`);
         await holdPromise;
-        console.log(`[TEST] Request #${reqNum}: released, continuing to real file`);
         await route.continue();
       } else {
         // Final retries after placeholder captured: let through
-        console.log(`[TEST] Request #${reqNum}: passing through`);
         await route.continue();
       }
     });
@@ -299,16 +296,11 @@ test.describe("VisionBuild Create Loop", () => {
     await page.getByRole("button", { name: /analyze room/i }).click();
     await page.getByText("Modern", { exact: true }).click();
     await page.getByRole("button", { name: /generate 4 designs/i }).click();
-    await page.waitForTimeout(4000);
     await expect(page.getByText(/swipe to browse/i)).toBeInViewport({ timeout: 30000 });
 
-    // Wait for initial 403s to trigger, then wait for retries to be held
-    // The first requests return 403, then retries are held on promise
-    await page.waitForTimeout(2500);
-    
-    // Assert that the clay IsoRoom placeholder is visible (not blank white cards)
+    // Wait for the placeholder to become visible (happens after 403 and during retry)
     const placeholder = page.locator('[data-testid="private-image-placeholder"]').first();
-    await expect(placeholder).toBeVisible({ timeout: 5000 });
+    await expect(placeholder).toBeVisible({ timeout: 10000 });
     
     // Verify placeholder has non-zero bounding box
     const boundingBox = await placeholder.boundingBox();
@@ -320,23 +312,15 @@ test.describe("VisionBuild Create Loop", () => {
     await page.screenshot({ path: "e2e/screens/a5-image-expired-placeholder.png", fullPage: true });
     
     // Release the hold so retry requests can proceed
-    console.log('[TEST] Releasing hold, allowing retry requests through');
     resolveHold();
     
-    // Wait for images to load after retry succeeds
-    await page.waitForFunction(() => {
-      const images = Array.from(document.querySelectorAll('img'));
-      const designImages = images.filter((img: any) => {
-        const src = img.getAttribute('src');
-        return src && src.includes('__mock__/design_');
-      });
-      return designImages.length > 0 && designImages.some((img: any) => img.naturalWidth > 0);
-    }, { timeout: 10000 });
+    // Wait for images to load after retry succeeds - wait for loaded image testID
+    const loadedImage = page.locator('[data-testid="private-image-loaded"]').first();
+    await expect(loadedImage).toBeVisible({ timeout: 10000 });
     
     await page.screenshot({ path: "e2e/screens/a5-image-retried.png", fullPage: true });
 
     // Verify that retries happened
-    console.log(`[TEST] Total requests: ${signedUrlRequests.length}`);
     expect(signedUrlRequests.length).toBeGreaterThan(4);
   });
 });
