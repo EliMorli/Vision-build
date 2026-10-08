@@ -12,6 +12,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { verifyAuth } from "../_shared/auth.ts";
 import { checkRateLimit, recordUsage } from "../_shared/rate-limit.ts";
 import { viChat } from "../_shared/ai.ts";
+import { checkAIConsent, consentRequiredResponse } from "../_shared/consent.ts";
 
 serve(async (req: Request) => {
   // Handle CORS preflight
@@ -26,6 +27,12 @@ serve(async (req: Request) => {
       return authResult;
     }
     const { userId, anonClient } = authResult;
+
+    // Check AI consent BEFORE any processing
+    const consentResult = await checkAIConsent(anonClient, userId);
+    if (!consentResult.hasConsent) {
+      return consentRequiredResponse(consentResult);
+    }
 
     // Check rate limit (uses default limit for assistant-chat)
     const rateLimitResult = await checkRateLimit(anonClient, userId, "assistant-chat");

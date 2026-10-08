@@ -13,6 +13,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { verifyAuth, verifyProjectOwnership, getServiceRoleClient } from "../_shared/auth.ts";
 import { checkRateLimit, recordUsage } from "../_shared/rate-limit.ts";
+import { checkAIConsent, consentRequiredResponse } from "../_shared/consent.ts";
 
 /**
  * Download an image from a URL and upload it to private Supabase storage
@@ -237,6 +238,12 @@ serve(async (req: Request) => {
       return authResult;
     }
     const { userId, anonClient } = authResult;
+
+    // Check AI consent BEFORE any processing
+    const consentResult = await checkAIConsent(anonClient, userId);
+    if (!consentResult.hasConsent) {
+      return consentRequiredResponse(consentResult);
+    }
 
     const { projectId, stylePrompt, roomAnalysis, isPreview } = await req.json();
 
