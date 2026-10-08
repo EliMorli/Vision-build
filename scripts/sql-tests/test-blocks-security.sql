@@ -4,24 +4,23 @@
 \set ON_ERROR_STOP on
 
 -- Setup: Create two test users
-DO $$
-DECLARE
-  user_a_id uuid := '11111111-1111-1111-1111-111111111111';
-  user_b_id uuid := '22222222-2222-2222-2222-222222222222';
-BEGIN
-  -- Clean up any existing test data
-  DELETE FROM public.blocks WHERE blocker_id IN (user_a_id, user_b_id) OR blocked_id IN (user_a_id, user_b_id);
-  DELETE FROM public.user_settings WHERE user_id IN (user_a_id, user_b_id);
-  DELETE FROM public.pro_waitlist WHERE user_id IN (user_a_id, user_b_id);
-  DELETE FROM public.profiles WHERE id IN (user_a_id, user_b_id);
-  
-  -- Insert test profiles
-  INSERT INTO public.profiles (id, email, display_name)
-  VALUES 
-    (user_a_id, 'user-a@test.com', 'User A'),
-    (user_b_id, 'user-b@test.com', 'User B');
-END;
-$$;
+BEGIN;
+
+-- Create auth users first
+INSERT INTO auth.users (id, email)
+VALUES 
+  ('11111111-1111-1111-1111-111111111111', 'user-a@test.com'),
+  ('22222222-2222-2222-2222-222222222222', 'user-b@test.com')
+ON CONFLICT (id) DO NOTHING;
+
+-- Create profiles
+INSERT INTO public.profiles (id, email, display_name)
+VALUES 
+  ('11111111-1111-1111-1111-111111111111', 'user-a@test.com', 'User A'),
+  ('22222222-2222-2222-2222-222222222222', 'user-b@test.com', 'User B')
+ON CONFLICT (id) DO NOTHING;
+
+COMMIT;
 
 -- ============================================================
 -- BLOCKS TESTS
@@ -234,16 +233,15 @@ ROLLBACK;
 -- CLEANUP
 -- ============================================================
 
-DO $$
-DECLARE
-  user_a_id uuid := '11111111-1111-1111-1111-111111111111';
-  user_b_id uuid := '22222222-2222-2222-2222-222222222222';
-BEGIN
-  DELETE FROM public.blocks WHERE blocker_id IN (user_a_id, user_b_id) OR blocked_id IN (user_a_id, user_b_id);
-  DELETE FROM public.user_settings WHERE user_id IN (user_a_id, user_b_id);
-  DELETE FROM public.pro_waitlist WHERE user_id IN (user_a_id, user_b_id);
-  DELETE FROM public.profiles WHERE id IN (user_a_id, user_b_id);
-  
-  RAISE NOTICE '✅ All security tests passed';
-END;
-$$;
+BEGIN;
+
+DELETE FROM public.blocks WHERE blocker_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222') 
+  OR blocked_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222');
+DELETE FROM public.user_settings WHERE user_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222');
+DELETE FROM public.pro_waitlist WHERE user_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222');
+DELETE FROM public.profiles WHERE id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222');
+DELETE FROM auth.users WHERE id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222');
+
+COMMIT;
+
+DO $$ BEGIN RAISE NOTICE '✅ All security tests passed'; END; $$;
