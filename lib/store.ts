@@ -823,7 +823,8 @@ interface ReportState {
 
 export const useReportStore = create<ReportState>(() => ({
   submitReport: async ({ targetType, targetId, reason }) => {
-    const userId = useAuthStore.getState().session?.user?.id;
+    const authState = useAuthStore.getState();
+    const userId = authState.session?.user?.id || authState.profile?.id;
 
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
       if (!userId) {
@@ -860,7 +861,8 @@ export const useReportStore = create<ReportState>(() => ({
     }
   },
   blockUser: async (blockedId: string) => {
-    const userId = useAuthStore.getState().session?.user?.id;
+    const authState = useAuthStore.getState();
+    const userId = authState.session?.user?.id || authState.profile?.id;
 
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
       if (!userId) {
