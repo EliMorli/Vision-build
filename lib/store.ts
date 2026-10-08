@@ -130,8 +130,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
+    // Clear Supabase session
     await supabase.auth.signOut();
-    set({ session: null, profile: null });
+    
+    // Clear all stores
+    set({ session: null, profile: null, loading: false, error: null });
+    useProjectStore.getState().clear();
+    useInboxStore.getState().clear();
+    
+    // Clear mock mode session if applicable
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      // Just clearing the store state is enough for mock mode
+      // The session null will prevent auth checks from passing
+    }
   },
 }));
 

@@ -44,7 +44,7 @@ export default function ProfileScreen() {
   const earnedBadges = ALL_BADGES.filter((b) => b.earned);
 
   const menuItems = [
-    { icon: "person-outline" as const, label: "Edit Profile", badge: null, route: null },
+    { icon: "person-outline" as const, label: "Edit Profile", badge: null, route: "/edit-profile" },
     { icon: "settings-outline" as const, label: "Settings & Privacy", badge: null, route: "/profile-settings" },
     { icon: "home-outline" as const, label: "My Properties", badge: roomsCount > 0 ? String(roomsCount) : null, route: null },
     { icon: "heart-outline" as const, label: "Saved Designs", badge: null, route: null }, // Will wire in Pass B
