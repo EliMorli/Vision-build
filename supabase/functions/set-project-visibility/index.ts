@@ -48,10 +48,24 @@ serve(async (req) => {
 
     // 6. Handle file copy/removal
     if (isPublic) {
-      // Copy main_image and design_image to public-designs
+      // PRIVACY: Copy ONLY generated design images to public-designs, NEVER main_image (original room photo)
       const filesToCopy = [];
-      if (project.main_image) filesToCopy.push(project.main_image);
-      if (project.design_image) filesToCopy.push(project.design_image);
+      
+      // Add design_image (the final selected design)
+      if (project.design_image) {
+        filesToCopy.push(project.design_image);
+      }
+      
+      // Add any generated_image_urls (array of all generated designs)
+      if (project.generated_image_urls && Array.isArray(project.generated_image_urls)) {
+        for (const url of project.generated_image_urls) {
+          if (url && typeof url === "string") {
+            // Extract path from URL if it's a full URL, otherwise use as-is
+            const path = url.includes("/") ? url.split("/").pop() || url : url;
+            filesToCopy.push(path);
+          }
+        }
+      }
 
       for (const path of filesToCopy) {
         try {
@@ -81,10 +95,28 @@ serve(async (req) => {
         }
       }
     } else {
-      // Remove from public-designs
+      // Remove from public-designs (generated designs + defensively remove main_image if it was copied)
       const filesToRemove = [];
-      if (project.main_image) filesToRemove.push(project.main_image);
-      if (project.design_image) filesToRemove.push(project.design_image);
+      
+      // Add design_image
+      if (project.design_image) {
+        filesToRemove.push(project.design_image);
+      }
+      
+      // Add generated_image_urls
+      if (project.generated_image_urls && Array.isArray(project.generated_image_urls)) {
+        for (const url of project.generated_image_urls) {
+          if (url && typeof url === "string") {
+            const path = url.includes("/") ? url.split("/").pop() || url : url;
+            filesToRemove.push(path);
+          }
+        }
+      }
+      
+      // Defensively remove main_image in case it was copied before this fix
+      if (project.main_image) {
+        filesToRemove.push(project.main_image);
+      }
 
       if (filesToRemove.length > 0) {
         const { error: removeError } = await adminClient.storage
