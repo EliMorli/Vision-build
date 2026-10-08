@@ -37,63 +37,67 @@ export function MenuSheet({
       transparent
       animationType="fade"
       onRequestClose={onClose}
-      testID={testID}
     >
-      <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-          <View style={styles.header}>
-            <Text style={styles.title}>{title}</Text>
-            <Pressable
-              onPress={onClose}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel="Close"
-            >
-              <Ionicons name="close" size={24} color={colors.textSecondary} />
-            </Pressable>
-          </View>
-
-          <View style={styles.options}>
-            {options.map((option, index) => (
+      <View style={styles.container} testID={testID}>
+        <Pressable style={styles.overlay} onPress={onClose}>
+          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.header}>
+              <Text style={styles.title}>{title}</Text>
               <Pressable
-                key={index}
-                style={[
-                  styles.option,
-                  index === options.length - 1 && styles.lastOption,
-                ]}
-                onPress={() => handleOption(option.onPress)}
+                onPress={onClose}
+                hitSlop={12}
                 accessibilityRole="button"
-                testID={option.testID}
+                accessibilityLabel="Close"
               >
-                {option.icon && (
-                  <Ionicons
-                    name={option.icon}
-                    size={22}
-                    color={
-                      option.variant === "destructive"
-                        ? colors.danger
-                        : colors.textPrimary
-                    }
-                  />
-                )}
-                <Text
-                  style={[
-                    styles.optionText,
-                    option.variant === "destructive" && styles.destructiveText,
-                  ]}
-                >
-                  {option.label}
-                </Text>
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
               </Pressable>
-            ))}
-          </View>
+            </View>
+
+            <View style={styles.options}>
+              {options.map((option, index) => (
+                <Pressable
+                  key={index}
+                  style={[
+                    styles.option,
+                    index === options.length - 1 && styles.lastOption,
+                  ]}
+                  onPress={() => handleOption(option.onPress)}
+                  accessibilityRole="button"
+                  testID={option.testID}
+                >
+                  {option.icon && (
+                    <Ionicons
+                      name={option.icon}
+                      size={22}
+                      color={
+                        option.variant === "destructive"
+                          ? colors.danger
+                          : colors.textPrimary
+                      }
+                    />
+                  )}
+                  <Text
+                    style={[
+                      styles.optionText,
+                      option.variant === "destructive" && styles.destructiveText,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </Pressable>
         </Pressable>
-      </Pressable>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",

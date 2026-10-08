@@ -36,47 +36,51 @@ export function ConfirmationSheet({
       transparent
       animationType="fade"
       onRequestClose={onClose}
-      testID={testID}
     >
-      <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-          <View style={styles.header}>
-            <Text style={styles.title}>{title}</Text>
-            <Pressable
-              onPress={onClose}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel="Close"
-            >
-              <Ionicons name="close" size={24} color={colors.textSecondary} />
-            </Pressable>
-          </View>
+      <View style={styles.container} testID={testID}>
+        <Pressable style={styles.overlay} onPress={onClose}>
+          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.header}>
+              <Text style={styles.title}>{title}</Text>
+              <Pressable
+                onPress={onClose}
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+              >
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
+              </Pressable>
+            </View>
 
-          <Text style={styles.message}>{message}</Text>
+            <Text style={styles.message}>{message}</Text>
 
-          <View style={styles.actions}>
-            <Button
-              label="Cancel"
-              variant="outline"
-              onPress={onClose}
-              fullWidth
-              testID={`${testID}-cancel`}
-            />
-            <Button
-              label={confirmLabel}
-              variant={confirmVariant}
-              onPress={handleConfirm}
-              fullWidth
-              testID={`${testID}-confirm`}
-            />
-          </View>
+            <View style={styles.actions}>
+              <Button
+                label="Cancel"
+                variant="outline"
+                onPress={onClose}
+                fullWidth
+                testID={`${testID}-cancel`}
+              />
+              <Button
+                label={confirmLabel}
+                variant={confirmVariant}
+                onPress={handleConfirm}
+                fullWidth
+                testID={`${testID}-confirm`}
+              />
+            </View>
+          </Pressable>
         </Pressable>
-      </Pressable>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
