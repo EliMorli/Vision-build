@@ -65,7 +65,11 @@ export default function ExploreScreen() {
         contentContainerStyle={styles.grid}
         columnWrapperStyle={styles.row}
         renderItem={({ item }) => (
-          <Pressable style={styles.card}>
+          <Pressable 
+            style={styles.card}
+            accessibilityRole="button"
+            accessibilityLabel={`${item.style} design by ${item.creator}`}
+          >
             <View style={styles.cardImageWrapper}>
               <IsoRoom
                 palette={item.style}
@@ -77,8 +81,9 @@ export default function ExploreScreen() {
             <Pressable
               style={styles.moreButton}
               onPress={() => handleReport(item.id)}
-              accessibilityLabel="Report or block"
-              hitSlop={8}
+              accessibilityLabel="Report or block design"
+              accessibilityRole="button"
+              hitSlop={12}
             >
               <Ionicons name="ellipsis-horizontal" size={20} color="#fff" />
             </Pressable>
@@ -146,9 +151,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 8,
     right: 8,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     alignItems: "center",

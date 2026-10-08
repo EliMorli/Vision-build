@@ -118,11 +118,20 @@ export default function ProjectDetailScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable 
+          onPress={() => router.back()} 
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </Pressable>
         <Text style={styles.headerTitle}>{projectTitle}</Text>
-        <Pressable hitSlop={12}>
+        <Pressable 
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="More options"
+        >
           <Ionicons name="ellipsis-horizontal" size={24} color={colors.textPrimary} />
         </Pressable>
       </View>

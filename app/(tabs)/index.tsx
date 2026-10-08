@@ -90,7 +90,12 @@ export default function DashboardScreen() {
             <Text style={fonts.heading}>Ready to redesign?</Text>
           </View>
           <View style={styles.headerRight}>
-            <Pressable onPress={() => router.push("/profile-settings")} hitSlop={12}>
+            <Pressable 
+              onPress={() => router.push("/profile-settings")} 
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel={`${xp} experience points, tap to view profile`}
+            >
               <View style={styles.xpChip}>
                 <Ionicons name="star" size={14} color={colors.accent} />
                 <Text style={styles.xpText}>{xp} XP</Text>
@@ -180,7 +185,12 @@ export default function DashboardScreen() {
           const designCount = item.generated_image_urls?.length || 0;
           
           return (
-            <Pressable style={styles.card} onPress={() => openProject(item)}>
+            <Pressable 
+              style={styles.card} 
+              onPress={() => openProject(item)}
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${item.title} project`}
+            >
               {item.selected_generation_url || item.original_image_url ? (
                 <PrivateImage
                   bucket="room-photos"
