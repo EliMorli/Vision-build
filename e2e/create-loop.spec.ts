@@ -2,13 +2,26 @@ import { test, expect, type Page } from "@playwright/test";
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:19006";
 
+// 1x1 green PNG as a buffer for mock design images
+const GREEN_PIXEL = Buffer.from([
+  0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+  0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+  0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+  0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53,
+  0xDE, 0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41,
+  0x54, 0x08, 0x99, 0x63, 0x60, 0xC0, 0x00, 0x00,
+  0x00, 0x04, 0x00, 0x01, 0x27, 0x9B, 0x4D, 0x52,
+  0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44,
+  0xAE, 0x42, 0x60, 0x82
+]);
+
 test.describe("VisionBuild Create Loop", () => {
   test("fresh session shows intro then consent", async ({ page }: { page: Page }) => {
     // No state seeded - fresh user
     await page.goto(BASE_URL);
     await page.waitForLoadState("networkidle");
 
-    // Should see intro/splash screen first
+    // Assert intro/splash screen first
     await expect(page.getByText(/welcome/i).or(page.getByText(/visionbuild/i))).toBeInViewport({ timeout: 10000 });
     
     // Complete intro (look for continue/get started button)
@@ -45,6 +58,15 @@ test.describe("VisionBuild Create Loop", () => {
       localStorage.setItem("@visionbuild:intro_seen", "true");
       localStorage.setItem("@visionbuild:ai_consent", "true");
       localStorage.setItem("@visionbuild:ai_consent_version", "2026-10-07b");
+    });
+
+    // Intercept mock design image URLs and serve green pixels
+    await page.route("**/__mock__/design_*.png*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "image/png",
+        body: GREEN_PIXEL
+      });
     });
 
     await page.goto(BASE_URL);
