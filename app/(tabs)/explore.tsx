@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -22,16 +22,17 @@ export default function ExploreScreen() {
   const blockUser = useReportStore((s) => s.blockUser);
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [reportingProjectId, setReportingProjectId] = useState<string>("");
-  const [blockedUsers, setBlockedUsers] = useState<Set<string>>(new Set());
   
-  // Load blocked users from localStorage (for mock mode) or from store
-  useEffect(() => {
+  // Initialize blocked users from localStorage (for mock mode)
+  const getInitialBlockedUsers = () => {
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
       const blocks = JSON.parse(localStorage.getItem("@visionbuild:blocks") || "[]");
-      const blocked = new Set(blocks.map((b: any) => b.blocked_id));
-      setBlockedUsers(blocked);
+      return new Set(blocks.map((b: any) => b.blocked_id));
     }
-  }, []);
+    return new Set<string>();
+  };
+  
+  const [blockedUsers, setBlockedUsers] = useState<Set<string>>(getInitialBlockedUsers());
   
   // Get only public projects from non-blocked users
   const publicDesigns = projects.filter(p => p.is_public && !blockedUsers.has(p.user_id || ""));
