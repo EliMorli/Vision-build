@@ -11,6 +11,7 @@ import {
   ViewToken,
   SafeAreaView,
   ActivityIndicator,
+  Animated,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -33,10 +34,24 @@ export default function ResultScreen() {
   const [compareUrl, setCompareUrl] = useState("");
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [reportingImageId, setReportingImageId] = useState<string>("");
+  const [showXPBanner, setShowXPBanner] = useState(true);
+  const [xpBannerScale] = useState(new Animated.Value(reduceMotion ? 1 : 0.9));
 
   const images = currentProject?.generated_image_urls ?? [];
-  const totalSlots = 4; // Always show 4 slots
+  const totalSlots = 4;
   const allSlots = Array.from({ length: totalSlots }, (_, i) => images[i] || null);
+
+  // XP banner animation
+  useEffect(() => {
+    if (showXPBanner && !reduceMotion) {
+      Animated.spring(xpBannerScale, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [showXPBanner, reduceMotion, xpBannerScale]);
 
   const onViewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
@@ -60,6 +75,27 @@ export default function ResultScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* XP reward banner */}
+      {showXPBanner && (
+        <Animated.View style={[styles.xpBanner, { transform: [{ scale: xpBannerScale }] }]}>
+          <View style={styles.xpIconCircle}>
+            <Ionicons name="star" size={18} color="#fff" />
+          </View>
+          <View style={styles.xpTextWrapper}>
+            <Text style={styles.xpTitle}>Room redesigned!</Text>
+            <Text style={styles.xpSubtitle}>Quest complete</Text>
+          </View>
+          <Text style={styles.xpAmount}>+50 XP</Text>
+          <Pressable 
+            onPress={() => setShowXPBanner(false)}
+            hitSlop={8}
+            accessibilityLabel="Dismiss"
+          >
+            <Ionicons name="close" size={18} color="#8A6A00" />
+          </Pressable>
+        </Animated.View>
+      )}
+
       <Text style={styles.subtitle}>
         Swipe to browse. Tap to select your favorite.
       </Text>
@@ -185,6 +221,52 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
     paddingTop: spacing.sm,
+  },
+  xpBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
+    borderRadius: radius.lg,
+    backgroundColor: "linear-gradient(90deg, #FFF4D1, #FFE7A3)",
+    shadowColor: "#F0C850",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 5,
+  },
+  xpIconCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    backgroundColor: colors.accent,
+    shadowColor: "#D99A00",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  xpTextWrapper: {
+    flex: 1,
+  },
+  xpTitle: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: colors.textPrimary,
+  },
+  xpSubtitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#8A6A00",
+  },
+  xpAmount: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#B37A00",
   },
   subtitle: {
     ...fonts.body,

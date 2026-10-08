@@ -67,24 +67,26 @@ export default function SignInScreen() {
       </View>
 
       {/* Onboarding carousel */}
-      <FlatList
-        data={PAGES}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onViewableItemsChanged={onViewableItemsChanged.current}
-        viewabilityConfig={viewabilityConfig.current}
-        keyExtractor={(_, i) => String(i)}
-        renderItem={({ item }) => (
-          <View style={styles.page}>
-            <View style={styles.iconCircle}>
-              <Ionicons name={item.icon} size={44} color={colors.primary} />
+      <View style={{ flex: 1, marginTop: spacing.lg }}>
+        <FlatList
+          data={PAGES}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onViewableItemsChanged={onViewableItemsChanged.current}
+          viewabilityConfig={viewabilityConfig.current}
+          keyExtractor={(_, i) => String(i)}
+          renderItem={({ item }) => (
+            <View style={styles.page}>
+              <View style={styles.iconCircle}>
+                <Ionicons name={item.icon} size={44} color={colors.primary} />
+              </View>
+              <Text style={styles.pageTitle}>{item.title}</Text>
+              <Text style={styles.pageSubtitle}>{item.subtitle}</Text>
             </View>
-            <Text style={styles.pageTitle}>{item.title}</Text>
-            <Text style={styles.pageSubtitle}>{item.subtitle}</Text>
-          </View>
-        )}
-      />
+          )}
+        />
+      </View>
 
       {/* Page dots */}
       <View style={styles.dots}>
@@ -127,6 +129,7 @@ export default function SignInScreen() {
           loading={loading}
           variant="outline"
           disabled={!ageConfirmed}
+          style={{ backgroundColor: ageConfirmed ? "#000" : "#ccc" }}
         />
         {error && <Text style={styles.errorText}>{error}</Text>}
       </View>
@@ -178,7 +181,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary + "12",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 32,
+    marginBottom: spacing.xl,
   },
   pageTitle: {
     ...fonts.heading,

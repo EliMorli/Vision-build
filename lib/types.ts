@@ -36,6 +36,8 @@ export interface Profile {
   photo_url: string | null;
   created_at: string;
   last_login_at: string;
+  xp: number;
+  level: number;
 }
 
 export type ProjectStatus =

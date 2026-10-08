@@ -299,11 +299,24 @@ export default function ProfileSettingsScreen() {
         {/* Danger Zone */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, styles.dangerTitle]}>Danger Zone</Text>
-          <Pressable
-            style={[styles.settingCard, styles.dangerCard]}
-            onPress={handleDeleteAccount}
-          >
-            <View style={styles.settingRow}>
+          <View style={styles.settingCard}>
+            <Pressable
+              style={styles.settingRow}
+              onPress={() => {
+                router.back();
+                useAuthStore.getState().signOut();
+              }}
+            >
+              <Text style={styles.settingLabel}>Sign out</Text>
+              <Ionicons name="log-out-outline" size={20} color={colors.textSecondary} />
+            </Pressable>
+            
+            <View style={styles.separator} />
+            
+            <Pressable
+              style={styles.settingRow}
+              onPress={handleDeleteAccount}
+            >
               <View style={styles.settingInfo}>
                 <Text style={[styles.settingLabel, styles.dangerLabel]}>
                   Delete Account
@@ -313,8 +326,8 @@ export default function ProfileSettingsScreen() {
                 </Text>
               </View>
               <Ionicons name="trash" size={20} color={colors.error} />
-            </View>
-          </Pressable>
+            </Pressable>
+          </View>
         </View>
 
         {/* Version */}
@@ -368,7 +381,6 @@ const styles = StyleSheet.create({
   },
   dangerCard: {
     borderColor: colors.error + "40",
-    backgroundColor: colors.error + "08",
   },
   settingRow: {
     flexDirection: "row",

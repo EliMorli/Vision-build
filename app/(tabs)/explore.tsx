@@ -5,20 +5,19 @@ import {
   StyleSheet,
   FlatList,
   TextInput,
-  Image,
   Pressable,
   SafeAreaView,
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
+import { IsoRoom } from "@/components";
 
 // Placeholder data - only public projects
 const PLACEHOLDER_DESIGNS = Array.from({ length: 8 }, (_, i) => ({
   id: String(i + 1),
   title: `Design ${i + 1}`,
-  style: ["Modern", "Coastal", "Farmhouse", "Industrial", "Luxury", "Scandinavian"][i % 6],
-  imageUrl: `https://placehold.co/300x300/${["1A73E8", "34A853", "FBBC04", "EA4335", "8E44AD", "E67E22"][i % 6]}/FFFFFF?text=Design+${i + 1}`,
+  style: ["modern", "coastal", "farmhouse", "industrial", "luxury", "scandinavian"][i % 6],
   likes: Math.floor(Math.random() * 500) + 50,
   isPublic: true,
 }));
@@ -64,7 +63,14 @@ export default function ExploreScreen() {
         columnWrapperStyle={styles.row}
         renderItem={({ item }) => (
           <Pressable style={styles.card}>
-            <Image source={{ uri: item.imageUrl }} style={styles.cardImage} />
+            <View style={styles.cardImageWrapper}>
+              <IsoRoom
+                palette={item.style}
+                size={160}
+                accessible={false}
+                importantForAccessibility="no-hide-descendants"
+              />
+            </View>
             <Pressable
               style={styles.moreButton}
               onPress={() => handleReport(item.id)}
@@ -122,10 +128,14 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     overflow: "hidden",
     marginBottom: spacing.sm,
+    position: "relative",
   },
-  cardImage: {
+  cardImageWrapper: {
     width: "100%",
     height: "100%",
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
   },
   moreButton: {
     position: "absolute",

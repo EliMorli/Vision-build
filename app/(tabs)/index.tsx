@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore, useAuthStore } from "@/lib/store";
 import { Project, ProjectStatus } from "@/lib/types";
-import { Button, EmptyState } from "@/components";
+import { Button, EmptyState, IsoRoom } from "@/components";
 import { useAIConsentCheck } from "@/lib/hooks/useAIConsentCheck";
 
 // Long-running threshold for showing "Rendering..." card in Home
@@ -32,11 +32,15 @@ const STATUS_MAP: Record<ProjectStatus, { label: string; color: string; icon: ke
 export default function DashboardScreen() {
   const router = useRouter();
   const { projects, fetchProjects, generatingStartTime } = useProjectStore();
-  const signOut = useAuthStore((s) => s.signOut);
   const profile = useAuthStore((s) => s.profile);
   const [showRenderingCard, setShowRenderingCard] = useState(false);
 
   useAIConsentCheck();
+
+  const xp = profile?.xp || 0;
+  const level = profile?.level || 1;
+  const xpForNextLevel = level * 200;
+  const xpProgress = (xp % 200) / xpForNextLevel;
 
   useEffect(() => {
     fetchProjects();
@@ -75,9 +79,15 @@ export default function DashboardScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Text style={fonts.heading}>Projects</Text>
-          <Pressable onPress={signOut} hitSlop={12}>
-            <Ionicons name="log-out-outline" size={22} color={colors.textSecondary} />
+          <View>
+            <Text style={styles.greeting}>Hey {profile?.display_name?.split(" ")[0] || "there"}</Text>
+            <Text style={fonts.heading}>Ready to redesign?</Text>
+          </View>
+          <Pressable onPress={() => router.push("/profile-settings")} hitSlop={12}>
+            <View style={styles.xpChip}>
+              <Ionicons name="star" size={14} color={colors.accent} />
+              <Text style={styles.xpText}>{xp} XP</Text>
+            </View>
           </Pressable>
         </View>
         <EmptyState
@@ -101,15 +111,14 @@ export default function DashboardScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View>
-          <Text style={fonts.heading}>Projects</Text>
-          {profile && (
-            <Text style={styles.greeting}>
-              Welcome back, {profile.display_name?.split(" ")[0] ?? "there"}
-            </Text>
-          )}
+          <Text style={styles.greeting}>Hey {profile?.display_name?.split(" ")[0] || "there"}</Text>
+          <Text style={fonts.heading}>Ready to redesign?</Text>
         </View>
-        <Pressable onPress={signOut} hitSlop={12}>
-          <Ionicons name="log-out-outline" size={22} color={colors.textSecondary} />
+        <Pressable onPress={() => router.push("/profile-settings")} hitSlop={12}>
+          <View style={styles.xpChip}>
+            <Ionicons name="star" size={14} color={colors.accent} />
+            <Text style={styles.xpText}>{xp} XP</Text>
+          </View>
         </Pressable>
       </View>
 
@@ -121,7 +130,6 @@ export default function DashboardScreen() {
           <RefreshControl refreshing={false} onRefresh={onRefresh} tintColor={colors.primary} />
         }
         renderItem={({ item }) => {
-          // Hide "rendering" status unless it's been long-running
           const shouldShowRendering = item.status === "rendering" && showRenderingCard;
           const displayStatus = (item.status === "rendering" && !shouldShowRendering) 
             ? "analyzed" 
@@ -132,10 +140,20 @@ export default function DashboardScreen() {
           
           return (
             <Pressable style={styles.card} onPress={() => openProject(item)}>
-              <Image
-                source={{ uri: item.selected_generation_url ?? item.original_image_url }}
-                style={styles.cardImage}
-              />
+              {item.selected_style ? (
+                <View style={styles.cardIsoWrapper}>
+                  <IsoRoom 
+                    palette={item.selected_style}
+                    size={360}
+                    accessibilityLabel={`${item.title} design`}
+                  />
+                </View>
+              ) : (
+                <Image
+                  source={{ uri: item.selected_generation_url ?? item.original_image_url }}
+                  style={styles.cardImage}
+                />
+              )}
               <View style={[styles.statusChip, { backgroundColor: status.color + "E6" }]}>
                 <Ionicons name={status.icon} size={12} color="#fff" />
                 <Text style={styles.statusText}>{status.label}</Text>
@@ -172,7 +190,33 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
   },
-  greeting: { ...fonts.regular, marginTop: 2 },
+  greeting: { 
+    ...fonts.regular, 
+    color: colors.textSecondary,
+    fontSize: 14,
+    marginBottom: 2,
+  },
+  xpChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 0,
+    elevation: 3,
+    borderBottomWidth: 3,
+    borderBottomColor: "#DDE2F1",
+  },
+  xpText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: colors.textPrimary,
+  },
   list: { padding: spacing.md, paddingTop: 0 },
   card: {
     backgroundColor: "#fff",
@@ -186,6 +230,13 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   cardImage: { width: "100%", height: 170, backgroundColor: colors.surface },
+  cardIsoWrapper: {
+    width: "100%",
+    height: 170,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   statusChip: {
     position: "absolute",
     top: 10,

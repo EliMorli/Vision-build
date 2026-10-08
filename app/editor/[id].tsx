@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { STYLE_OPTIONS, StyleOption } from "@/lib/types";
 import { useProjectStore } from "@/lib/store";
-import { Button, ProgressBar, Banner } from "@/components";
+import { Button, ProgressBar, Banner, IsoRoom } from "@/components";
 
 // Threshold for showing "long-running" UI: Go to Home option and Home Rendering card
 const LONG_RUNNING_THRESHOLD_MS = 45000; // 45 seconds
@@ -59,10 +59,9 @@ export default function EditorScreen() {
 
   const handleGenerate = async () => {
     if (!selectedStyle || !id) return;
-    const result = await generateDesigns(id, selectedStyle.promptModifier);
-    if (result) {
-      router.push(`/result/${id}`);
-    }
+    // Start generation and immediately navigate to the generating screen
+    generateDesigns(id, selectedStyle.promptModifier);
+    router.push(`/generating/${id}`);
   };
 
   const handleGoHome = () => {
@@ -116,11 +115,14 @@ export default function EditorScreen() {
                   <Ionicons name="checkmark" size={14} color="#fff" />
                 </View>
               )}
-              <Ionicons
-                name={item.icon as any}
-                size={30}
-                color={isSelected ? colors.primary : colors.textSecondary}
-              />
+              <View style={styles.styleImage}>
+                <IsoRoom 
+                  palette={item.id}
+                  size={118}
+                  accessible={false}
+                  importantForAccessibility="no-hide-descendants"
+                />
+              </View>
               <Text
                 style={[
                   styles.styleName,
@@ -129,9 +131,6 @@ export default function EditorScreen() {
               >
                 {item.name}
               </Text>
-              <Text style={styles.styleDesc} numberOfLines={2}>
-                {item.description}
-              </Text>
             </Pressable>
           );
         }}
@@ -139,42 +138,13 @@ export default function EditorScreen() {
 
       {/* Footer */}
       <View style={styles.footer}>
-        {loading ? (
-          <>
-            <ProgressBar progress={progress} message={progressMessage} />
-            
-            {/* Countdown for normal fast renders (< 45s) */}
-            {!showLongRunning && countdown > 0 && (
-              <Text style={styles.countdown}>About {countdown} sec remaining</Text>
-            )}
-            
-            {/* Long-running UI (>45s): show notification message and Go Home option */}
-            {showLongRunning && (
-              <>
-                <View style={styles.longRunningBox}>
-                  <Ionicons name="time-outline" size={20} color={colors.textSecondary} />
-                  <Text style={styles.longRunningText}>
-                    This is taking longer than usual. We'll notify you when your designs are ready.
-                  </Text>
-                </View>
-                <Button
-                  label="Go to Home"
-                  icon="home-outline"
-                  onPress={handleGoHome}
-                  variant="secondary"
-                />
-              </>
-            )}
-          </>
-        ) : (
-          <Button
-            label="Generate 4 Designs"
-            icon="sparkles"
-            onPress={handleGenerate}
-            disabled={!selectedStyle}
-            variant="primary"
-          />
-        )}
+        <Button
+          label="Generate 4 Designs"
+          icon="sparkles"
+          onPress={handleGenerate}
+          disabled={!selectedStyle || loading}
+          variant="primary"
+        />
       </View>
     </SafeAreaView>
   );
@@ -202,53 +172,50 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    padding: spacing.md,
+    padding: 6,
+    paddingBottom: 10,
     borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+    borderWidth: 3,
+    borderColor: "#fff",
     backgroundColor: "#fff",
-    gap: 6,
+    gap: 4,
     minHeight: 130,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.1,
+    shadowRadius: 0,
+    elevation: 5,
   },
   styleCardSelected: {
     borderColor: colors.primary,
-    borderWidth: 2,
+    borderWidth: 3,
     backgroundColor: colors.primary + "0A",
+    shadowColor: colors.primary,
+    shadowOpacity: 0.2,
+    transform: [{ translateY: -3 }],
   },
   checkBadge: {
     position: "absolute",
-    top: 8,
-    right: 8,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    top: -8,
+    right: -8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: colors.primary,
+    borderWidth: 3,
+    borderColor: "#fff",
     justifyContent: "center",
     alignItems: "center",
+    zIndex: 10,
   },
-  styleName: { fontSize: 14, fontWeight: "600", color: colors.textPrimary },
-  styleDesc: { ...fonts.regular, textAlign: "center", fontSize: 12 },
-  footer: { padding: spacing.md, gap: spacing.sm },
-  countdown: {
-    ...fonts.regular,
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: "center",
-    marginTop: spacing.xs,
-  },
-  longRunningBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    padding: spacing.md,
+  styleImage: {
+    width: "100%",
     backgroundColor: colors.surface,
     borderRadius: radius.md,
-    marginTop: spacing.sm,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
   },
-  longRunningText: {
-    ...fonts.regular,
-    fontSize: 14,
-    color: colors.textSecondary,
-    flex: 1,
-  },
+  styleName: { fontSize: 14, fontWeight: "900", color: colors.textPrimary, marginHorizontal: 6 },
+  footer: { padding: spacing.md },
 });
