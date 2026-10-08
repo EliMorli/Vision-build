@@ -175,12 +175,15 @@ test.describe("UI Screenshots", () => {
       localStorage.clear();
       localStorage.setItem("@visionbuild:intro_seen", "true");
       localStorage.setItem("@visionbuild:mock_session", "true");
+      localStorage.setItem("@visionbuild:ai_consent", "true");
+      localStorage.setItem("@visionbuild:ai_consent_version", "2026-10-07b");
     });
 
     await page.goto(BASE_URL);
+    await page.waitForLoadState("networkidle");
     
     // Wait for Home screen to load (starting screen with mock session)
-    await expect(page.getByText("My projects")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/ready to redesign/i)).toBeVisible({ timeout: 10000 });
 
     // Tap Camera tab
     await page.getByTestId("tab-camera").click();
