@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Stack, useRouter, useSegments, useRootNavigationState } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as WebBrowser from "expo-web-browser";
@@ -24,6 +24,7 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const setSession = useAuthStore((s) => s.setSession);
   const session = useAuthStore((s) => s.session);
+  const loading = useAuthStore((s) => s.loading);
   const loadSettings = useSettingsStore((s) => s.loadSettings);
   const router = useRouter();
   const segments = useSegments();
@@ -91,10 +92,10 @@ export default function RootLayout() {
     }
   }, [session?.user?.id, loadSettings]);
 
-  // Guard: redirect to root when session becomes null on protected routes
+  // Guard: redirect to sign-in when session becomes null on protected routes
   useEffect(() => {
-    // Don't navigate until the root navigator is ready
-    if (!rootNavigationState?.key) return;
+    // Don't navigate until the root navigator is ready and session has finished loading
+    if (!rootNavigationState?.key || loading) return;
     
     const checkSessionGuard = async () => {
       if (!session && segments.length > 0) {
@@ -108,19 +109,19 @@ export default function RootLayout() {
           if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
             const mockSignedOut = await AsyncStorage.getItem("@visionbuild:mock_signed_out");
             if (mockSignedOut === "true") {
-              // Intentional sign-out, redirect to root
-              router.replace("/");
+              // Intentional sign-out, redirect to sign-in
+              router.replace("/(auth)/sign-in");
             }
           } else {
-            // Real mode: always redirect to root when session is null
-            router.replace("/");
+            // Real mode: always redirect to sign-in when session is null
+            router.replace("/(auth)/sign-in");
           }
         }
       }
     };
     
     checkSessionGuard();
-  }, [session, segments, router, rootNavigationState?.key]);
+  }, [session, segments, router, rootNavigationState?.key, loading]);
 
   useEffect(() => {
     if (fontsLoaded || fontError) {

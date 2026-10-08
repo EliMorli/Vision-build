@@ -78,13 +78,18 @@ export default function ResultScreen() {
 
   // XP banner animation
   useEffect(() => {
-    if (showXPBanner && !reduceMotion) {
-      Animated.spring(xpBannerScale, {
-        toValue: 1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }).start();
+    if (showXPBanner) {
+      if (reduceMotion) {
+        // Skip animation, set to final state immediately
+        xpBannerScale.setValue(1);
+      } else {
+        Animated.spring(xpBannerScale, {
+          toValue: 1,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }).start();
+      }
     }
   }, [showXPBanner, reduceMotion, xpBannerScale]);
 
