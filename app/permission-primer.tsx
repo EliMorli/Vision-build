@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { Button } from "@/components";
 
-type PermissionType = "camera" | "photos" | "location";
+type PermissionType = "camera" | "photos";
 
 const PERMISSION_INFO: Record<PermissionType, {
   icon: keyof typeof Ionicons.glyphMap;
