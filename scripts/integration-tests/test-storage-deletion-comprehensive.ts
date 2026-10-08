@@ -181,7 +181,12 @@ async function main() {
     token_hash: "test-token-hash",
     status: "pending",
   }).select().single();
-  console.log("  ✅ account_deletion_requests\n");
+  console.log("  ✅ account_deletion_requests");
+
+  // Seed storage buckets
+  const testBlob = new Blob(["test"], { type: "image/jpeg" });
+  await supabase.storage.from("profile-photos").upload(`${userId}/avatar.jpg`, testBlob, { upsert: true });
+  console.log("  ✅ profile-photos\n");
 
   // ═══════════════════════════════════════════════════════════
   // PART 3: Test successful deletion
@@ -249,6 +254,14 @@ async function main() {
     .is("admin_id", null);
   console.log(`  ✅ moderation_log: admin_id nulled (${moderationLogs?.length || 0} rows with null admin_id)`);
   
+  // Verify storage cleanup
+  const { data: profilePhotosAfter } = await supabase.storage.from("profile-photos").list(userId);
+  if (profilePhotosAfter && profilePhotosAfter.length > 0) {
+    console.error(`  ❌ profile-photos: ${profilePhotosAfter.length} files remain`);
+    Deno.exit(1);
+  }
+  console.log("  ✅ profile-photos: storage cleaned");
+  
   console.log("\n✅ All tables cleaned successfully\n");
 
   // ═══════════════════════════════════════════════════════════
@@ -282,6 +295,10 @@ async function main() {
     token_hash: "test-token-hash-2",
     status: "pending",
   });
+
+  // Seed storage for fault injection test
+  const testBlob2 = new Blob(["test"], { type: "image/jpeg" });
+  await supabase.storage.from("profile-photos").upload(`${userId2}/avatar.jpg`, testBlob2, { upsert: true });
   
   // Mock a storage fault by creating a client that will fail
   // We can't easily mock the Supabase client, so we'll simulate by checking
@@ -308,7 +325,15 @@ async function main() {
     console.error("  ❌ Auth user should still exist after fault");
     Deno.exit(1);
   }
-  console.log("  ✅ Auth user still exists (as expected)\n");
+  console.log("  ✅ Auth user still exists (as expected)");
+
+  // Verify storage still exists (survives fault injection)
+  const { data: profilePhotosFault } = await supabase.storage.from("profile-photos").list(userId2);
+  if (!profilePhotosFault || profilePhotosFault.length === 0) {
+    console.error("  ❌ Storage should survive fault injection");
+    Deno.exit(1);
+  }
+  console.log("  ✅ Storage survives fault injection\n");
   
   // Simulate retry function (inline)
   console.log("🔄 Running retry deletion...");
@@ -343,6 +368,14 @@ async function main() {
     Deno.exit(1);
   }
   console.log("  ✅ Auth user deleted");
+
+  // Verify storage is cleaned after retry
+  const { data: profilePhotosRetry } = await supabase.storage.from("profile-photos").list(userId2);
+  if (profilePhotosRetry && profilePhotosRetry.length > 0) {
+    console.error("  ❌ Storage should be cleaned after retry");
+    Deno.exit(1);
+  }
+  console.log("  ✅ Storage cleaned after retry");
   
   // Verify completion log exists
   const { data: completionLog } = await supabase.from("deletion_completion_log")
@@ -362,10 +395,14 @@ async function main() {
   console.log("✨ ALL TESTS PASSED");
   console.log("═".repeat(60));
   console.log("✅ Seeded all user-data tables (including pro_waitlist email, blocks both sides, user_settings)");
+  console.log("✅ Seeded profile-photos bucket");
   console.log("✅ Successful deletion removes all rows (all tables empty)");
+  console.log("✅ Successful deletion removes all storage files");
   console.log("✅ moderation_log.admin_id properly nulled (not deleted)");
   console.log("✅ Fault injection preserves auth user and request");
+  console.log("✅ Fault injection preserves storage files");
   console.log("✅ Retry function completes deletion");
+  console.log("✅ Retry function removes all storage files");
   console.log("✅ Completion log survives cascade delete");
   console.log("═".repeat(60) + "\n");
   
