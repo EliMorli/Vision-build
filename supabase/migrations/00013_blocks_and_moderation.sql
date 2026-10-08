@@ -8,7 +8,7 @@
 create table public.blocks (
   id uuid primary key default uuid_generate_v4(),
   blocker_id uuid references public.profiles(id) on delete cascade not null,
-  blocked_id uuid not null,
+  blocked_id uuid references public.profiles(id) on delete cascade not null,
   blocked_type text not null check (blocked_type in ('user', 'contractor')),
   created_at timestamptz not null default now(),
   

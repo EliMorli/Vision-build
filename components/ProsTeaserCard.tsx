@@ -97,7 +97,7 @@ export function ProsTeaserCard() {
     return (
       <View style={styles.slimCard} testID="pros-teaser-joined">
         <Ionicons name="checkmark-circle" size={20} color={colors.success} />
-        <Text style={styles.slimText}>✓ You're on the list.</Text>
+        <Text style={styles.slimText}>You're on the list.</Text>
       </View>
     );
   }

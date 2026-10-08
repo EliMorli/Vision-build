@@ -7,7 +7,7 @@ create table public.user_settings (
   user_id uuid references public.profiles(id) on delete cascade primary key,
   
   -- Notification settings
-  push_notifications boolean not null default true,
+  push_notifications boolean not null default false,
   marketing_emails boolean not null default false,
   
   -- Privacy settings
@@ -38,14 +38,17 @@ create policy "Users can update own settings"
 
 -- Auto-create settings row when user signs up
 create or replace function public.handle_new_user_settings()
-returns trigger as $$
+returns trigger
+security definer
+set search_path = ''
+as $$
 begin
   insert into public.user_settings (user_id)
   values (new.id)
   on conflict (user_id) do nothing;
   return new;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql;
 
 create trigger on_profile_created_settings
   after insert on public.profiles

@@ -59,6 +59,7 @@ export default function RootLayout() {
         <Stack.Screen name="handoff/[id]" options={{ title: "Get Estimates" }} />
         <Stack.Screen name="delete-account/index" options={{ title: "Delete Account" }} />
         <Stack.Screen name="delete-account/confirm" options={{ headerShown: false }} />
+        <Stack.Screen name="pros-coming-soon" options={{ title: "Find a pro" }} />
         <Stack.Screen name="terms" options={{ title: "Terms of Service" }} />
         <Stack.Screen name="privacy" options={{ title: "Privacy Policy" }} />
       </Stack>
