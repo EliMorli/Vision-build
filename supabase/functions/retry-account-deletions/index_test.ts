@@ -147,7 +147,7 @@ Deno.test("retry-account-deletions - marks request completed on success", async 
           }),
           update: (data: any) => {
             return {
-              eq: (col: string) => {
+              eq: (col: string, val: any) => {
                 if (data.status === "completed") {
                   completedCalled = true;
                 }
