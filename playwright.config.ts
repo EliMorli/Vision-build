@@ -11,7 +11,7 @@ export default defineConfig({
     baseURL: process.env.BASE_URL || "http://localhost:19006",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
-    viewport: { width: 780, height: 1688 },
+    viewport: { width: 390, height: 844 },
     deviceScaleFactor: 2,
   },
 
@@ -20,7 +20,7 @@ export default defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
-        viewport: { width: 780, height: 1688 },
+        viewport: { width: 390, height: 844 },
         deviceScaleFactor: 2,
       },
     },

@@ -1,33 +1,38 @@
 -- ============================================================
 -- Public Designs RLS and RPC
--- Allow authenticated users to view public designs from others
--- Add RPC to fetch public designs excluding blocked users
+-- RPC to fetch public designs excluding blocked users
+-- No direct RLS - Explore must use the RPC only
 -- ============================================================
-
--- ─── RLS Policy for Reading Public Projects ────────────────
-
--- Authenticated users can read public projects from other users
-create policy "Authenticated users can view public projects"
-  on public.projects for select
-  using (
-    auth.role() = 'authenticated' 
-    and is_public = true 
-    and user_id != auth.uid()
-  );
 
 -- ─── RPC Function: Fetch Public Designs Excluding Blocks ───
 
 create or replace function public.fetch_public_designs()
-returns setof public.projects
+returns table (
+  id uuid,
+  user_id uuid,
+  title text,
+  selected_style text,
+  selected_generation_url text,
+  created_at timestamptz
+)
 language sql
 security definer
 stable
-set search_path = public, auth
+set search_path = ''
 as $$
-  select p.*
+  select 
+    p.id,
+    p.user_id,
+    p.title,
+    p.selected_style,
+    p.selected_generation_url,
+    p.created_at
   from public.projects p
+  left join public.profiles prof on prof.id = p.user_id
   where p.is_public = true
     and p.user_id != auth.uid()
+    and (p.is_hidden is null or p.is_hidden = false)
+    and (prof.is_banned is null or prof.is_banned = false)
     and not exists (
       select 1 from public.blocks b
       where b.blocker_id = auth.uid()
@@ -37,6 +42,6 @@ as $$
   limit 100;
 $$;
 
--- Grant execute to authenticated users only
-revoke all on function public.fetch_public_designs from public;
-grant execute on function public.fetch_public_designs to authenticated;
+-- Revoke from all, grant only to authenticated
+revoke all on function public.fetch_public_designs() from public, anon, authenticated;
+grant execute on function public.fetch_public_designs() to authenticated;

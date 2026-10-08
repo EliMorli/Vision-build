@@ -43,7 +43,7 @@ test.describe("VisionBuild Display Name Consistency", () => {
   });
 
   test("fallback to 'User' when profile has empty display_name", async ({ page }: { page: Page }) => {
-    // Seed profile with empty display_name
+    // Seed profile with empty display_name and distinctive XP
     await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:intro_seen", "true");
       localStorage.setItem("@visionbuild:mock_seed_profile", JSON.stringify({
@@ -53,7 +53,7 @@ test.describe("VisionBuild Display Name Consistency", () => {
         photo_url: null,
         created_at: new Date().toISOString(),
         last_login_at: new Date().toISOString(),
-        xp: 0,
+        xp: 137,
         level: 1
       }));
     });
@@ -67,6 +67,9 @@ test.describe("VisionBuild Display Name Consistency", () => {
 
     // Navigate to Profile by URL
     await page.goto(`${BASE_URL}/(tabs)/profile`);
+    
+    // First, assert the XP 137 is shown (proves seeded profile loaded)
+    await expect(page.getByText("137")).toBeVisible({ timeout: 5000 });
     
     // Check Profile screen name and initial - should show "User" and "U"
     const profileName = page.getByTestId("profile-display-name");

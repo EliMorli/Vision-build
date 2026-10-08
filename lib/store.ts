@@ -826,18 +826,24 @@ export const useReportStore = create<ReportState>(() => ({
     const userId = useAuthStore.getState().session?.user?.id;
 
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
-      console.log("[Mock] Report submitted:", { targetType, targetId, reason, userId: userId || "mock-user" });
+      if (!userId) {
+        throw new Error("You must be signed in to report content");
+      }
+      
+      console.log("[Mock] Report submitted:", { targetType, targetId, reason, userId });
       
       // Persist report to AsyncStorage for E2E testing
       const existingReports = await AsyncStorage.getItem("@visionbuild:reports");
       const reports = existingReports ? JSON.parse(existingReports) : [];
-      reports.push({ targetType, targetId, reason, userId: userId || "mock-user", createdAt: new Date().toISOString() });
+      reports.push({ targetType, targetId, reason, userId, createdAt: new Date().toISOString() });
       await AsyncStorage.setItem("@visionbuild:reports", JSON.stringify(reports));
       
       return;
     }
 
-    if (!userId) return;
+    if (!userId) {
+      throw new Error("You must be signed in to report content");
+    }
 
     const { error } = await (supabase.from("reports") as any).insert([
       {
@@ -857,16 +863,22 @@ export const useReportStore = create<ReportState>(() => ({
     const userId = useAuthStore.getState().session?.user?.id;
 
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
-      console.log("[Mock] User blocked:", { blockedId, userId: userId || "mock-user" });
+      if (!userId) {
+        throw new Error("You must be signed in to block users");
+      }
+      
+      console.log("[Mock] User blocked:", { blockedId, userId });
       // Store block in AsyncStorage for e2e tests (works as localStorage on web)
       const blocksJson = await AsyncStorage.getItem("@visionbuild:blocks");
       const blocks = blocksJson ? JSON.parse(blocksJson) : [];
-      blocks.push({ blocker_id: userId || "mock-user", blocked_id: blockedId });
+      blocks.push({ blocker_id: userId, blocked_id: blockedId });
       await AsyncStorage.setItem("@visionbuild:blocks", JSON.stringify(blocks));
       return;
     }
 
-    if (!userId) return;
+    if (!userId) {
+      throw new Error("You must be signed in to block users");
+    }
 
     const { error } = await (supabase.from("blocks") as any).insert([
       {

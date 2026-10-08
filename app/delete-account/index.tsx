@@ -106,7 +106,7 @@ export default function DeleteAccountRequest() {
         </Pressable>
 
         <Text style={styles.warning}>
-          This will permanently delete your account and your projects, photos, designs, chats and pros waitlist signup. This action cannot be undone.
+          This will permanently delete your account and {DELETED_DATA_SUMMARY}. This action cannot be undone.
         </Text>
       </View>
     </View>

@@ -17,6 +17,7 @@ import { useAuthStore, usePrivacyStore, useSettingsStore } from "@/lib/store";
 import { SUPPORT_EMAIL } from "@/lib/config";
 import { supabase } from "@/lib/supabase";
 import { ConfirmationSheet } from "@/components";
+import { DELETED_DATA_SUMMARY } from "@/lib/constants/deletion";
 
 export default function ProfileSettingsScreen() {
   const router = useRouter();
@@ -189,7 +190,7 @@ export default function ProfileSettingsScreen() {
         visible={deleteConfirmVisible}
         onClose={() => setDeleteConfirmVisible(false)}
         title="Delete Account"
-        message="Are you sure? This will permanently delete your account and your projects, photos, designs, chats and pros waitlist signup. This action cannot be undone."
+        message={`Are you sure? This will permanently delete your account and ${DELETED_DATA_SUMMARY}. This action cannot be undone.`}
         confirmLabel="Delete My Account"
         confirmVariant="danger"
         onConfirm={confirmDeleteAccount}

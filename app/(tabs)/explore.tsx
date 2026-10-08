@@ -72,10 +72,13 @@ export default function ExploreScreen() {
     const { projectId } = confirmSheet;
     setReportingProjectId(projectId);
     setReportModalVisible(true);
+    setConfirmSheet({ visible: false, type: null, projectId: "", userId: "" });
   };
 
   const handleConfirmBlock = async () => {
     const { userId } = confirmSheet;
+    setConfirmSheet({ visible: false, type: null, projectId: "", userId: "" });
+    
     if (!userId) {
       setErrorMessage("Cannot block: user not found");
       setTimeout(() => setErrorMessage(""), 3000);
@@ -88,8 +91,8 @@ export default function ExploreScreen() {
       await fetchPublicDesigns();
       setSuccessMessage("User blocked. Their designs won't appear in Explore anymore.");
       setTimeout(() => setSuccessMessage(""), 3000);
-    } catch (error) {
-      setErrorMessage("Failed to block user. Please try again.");
+    } catch (error: any) {
+      setErrorMessage(error.message || "Failed to block user. Please try again.");
       setTimeout(() => setErrorMessage(""), 3000);
     }
   };
@@ -141,6 +144,10 @@ export default function ExploreScreen() {
         onSuccess={() => {
           setSuccessMessage("Thank you for reporting. We'll review this design.");
           setTimeout(() => setSuccessMessage(""), 3000);
+        }}
+        onError={(error) => {
+          setErrorMessage(error);
+          setTimeout(() => setErrorMessage(""), 3000);
         }}
         type="design"
         itemId={reportingProjectId}
@@ -195,6 +202,14 @@ export default function ExploreScreen() {
         <View style={styles.successBanner} testID="success-message">
           <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
           <Text style={styles.successText}>{successMessage}</Text>
+        </View>
+      ) : null}
+
+      {/* Error message */}
+      {errorMessage ? (
+        <View style={styles.errorBanner} testID="error-message">
+          <Ionicons name="alert-circle" size={20} color={colors.error} />
+          <Text style={styles.errorText}>{errorMessage}</Text>
         </View>
       ) : null}
 
@@ -379,6 +394,26 @@ const styles = StyleSheet.create({
   successText: {
     ...fonts.body,
     color: colors.textPrimary,
+    flex: 1,
+  },
+  errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.error + "12",
+    padding: spacing.md,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+    borderRadius: radius.md,
+    gap: spacing.sm,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  errorText: {
+    ...fonts.body,
+    color: colors.error,
     flex: 1,
   },
 });

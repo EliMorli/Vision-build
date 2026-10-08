@@ -7,7 +7,16 @@ set -e
 echo "🔍 Checking for Alert.alert in app/ and components/..."
 
 # Search for Alert.alert in app/ and components/
-MATCHES=$(rg "Alert\.alert" app/ components/ 2>/dev/null || true)
+MATCHES=$(grep -rn "Alert\.alert" app/ components/ 2>&1 || true)
+
+# Check if grep failed (not just "no matches")
+if echo "$MATCHES" | grep -q "No such file or directory"; then
+  echo "❌ Error: grep failed to search directories"
+  exit 1
+fi
+
+# Filter out grep's "no matches" message
+MATCHES=$(echo "$MATCHES" | grep -v "No such file or directory" || true)
 
 if [ -n "$MATCHES" ]; then
   echo ""

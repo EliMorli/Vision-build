@@ -9,7 +9,7 @@ import * as AppleAuthentication from "expo-apple-authentication";
 import { SUPPORT_EMAIL } from "../../lib/config";
 import { colors, fonts } from "../../lib/theme";
 import { supabase } from "@/lib/supabase";
-import { shouldShowAppleNote, DELETED_DATA_SUMMARY } from "../../lib/constants/deletion";
+import { DELETED_DATA_SUMMARY } from "../../lib/constants/deletion";
 import DeletedAccountView from "../../components/DeletedAccountView";
 
 type PageState = "loading" | "valid" | "error" | "deleting" | "deleted";

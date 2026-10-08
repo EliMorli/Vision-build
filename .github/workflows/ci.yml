@@ -119,6 +119,16 @@ jobs:
           PGPASSWORD: postgres
           PGDATABASE: visionbuild_test
         run: |
+          # Fail if supabase/tests/*.sql exists (they never run)
+          if ls supabase/tests/*.sql 2>/dev/null; then
+            echo "❌ Found SQL files in supabase/tests/ - they never run!"
+            echo "SQL tests must be in scripts/sql-tests/"
+            exit 1
+          fi
+          
+          SQL_FILE_COUNT=$(ls -1 scripts/sql-tests/*.sql 2>/dev/null | wc -l)
+          echo "Running $SQL_FILE_COUNT SQL test files..."
+          
           for test_file in scripts/sql-tests/*.sql; do
             echo "Running $(basename $test_file)..."
             psql -f "$test_file" -v ON_ERROR_STOP=1
@@ -178,6 +188,36 @@ jobs:
         env:
           EXPO_PUBLIC_DEV_MOCK_SESSION: "true"
           CI: "true"
+      
+      - name: Verify screenshot dimensions
+        run: |
+          echo "Checking screenshot dimensions (expected 780x1688 at DSF 2)..."
+          FAIL=0
+          for screenshot in e2e/screens/ui-*.png; do
+            if [ ! -f "$screenshot" ]; then
+              continue
+            fi
+            # Check if file was modified in this run (within last 5 minutes)
+            if [ $(find "$screenshot" -mmin -5 2>/dev/null | wc -l) -eq 0 ]; then
+              echo "❌ $screenshot was not regenerated in this test run"
+              FAIL=1
+              continue
+            fi
+            # Check dimensions with identify (ImageMagick)
+            DIMS=$(identify -format "%wx%h" "$screenshot" 2>/dev/null || echo "error")
+            if [ "$DIMS" != "780x1688" ]; then
+              echo "❌ $screenshot is $DIMS (expected 780x1688)"
+              FAIL=1
+            else
+              echo "✓ $screenshot is $DIMS"
+            fi
+          done
+          if [ $FAIL -eq 1 ]; then
+            echo ""
+            echo "Screenshot check failed. All ui-* screenshots must be 780x1688 and regenerated during the test run."
+            exit 1
+          fi
+          echo "✅ All screenshots are 780x1688 and were regenerated."
       
       - name: Upload Playwright Report
         uses: actions/upload-artifact@v4

@@ -66,7 +66,7 @@ test.describe("VisionBuild Explore Report and Block", () => {
     // Verify success message
     await expect(page.getByTestId("success-message")).toBeVisible({ timeout: 5000 });
 
-    // Verify report was recorded in localStorage
+    // Verify report was recorded in localStorage with correct reason
     const reports = await page.evaluate(() => {
       const stored = localStorage.getItem("@visionbuild:reports");
       return stored ? JSON.parse(stored) : [];
@@ -76,7 +76,7 @@ test.describe("VisionBuild Explore Report and Block", () => {
     expect(reports[0]).toMatchObject({
       targetType: "design",
       targetId: "project-public-1",
-      reason: expect.any(String),
+      reason: "inappropriate",
     });
   });
 
@@ -109,6 +109,7 @@ test.describe("VisionBuild Explore Report and Block", () => {
           },
         ]));
         localStorage.setItem("@visionbuild:blocks", JSON.stringify([]));
+        localStorage.setItem("@visionbuild:reports", JSON.stringify([]));
         sessionStorage.setItem("__vb_seeded", "1");
       }
     });
@@ -126,6 +127,15 @@ test.describe("VisionBuild Explore Report and Block", () => {
     // Cancel
     await page.getByTestId("report-confirm-sheet-cancel").click();
     await expect(page.getByTestId("report-confirm-sheet")).not.toBeVisible({ timeout: 3000 });
+
+    // Assert no reports were stored (poll over ~1s to catch delayed bugs)
+    await expect.poll(async () => {
+      const reports = await page.evaluate(() => {
+        const stored = localStorage.getItem("@visionbuild:reports");
+        return stored ? JSON.parse(stored) : [];
+      });
+      return reports.length;
+    }, { timeout: 1000 }).toBe(0);
 
     // Should NOT see success message
     await expect(page.getByTestId("success-message")).not.toBeVisible();

@@ -4,9 +4,6 @@ const BASE_URL = process.env.BASE_URL || "http://localhost:19006";
 
 test.describe("Delete Account Flow", () => {
   test("delete account confirmation: cancel, reopen, confirm", async ({ page }: { page: Page }) => {
-    // Set device scale factor to 2 for screenshots
-    await page.setViewportSize({ width: 390, height: 844 });
-    
     await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:intro_seen", "true");
       localStorage.setItem("@visionbuild:mock_seed_profile", JSON.stringify({
@@ -40,7 +37,7 @@ test.describe("Delete Account Flow", () => {
     // Verify message contains deletion summary (from DELETED_DATA_SUMMARY)
     await expect(page.getByText(/This will permanently delete your account and your projects/i)).toBeVisible();
 
-    // Take screenshot at DSF 2 (390x844 viewport already set)
+    // Take screenshot
     await page.screenshot({ 
       path: "e2e/screens/ui-delete-account-confirm.png", 
       fullPage: false 
@@ -55,5 +52,15 @@ test.describe("Delete Account Flow", () => {
     
     await page.getByTestId("delete-account-button").click();
     await expect(page.getByTestId("delete-account-confirm")).toBeVisible({ timeout: 3000 });
+
+    // ─── Part 4: Confirm deletion ───
+    
+    await page.getByTestId("delete-account-confirm-confirm").click();
+    
+    // Wait for navigation to deletion progress/confirm screen
+    await page.waitForURL(/\/delete-account/, { timeout: 5000 });
+    
+    // Verify DELETED_DATA_SUMMARY is visible on the confirmation screen
+    await expect(page.getByText(/your projects, photos, designs, chats and pros waitlist signup/i)).toBeVisible({ timeout: 3000 });
   });
 });

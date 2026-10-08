@@ -18,6 +18,7 @@ interface ReportModalProps {
   visible: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  onError?: (error: string) => void;
   type: "design" | "message" | "contractor";
   itemId: string;
 }
@@ -47,7 +48,7 @@ const REPORT_REASONS = {
   ],
 };
 
-export function ReportModal({ visible, onClose, onSuccess, type, itemId }: ReportModalProps) {
+export function ReportModal({ visible, onClose, onSuccess, onError, type, itemId }: ReportModalProps) {
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitReport = useReportStore((s) => s.submitReport);
@@ -75,9 +76,16 @@ export function ReportModal({ visible, onClose, onSuccess, type, itemId }: Repor
       if (onSuccess) {
         onSuccess();
       }
-    } catch (error) {
+    } catch (error: any) {
       setIsSubmitting(false);
       console.error("Failed to submit report:", error);
+      setSelectedReason(null);
+      onClose();
+      
+      // Call onError callback if provided
+      if (onError) {
+        onError(error.message || "Failed to submit report. Please try again.");
+      }
     }
   };
 
