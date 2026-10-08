@@ -1,21 +1,31 @@
+import { useState, useEffect } from "react";
 import { View, Text, StyleSheet, SafeAreaView } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { ErrorState, IsoRoom, Button } from "@/components";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 
-// Helper to calculate hours until midnight UTC
-function getHoursUntilMidnight(): number {
-  const now = new Date();
-  const midnight = new Date(now);
-  midnight.setUTCHours(24, 0, 0, 0);
-  const diff = midnight.getTime() - now.getTime();
-  return Math.ceil(diff / (1000 * 60 * 60));
-}
-
 export default function ResultErrorScreen() {
   const { type, resetTime } = useLocalSearchParams<{ type?: string; resetTime?: string }>();
   const router = useRouter();
+  const [hoursUntilReset, setHoursUntilReset] = useState(0);
+
+  // Calculate hours until reset in useEffect to avoid impure calls during render
+  useEffect(() => {
+    if (type === "rate-limit") {
+      if (resetTime) {
+        const hours = Math.ceil((new Date(resetTime).getTime() - Date.now()) / (1000 * 60 * 60));
+        setHoursUntilReset(Math.max(0, hours));
+      } else {
+        // Default: hours until midnight UTC
+        const now = new Date();
+        const midnight = new Date(now);
+        midnight.setUTCHours(24, 0, 0, 0);
+        const diff = midnight.getTime() - now.getTime();
+        setHoursUntilReset(Math.ceil(diff / (1000 * 60 * 60)));
+      }
+    }
+  }, [type, resetTime]);
 
   const handleRetry = () => {
     if (type === "rate-limit") {
@@ -27,10 +37,7 @@ export default function ResultErrorScreen() {
 
   // For rate limit, show custom UI with clay room
   if (type === "rate-limit") {
-    const hoursUntil = resetTime
-      ? Math.ceil((new Date(resetTime).getTime() - Date.now()) / (1000 * 60 * 60))
-      : getHoursUntilMidnight();
-    const resetText = hoursUntil > 0 ? `New designs in ${hoursUntil} h` : "New designs available now";
+    const resetText = hoursUntilReset > 0 ? `New designs in ${hoursUntilReset} h` : "New designs available now";
 
     return (
       <SafeAreaView style={styles.container}>
