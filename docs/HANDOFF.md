@@ -375,3 +375,87 @@ The `projects` table stores **storage paths**, never signed URLs:
 - **Image privacy bug fixed with comprehensive tests**
 
 The main gap is **wiring** - connecting existing pieces together and adding mock mode for local testing.
+
+---
+
+## 🔐 AI Consent Enforcement (Updated October 8, 2026)
+
+### Server-Side Enforcement
+
+All AI operations (`analyze-room`, `generate-design`, `assistant-chat`) enforce consent on the server before processing.
+
+**Version Constant:**
+- Shared constant: `supabase/functions/_shared/consent.ts` → `CURRENT_AI_CONSENT_VERSION`
+- Client mirrors: `lib/config.ts` → `AI_CONSENT_VERSION` (must match server)
+
+**403 Response Contract:**
+```json
+{
+  "error": "consent_required",
+  "reason": "never" | "outdated",
+  "current_version": "2026-10-07b"
+}
+```
+
+- `reason: "never"` = no consent row in database
+- `reason: "outdated"` = consent row exists for older version
+- Check runs BEFORE any storage read or AI/OpenRouter call
+
+**RLS Policy:**
+- Users can only insert/read their own consent rows
+- Tested in `scripts/sql-tests/test-consent-security.sql`
+
+### Client-Side Handling
+
+**Data Layer:**
+- `lib/data/supabase.ts` parses 403 consent errors and throws `ConsentError` with `isConsentError`, `reason`, `currentVersion`
+- `lib/data/in-memory.ts` simulates consent checks using `@visionbuild:mock_consent_version` in localStorage
+
+**Store Behavior:**
+- `uploadAndAnalyze` and `generateDesigns` catch `ConsentError`
+- Navigate to `/ai-consent` with:
+  - `reason`: "never" | "outdated"
+  - `resumeData`: JSON-encoded context (imageUri, projectId, stylePrompt, etc.)
+
+**Consent Screen (`app/ai-consent.tsx`):**
+- Re-consent mode when `reason` param present
+- `reason=outdated`: Shows update notice "We've updated how your photos are handled. Please review before your next design."
+- `reason=never`: Normal consent screen, no update notice
+- On accept: Writes consent to DB, then retries original operation with saved context
+- On decline: Returns to project/camera with photo preserved, no AI call made
+
+**Mock Mode:**
+- Set `@visionbuild:mock_consent_version` to simulate consent states:
+  - Missing = never
+  - Old version (e.g., "2026-10-01") = outdated
+  - Current version = allowed
+
+### Tests
+
+**Function Tests (Deno):**
+- `supabase/functions/analyze-room/index_test.ts`
+- `supabase/functions/generate-design/index_test.ts`
+- `supabase/functions/assistant-chat/index_test.ts`
+- All test: no consent → 403 never, outdated → 403 outdated, current → success
+
+**SQL Tests:**
+- `scripts/sql-tests/test-consent-security.sql`
+- Tests: user inserts own consent ✅, cannot insert for other user ✅, can read own ✅, cannot read others ✅
+
+**E2E Tests (Playwright):**
+- `e2e/consent-flow.spec.ts`
+- Tests:
+  1. Outdated consent → re-consent screen with update notice → accept → resumes with same photo/style
+  2. Never consent → normal consent screen (no update notice)
+  3. Decline → back to camera with photo, no AI request made
+  4. Generate-design triggers re-consent when consent becomes outdated mid-flow
+
+**Screenshots:**
+- `e2e/screens/a7-reconsent-outdated.png` - Re-consent screen with update notice
+- `e2e/screens/a7-reconsent-never.png` - Normal consent screen (first-time)
+- `e2e/screens/a7-reconsent-declined-project.png` - Camera screen after decline, photo preserved
+
+### Commits
+1. `33892ab` - feat: enforce AI consent on server
+2. `5d31cb5` - feat: handle consent_required errors in app
+
