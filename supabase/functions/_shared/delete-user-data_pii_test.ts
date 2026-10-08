@@ -57,7 +57,7 @@ Deno.test("deleteUserData - email never appears in console logs (success path)",
       delete: () => ({
         eq: () => Promise.resolve({ error: null }),
       }),
-      insert: () => Promise.resolve({ error: null }),
+      insert: (data: any) => Promise.resolve({ error: null }),
     }),
     storage: {
       listBuckets: async () => ({
@@ -215,7 +215,7 @@ Deno.test("deleteUserData - email never appears in console logs (Apple revoke pa
       delete: () => ({
         eq: () => Promise.resolve({ error: null }),
       }),
-      insert: () => Promise.resolve({ error: null }),
+      insert: (data: any) => Promise.resolve({ error: null }),
     }),
     storage: {
       listBuckets: async () => ({ data: [], error: null }),

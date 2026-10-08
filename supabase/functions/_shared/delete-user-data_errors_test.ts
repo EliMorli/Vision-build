@@ -23,6 +23,7 @@ Deno.test("deleteUserData - storage list error returns stage 'storage' and doesn
       delete: () => ({
         eq: () => Promise.resolve({ error: null }),
       }),
+      insert: (data: any) => Promise.resolve({ error: null }),
     }),
     storage: {
       listBuckets: async () => ({
@@ -72,6 +73,7 @@ Deno.test("deleteUserData - storage remove error returns stage 'storage' and doe
       delete: () => ({
         eq: () => Promise.resolve({ error: null }),
       }),
+      insert: (data: any) => Promise.resolve({ error: null }),
     }),
     storage: {
       listBuckets: async () => ({
@@ -129,6 +131,7 @@ Deno.test("deleteUserData - DB error returns stage 'database' with table name an
           delete: () => ({
             eq: () => Promise.resolve({ error: null }),
           }),
+          insert: (data: any) => Promise.resolve({ error: null }),
         };
       }
       // Fail on leads table
@@ -137,12 +140,14 @@ Deno.test("deleteUserData - DB error returns stage 'database' with table name an
           delete: () => ({
             eq: () => Promise.resolve({ error: { message: "FK violation" } }),
           }),
+          insert: (data: any) => Promise.resolve({ error: null }),
         };
       }
       return {
         delete: () => ({
           eq: () => Promise.resolve({ error: null }),
         }),
+        insert: (data: any) => Promise.resolve({ error: null }),
       };
     },
     storage: {
@@ -191,6 +196,7 @@ Deno.test("deleteUserData - remove that keeps returning same files hits max atte
       delete: () => ({
         eq: () => Promise.resolve({ error: null }),
       }),
+      insert: (data: any) => Promise.resolve({ error: null }),
     }),
     storage: {
       listBuckets: async () => ({
