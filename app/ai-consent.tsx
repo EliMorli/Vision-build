@@ -118,6 +118,13 @@ export default function AIConsentScreen() {
 
           {/* Title */}
           <Text style={styles.title}>AI-Powered Designs</Text>
+          
+          {/* DEBUG: Show params */}
+          {__DEV__ && (
+            <Text style={{ fontSize: 10, color: 'red', marginVertical: 10 }}>
+              DEBUG: reason={JSON.stringify(reason)}, isOutdated={JSON.stringify(isOutdated)}, isReconsent={JSON.stringify(isReconsent)}
+            </Text>
+          )}
 
           {/* Re-consent message (if applicable) */}
           {isReconsent && isOutdated && (
