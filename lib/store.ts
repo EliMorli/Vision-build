@@ -52,11 +52,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const overrides = JSON.parse(overrideJson);
         if (overrides.profile === "loading") {
           set({ loading: true });
-          return; // Hang until override is cleared
+          await new Promise(() => {}); // Never resolves
         }
         if (overrides.profile === "error") {
-          set({ loading: false });
-          throw new Error("RAW_SECRET_ERROR_profile_fetch");
+          set({ loading: false, error: "RAW_SECRET_ERROR_profile_fetch" });
+          return;
         }
       }
       
@@ -281,12 +281,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         // Check any of the screens that use fetchProjects
         for (const screen of ["home", "project", "results", "editor"]) {
           if (overrides[screen] === "loading") {
-            set({ loading: true });
+            set({ loading: true, error: null });
             return; // Hang until override is cleared
           }
           if (overrides[screen] === "error") {
-            set({ loading: false });
-            throw new Error(`RAW_SECRET_ERROR_${screen}_fetch`);
+            set({ loading: false, error: `RAW_SECRET_ERROR_${screen}_fetch` });
+            return;
           }
         }
       }
@@ -1037,12 +1037,14 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 interface ExploreState {
   publicDesigns: Project[];
   loading: boolean;
+  error: string | null;
   fetchPublicDesigns: () => Promise<void>;
 }
 
 export const useExploreStore = create<ExploreState>((set, get) => ({
   publicDesigns: [],
   loading: false,
+  error: null,
 
   fetchPublicDesigns: async () => {
     set({ loading: true });
@@ -1055,14 +1057,15 @@ export const useExploreStore = create<ExploreState>((set, get) => ({
       if (overrideJson) {
         const overrides = JSON.parse(overrideJson);
         if (overrides.explore === "loading") {
+          set({ loading: true });
           return; // Hang until override is cleared
         }
         if (overrides.explore === "error") {
-          set({ loading: false });
-          throw new Error("RAW_SECRET_ERROR_explore_fetch");
+          set({ loading: false, error: "RAW_SECRET_ERROR_explore_fetch" });
+          return;
         }
         if (overrides.explore === "empty") {
-          set({ publicDesigns: [], loading: false });
+          set({ publicDesigns: [], loading: false, error: null });
           return;
         }
       }
@@ -1187,7 +1190,8 @@ export const useInboxStore = create<InboxState>((set, get) => ({
       if (overrideJson) {
         const overrides = JSON.parse(overrideJson);
         if (overrides.inbox === "loading") {
-          return; // Hang until override is cleared
+          // For inbox, the screen manages its own loading state, so we just hang the promise
+          await new Promise(() => {}); // Never resolves
         }
         if (overrides.inbox === "error") {
           throw new Error("RAW_SECRET_ERROR_inbox_fetch");
