@@ -247,7 +247,7 @@ test.describe("VisionBuild AI Consent Flow", () => {
     
     // Get the original photo source to verify later
     const originalPhotoSrc = await page.evaluate(() => {
-      const imgs = document.querySelectorAll('img');
+      const imgs = Array.from(document.querySelectorAll('img'));
       for (const img of imgs) {
         if (img.src.includes('test-room') || img.alt?.includes('room')) {
           return img.src;
