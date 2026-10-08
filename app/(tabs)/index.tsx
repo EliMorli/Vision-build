@@ -117,23 +117,15 @@ export default function DashboardScreen() {
           <View style={styles.emptyIllustration}>
             <IsoRoom palette="modern" size={220} spark />
           </View>
-          <View style={styles.questCard}>
-            <View style={styles.questIcon}>
-              <Ionicons name="camera" size={24} color={colors.primary} />
-            </View>
-            <View style={styles.questContent}>
-              <Text style={styles.questTitle}>Redesign your first room</Text>
-              <Text style={styles.questReward}>+50 XP</Text>
-            </View>
-            <Pressable 
-              style={styles.questButton}
-              onPress={() => router.push("/(tabs)/camera")}
-              accessibilityLabel="Start first project"
-              accessibilityRole="button"
-            >
-              <Ionicons name="arrow-forward" size={20} color="#fff" />
-            </Pressable>
-          </View>
+          <Text style={styles.emptyTitle}>No projects yet</Text>
+          <Text style={styles.emptySubtitle}>
+            Take a photo of any room to start visualizing your renovation.
+          </Text>
+          <Button
+            label="Start Your First Project"
+            onPress={() => router.push("/(tabs)/camera")}
+            icon="add-circle-outline"
+          />
         </View>
       </SafeAreaView>
     );
@@ -354,62 +346,24 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxl,
   },
   emptyIllustration: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.15,
     shadowRadius: 20,
     elevation: 10,
   },
-  questCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    gap: spacing.md,
-    width: "100%",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 6,
-    borderBottomWidth: 4,
-    borderBottomColor: "#DDE2F1",
+  emptyTitle: {
+    ...fonts.heading,
+    fontSize: 24,
+    marginBottom: spacing.xs,
+    textAlign: "center",
   },
-  questIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: colors.primary + "12",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  questContent: {
-    flex: 1,
-  },
-  questTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: colors.textPrimary,
-    marginBottom: 2,
-  },
-  questReward: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: colors.accent,
-  },
-  questButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+  emptySubtitle: {
+    ...fonts.regular,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginBottom: spacing.xl,
+    lineHeight: 22,
   },
 });
