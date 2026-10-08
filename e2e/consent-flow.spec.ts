@@ -9,7 +9,7 @@ test.describe("VisionBuild AI Consent Flow", () => {
       localStorage.setItem("@visionbuild:intro_seen", "true");
       localStorage.setItem("@visionbuild:ai_consent", "true");
       localStorage.setItem("@visionbuild:ai_consent_version", "2026-10-01"); // Old version
-      localStorage.setItem("@visionbuild:mock_consent_version", "2026-10-01"); // Simulate outdated in mock mode
+      localStorage.setItem("@visionbuild:mock_consent_version", "2026-10-01"); // Simulate outdated in mock mode (must be set to trigger check)
     });
 
     await page.goto(BASE_URL);
@@ -35,7 +35,7 @@ test.describe("VisionBuild AI Consent Flow", () => {
     // Assert screen with update notice
     await page.screenshot({ path: "e2e/screens/a7-reconsent-outdated.png", fullPage: true });
 
-    // Click Continue to accept
+    // Click Continue to accept (this should update mock consent version)
     await page.getByRole("button", { name: /continue/i }).click();
 
     // Should resume to style picker (analyze completed automatically)
@@ -58,10 +58,11 @@ test.describe("VisionBuild AI Consent Flow", () => {
   });
 
   test("never consent shows normal consent screen without update notice", async ({ page }: { page: Page }) => {
-    // Seed with intro seen but NO consent at all
+    // Seed with intro seen but NO consent at all, and explicitly set mock consent version to empty to trigger check
     await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:intro_seen", "true");
-      // NO consent keys set
+      localStorage.setItem("@visionbuild:mock_consent_version", ""); // Empty string triggers never check
+      // NO ai_consent or ai_consent_version keys set
     });
 
     await page.goto(BASE_URL);
@@ -100,7 +101,7 @@ test.describe("VisionBuild AI Consent Flow", () => {
       localStorage.setItem("@visionbuild:intro_seen", "true");
       localStorage.setItem("@visionbuild:ai_consent", "true");
       localStorage.setItem("@visionbuild:ai_consent_version", "2026-10-01");
-      localStorage.setItem("@visionbuild:mock_consent_version", "2026-10-01");
+      localStorage.setItem("@visionbuild:mock_consent_version", "2026-10-01"); // Must be set to trigger check
     });
 
     // Track AI requests to verify none are made after decline
@@ -146,12 +147,12 @@ test.describe("VisionBuild AI Consent Flow", () => {
   });
 
   test("generate-design triggers re-consent flow", async ({ page }: { page: Page }) => {
-    // Seed with intro seen, consent accepted initially, but mock will be outdated
+    // Seed with intro seen, consent accepted initially
     await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:intro_seen", "true");
       localStorage.setItem("@visionbuild:ai_consent", "true");
       localStorage.setItem("@visionbuild:ai_consent_version", "2026-10-07b");
-      localStorage.setItem("@visionbuild:mock_consent_version", "2026-10-07b");
+      // Start with current consent (no mock_consent_version key, so consent check is skipped initially)
     });
 
     await page.goto(BASE_URL);
@@ -167,13 +168,13 @@ test.describe("VisionBuild AI Consent Flow", () => {
     ]);
     await chooser.setFiles("e2e/fixtures/test-room.jpg");
 
-    // Analyze passes (consent is current)
+    // Analyze passes (consent check is skipped because mock_consent_version not set)
     await page.getByRole("button", { name: /analyze room/i }).click();
     await expect(page.getByText("Select a Design Style")).toBeInViewport({ timeout: 10000 });
 
     // Now simulate consent becoming outdated (e.g., policy updated between analyze and generate)
     await page.evaluate(() => {
-      localStorage.setItem("@visionbuild:mock_consent_version", "2026-10-01");
+      localStorage.setItem("@visionbuild:mock_consent_version", "2026-10-01"); // Set to old version to trigger outdated check
     });
 
     // Select style and generate

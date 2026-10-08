@@ -23,12 +23,20 @@ interface ConsentError extends Error {
 
 /**
  * Check mock consent status (simulated for testing)
+ * Only checks if mock consent version is explicitly set
  */
 async function checkMockConsent(): Promise<void> {
+  // Only check consent if mock consent version key exists
+  // This maintains backward compatibility with existing tests
   const mockVersion = await AsyncStorage.getItem(MOCK_CONSENT_VERSION_KEY);
   
-  // If no consent version set, return never
-  if (!mockVersion) {
+  // If key doesn't exist, skip consent check (backward compatible)
+  if (mockVersion === null) {
+    return;
+  }
+  
+  // If key exists but is empty, treat as never consented
+  if (!mockVersion || mockVersion === "") {
     const error = new Error("AI consent required") as ConsentError;
     error.isConsentError = true;
     error.reason = "never";

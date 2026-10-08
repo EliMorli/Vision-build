@@ -31,8 +31,14 @@ export default function AIConsentScreen() {
     try {
       await AsyncStorage.setItem(AI_CONSENT_KEY, "true");
       await AsyncStorage.setItem(AI_CONSENT_VERSION_KEY, AI_CONSENT_VERSION);
+      
+      // In mock mode, also update the mock consent version
+      const isMockMode = __DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true";
+      if (isMockMode) {
+        await AsyncStorage.setItem("@visionbuild:mock_consent_version", AI_CONSENT_VERSION);
+      }
 
-      if (userId && !(__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true")) {
+      if (userId && !isMockMode) {
         await (supabase.from("consents") as any).insert([
           {
             user_id: userId,
