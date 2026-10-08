@@ -35,12 +35,11 @@ export default function ProsComingSoonScreen() {
   }, [projectId]);
 
   const checkWaitlistStatus = async () => {
-    if (!projectId) return;
-
     const userId = useAuthStore.getState().session?.user?.id;
     
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
-      const stored = localStorage.getItem(`@visionbuild:waitlist:${projectId}`);
+      const key = projectId ? `@visionbuild:waitlist:${projectId}` : "@visionbuild:waitlist:general";
+      const stored = localStorage.getItem(key);
       setIsOnWaitlist(stored === "true");
       setChecking(false);
       return;
@@ -52,12 +51,18 @@ export default function ProsComingSoonScreen() {
     }
 
     try {
-      const { data, error } = await (supabase
-        .from("pro_waitlist") as any)
+      const query = supabase
+        .from("pro_waitlist") as any
         .select("id")
-        .eq("user_id", userId)
-        .eq("project_id", projectId)
-        .single();
+        .eq("user_id", userId);
+      
+      if (projectId) {
+        query.eq("project_id", projectId);
+      } else {
+        query.is("project_id", null);
+      }
+      
+      const { data, error } = await query.single();
 
       setIsOnWaitlist(!!data && !error);
     } catch (_err) {
