@@ -77,7 +77,9 @@ Deno.test("deleteUserData - not an Apple user", async () => {
   });
 
   assertEquals(result.success, true);
-  assertEquals(result.appleRevokeStatus, { status: "skipped", reason: "not_apple_user" });
+  if (result.success) {
+    assertEquals(result.appleRevokeStatus, { status: "skipped", reason: "not_apple_user" });
+  }
 });
 
 Deno.test("deleteUserData - Apple user with no auth code (user cancelled)", async () => {
@@ -92,7 +94,9 @@ Deno.test("deleteUserData - Apple user with no auth code (user cancelled)", asyn
   });
 
   assertEquals(result.success, true);
-  assertEquals(result.appleRevokeStatus, { status: "skipped", reason: "no_auth_code" });
+  if (result.success) {
+    assertEquals(result.appleRevokeStatus, { status: "skipped", reason: "no_auth_code" });
+  }
 });
 
 Deno.test("deleteUserData - Apple user with missing credentials", async () => {
@@ -121,7 +125,9 @@ Deno.test("deleteUserData - Apple user with missing credentials", async () => {
     });
 
     assertEquals(result.success, true);
-    assertEquals(result.appleRevokeStatus, { status: "skipped", reason: "missing_credentials" });
+    if (result.success) {
+      assertEquals(result.appleRevokeStatus, { status: "skipped", reason: "missing_credentials" });
+    }
   } finally {
     // Restore env vars
     if (originalTeamId) Deno.env.set("APPLE_TEAM_ID", originalTeamId);
@@ -164,9 +170,11 @@ Deno.test("deleteUserData - Apple token exchange fails", async () => {
     });
 
     assertEquals(result.success, true);
-    assertEquals(result.appleRevokeStatus.status, "failed");
-    if (result.appleRevokeStatus.status === 'failed') {
-      assertEquals(result.appleRevokeStatus.reason, "token_exchange_failed");
+    if (result.success) {
+      assertEquals(result.appleRevokeStatus.status, "failed");
+      if (result.appleRevokeStatus.status === 'failed') {
+        assertEquals(result.appleRevokeStatus.reason, "token_exchange_failed");
+      }
     }
   } finally {
     restoreFetch();
@@ -205,9 +213,11 @@ Deno.test("deleteUserData - Apple revoke fails but deletion succeeds", async () 
     });
 
     assertEquals(result.success, true);
-    assertEquals(result.appleRevokeStatus.status, "failed");
-    if (result.appleRevokeStatus.status === 'failed') {
-      assertEquals(result.appleRevokeStatus.reason, "revoke_failed");
+    if (result.success) {
+      assertEquals(result.appleRevokeStatus.status, "failed");
+      if (result.appleRevokeStatus.status === 'failed') {
+        assertEquals(result.appleRevokeStatus.reason, "revoke_failed");
+      }
     }
   } finally {
     restoreFetch();
@@ -246,7 +256,9 @@ Deno.test("deleteUserData - Apple revoke succeeds", async () => {
     });
 
     assertEquals(result.success, true);
-    assertEquals(result.appleRevokeStatus, { status: "success" });
+    if (result.success) {
+      assertEquals(result.appleRevokeStatus, { status: "success" });
+    }
   } finally {
     restoreFetch();
   }
