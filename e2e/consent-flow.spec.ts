@@ -148,7 +148,7 @@ test.describe("VisionBuild AI Consent Flow", () => {
     expect(aiRequests).toHaveLength(0);
   });
 
-  test.skip("generate-design triggers re-consent flow", async ({ page }: { page: Page }) => {
+  test("generate-design triggers re-consent flow", async ({ page }: { page: Page }) => {
     // Seed with intro seen, consent accepted initially
     await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:intro_seen", "true");
