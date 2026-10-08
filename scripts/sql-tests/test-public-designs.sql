@@ -86,10 +86,9 @@ BEGIN
   FROM public.fetch_public_designs()
   WHERE user_id IN (v_alice_id, v_charlie_id);
 
-  -- Just check that we get SOME results, proving the function works and file runs
   RAISE NOTICE 'PASS: fetch_public_designs returns % public projects from Alice+Charlie (expected 2)', v_count;
 
-  IF v_count != 999 THEN -- PLANTED FAILURE to prove file runs
+  IF v_count != 2 THEN
     RAISE EXCEPTION 'FAIL: fetch_public_designs should return 2 public projects (Alice + Charlie), got %', v_count;
   END IF;
 
