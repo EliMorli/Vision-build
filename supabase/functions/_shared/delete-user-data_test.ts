@@ -165,7 +165,9 @@ Deno.test("deleteUserData - Apple token exchange fails", async () => {
 
     assertEquals(result.success, true);
     assertEquals(result.appleRevokeStatus.status, "failed");
-    assertEquals(result.appleRevokeStatus.reason, "token_exchange_failed");
+    if (result.appleRevokeStatus.status === 'failed') {
+      assertEquals(result.appleRevokeStatus.reason, "token_exchange_failed");
+    }
   } finally {
     restoreFetch();
   }
@@ -204,7 +206,9 @@ Deno.test("deleteUserData - Apple revoke fails but deletion succeeds", async () 
 
     assertEquals(result.success, true);
     assertEquals(result.appleRevokeStatus.status, "failed");
-    assertEquals(result.appleRevokeStatus.reason, "revoke_failed");
+    if (result.appleRevokeStatus.status === 'failed') {
+      assertEquals(result.appleRevokeStatus.reason, "revoke_failed");
+    }
   } finally {
     restoreFetch();
   }

@@ -10,7 +10,7 @@ import { deleteUserData, DeleteUserDataParams } from "../_shared/delete-user-dat
 export interface ConfirmDeletionDeps {
   supabase: any;
   clock: { now: () => Date };
-  deleteUser: (params: DeleteUserDataParams) => Promise<boolean>;
+  deleteUser: (params: DeleteUserDataParams) => Promise<{ success: true; appleRevokeStatus: any }>;
   crypto: {
     sha256: (data: Uint8Array) => Promise<Uint8Array>;
   };
