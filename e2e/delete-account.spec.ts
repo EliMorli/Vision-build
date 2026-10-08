@@ -17,10 +17,10 @@ test.describe("Delete Account Flow", () => {
         level: 1
       }));
       localStorage.setItem("@visionbuild:user_settings:mock-user", JSON.stringify({
-        push_notifications: true,
-        marketing_emails: false,
-        public_projects_default: false,
-        reduce_motion: true
+        pushNotifications: true,
+        marketingEmails: false,
+        publicProjectsDefault: false,
+        reduceMotion: true
       }));
     });
 
@@ -38,7 +38,13 @@ test.describe("Delete Account Flow", () => {
 
     // ─── Part 1: Verify confirm sheet shows and take screenshot ───
     
-    await expect(page.getByTestId("delete-account-confirm")).toBeVisible({ timeout: 3000 });
+    const confirmSheet = page.getByTestId("delete-account-confirm");
+    await expect(confirmSheet).toBeVisible({ timeout: 3000 });
+    
+    // Verify reduced motion works: sheet should be at full opacity immediately
+    await expect.poll(async () => {
+      return await confirmSheet.evaluate((el) => getComputedStyle(el).opacity);
+    }).toBe('1');
     
     // Verify message contains deletion summary (from DELETED_DATA_SUMMARY)
     await expect(page.getByText(/This will permanently delete your account and your projects/i)).toBeVisible();

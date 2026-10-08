@@ -8,6 +8,7 @@ import { supabase } from "./supabase";
 import { Project, Profile, Contractor } from "./types";
 import { getDataLayer } from "./data";
 import { InMemoryDataLayer } from "./data/in-memory";
+import { MOCK_USER_ID } from "./constants/mock";
 
 // ─── Auth Store ────────────────────────────────────────────
 
@@ -42,7 +43,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   fetchProfile: async () => {
     // In mock mode, check for seeded mock profile first (for E2E testing)
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
-      const userId = get().session?.user?.id ?? "mock-user";
+      const userId = get().session?.user?.id ?? MOCK_USER_ID;
       
       try {
         const seedJson = await AsyncStorage.getItem("@visionbuild:mock_seed_profile");
@@ -264,7 +265,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       const mockProjects: Project[] = [
         {
           id: "mock-1",
-          user_id: "mock-user",
+          user_id: MOCK_USER_ID,
           title: "Kitchen Renovation",
           original_image_url: "https://placehold.co/800x500/E0E0E0/808080?text=Kitchen+Before",
           room_analysis: {
@@ -290,7 +291,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         },
         {
           id: "mock-2",
-          user_id: "mock-user",
+          user_id: MOCK_USER_ID,
           title: "Bathroom Remodel",
           original_image_url: "https://placehold.co/800x500/D0D0D0/707070?text=Bathroom+Before",
           room_analysis: {
@@ -314,7 +315,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         },
         {
           id: "mock-3",
-          user_id: "mock-user",
+          user_id: MOCK_USER_ID,
           title: "Backyard Oasis",
           original_image_url: "https://placehold.co/800x500/C8E6C9/4CAF50?text=Backyard+Before",
           room_analysis: {
@@ -929,7 +930,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
       const dataLayer = getDataLayer();
-      const settings = await dataLayer.getUserSettings(userId || "mock-user");
+      const settings = await dataLayer.getUserSettings(userId || MOCK_USER_ID);
       if (settings) {
         set({
           pushNotifications: settings.pushNotifications,
@@ -965,7 +966,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
       set({ [key]: value } as any);
       const dataLayer = getDataLayer();
-      await dataLayer.saveUserSettings(userId || "mock-user", {
+      await dataLayer.saveUserSettings(userId || MOCK_USER_ID, {
         ...get(),
         [key]: value,
       });

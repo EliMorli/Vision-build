@@ -12,7 +12,7 @@ import {
 } from "@expo-google-fonts/nunito";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "@/lib/supabase";
-import { useAuthStore } from "@/lib/store";
+import { useAuthStore, useSettingsStore } from "@/lib/store";
 
 // Complete any pending auth sessions (handles redirect back from browser)
 WebBrowser.maybeCompleteAuthSession();
@@ -23,6 +23,7 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const setSession = useAuthStore((s) => s.setSession);
   const session = useAuthStore((s) => s.session);
+  const loadSettings = useSettingsStore((s) => s.loadSettings);
   const router = useRouter();
   const segments = useSegments();
 
@@ -38,9 +39,10 @@ export default function RootLayout() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       
-      // In mock mode, fetch profile immediately since there's no real session
+      // In mock mode, fetch profile and settings immediately since there's no real session
       if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
         useAuthStore.getState().fetchProfile();
+        loadSettings();
       }
     });
 

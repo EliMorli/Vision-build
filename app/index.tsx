@@ -4,6 +4,7 @@ import { ActivityIndicator, View } from "react-native";
 import { colors } from "@/lib/theme";
 import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { MOCK_USER_ID } from "@/lib/constants/mock";
 
 const INTRO_SEEN_KEY = "@visionbuild:intro_seen";
 
@@ -45,7 +46,7 @@ export default function Index() {
       const now = Date.now();
       setSession({
         user: {
-          id: "mock-user-id",
+          id: MOCK_USER_ID,
           email: "demo@visionbuild.app",
           app_metadata: {},
           user_metadata: {},

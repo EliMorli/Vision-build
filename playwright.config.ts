@@ -13,6 +13,7 @@ export default defineConfig({
     screenshot: "only-on-failure",
     viewport: { width: 390, height: 844 },
     deviceScaleFactor: 2,
+    reducedMotion: "reduce",
   },
 
   projects: [
@@ -22,6 +23,7 @@ export default defineConfig({
         ...devices["Desktop Chrome"],
         viewport: { width: 390, height: 844 },
         deviceScaleFactor: 2,
+        reducedMotion: "reduce",
       },
     },
   ],
