@@ -1,6 +1,7 @@
 // Test A: Assert that email never appears in console logs during deletion
-import { assertEquals, assertStringIncludes } from "https://deno.land/std@0.192.0/testing/asserts.ts";
+import { assertEquals } from "https://deno.land/std@0.192.0/testing/asserts.ts";
 import { deleteUserData } from "./delete-user-data.ts";
+import { createMockSupabase } from "./test-utils.ts";
 
 // Mock console to capture all output
 let logOutput: string[] = [];
@@ -42,34 +43,7 @@ Deno.test("deleteUserData - email never appears in console logs (success path)",
   const testEmail = "test-pii@example.com";
   const testUserId = "test-user-123";
 
-  // Mock Supabase client
-  const mockSupabase = {
-    auth: {
-      admin: {
-        getUserById: async () => ({
-          data: { user: { id: testUserId, email: testEmail, app_metadata: {} } },
-          error: null,
-        }),
-        deleteUser: async () => ({ error: null }),
-      },
-    },
-    from: (table: string) => ({
-      delete: () => ({
-        eq: () => Promise.resolve({ error: null }),
-      }),
-      insert: (data: any) => Promise.resolve({ error: null }),
-    }),
-    storage: {
-      listBuckets: async () => ({
-        data: [{ id: "profiles", name: "profiles" }, { id: "projects", name: "projects" }],
-        error: null,
-      }),
-      from: (bucket: string) => ({
-        list: async (path: string) => ({ data: [], error: null }),
-        remove: async (paths: string[]) => ({ data: null, error: null }),
-      }),
-    },
-  } as any;
+  const mockSupabase = createMockSupabase({});
 
   captureConsole();
   
@@ -91,33 +65,11 @@ Deno.test("deleteUserData - email never appears in console logs (storage failure
   const testEmail = "test-pii-failure@example.com";
   const testUserId = "test-user-456";
 
-  // Mock with storage error
-  const mockSupabase = {
-    auth: {
-      admin: {
-        getUserById: async () => ({
-          data: { user: { id: testUserId, email: testEmail, app_metadata: {} } },
-          error: null,
-        }),
-        deleteUser: async () => ({ error: null }),
-      },
+  const mockSupabase = createMockSupabase({
+    storageErrors: {
+      "room-photos": { list: { message: "Storage list error" } },
     },
-    from: () => ({
-      delete: () => ({
-        eq: () => Promise.resolve({ error: null }),
-      }),
-    }),
-    storage: {
-      listBuckets: async () => ({
-        data: [{ id: "profiles", name: "profiles" }],
-        error: null,
-      }),
-      from: () => ({
-        list: async () => ({ data: null, error: { message: "Storage list error" } }),
-        remove: async () => ({ data: null, error: null }),
-      }),
-    },
-  } as any;
+  });
 
   captureConsole();
   
@@ -141,33 +93,11 @@ Deno.test("deleteUserData - email never appears in console logs (database failur
   const testEmail = "test-pii-db-fail@example.com";
   const testUserId = "test-user-789";
 
-  // Mock with DB error
-  const mockSupabase = {
-    auth: {
-      admin: {
-        getUserById: async () => ({
-          data: { user: { id: testUserId, email: testEmail, app_metadata: {} } },
-          error: null,
-        }),
-        deleteUser: async () => ({ error: null }),
-      },
+  const mockSupabase = createMockSupabase({
+    dbErrors: {
+      xp_events: { message: "DB error" },
     },
-    from: (table: string) => ({
-      delete: () => ({
-        eq: () => Promise.resolve({ error: { message: "DB error" } }),
-      }),
-    }),
-    storage: {
-      listBuckets: async () => ({
-        data: [],
-        error: null,
-      }),
-      from: () => ({
-        list: async () => ({ data: [], error: null }),
-        remove: async () => ({ data: null, error: null }),
-      }),
-    },
-  } as any;
+  });
 
   captureConsole();
   
@@ -191,48 +121,17 @@ Deno.test("deleteUserData - email never appears in console logs (Apple revoke pa
   const testEmail = "test-apple@example.com";
   const testUserId = "test-user-apple";
 
-  // Mock Apple user
-  const mockSupabase = {
-    auth: {
-      admin: {
-        getUserById: async () => ({
-          data: { 
-            user: { 
-              id: testUserId, 
-              email: testEmail, 
-              app_metadata: { 
-                provider: "apple",
-                provider_id: "001234.test"
-              } 
-            } 
-          },
-          error: null,
-        }),
-        deleteUser: async () => ({ error: null }),
-      },
-    },
-    from: (table: string) => ({
-      delete: () => ({
-        eq: () => Promise.resolve({ error: null }),
-      }),
-      insert: (data: any) => Promise.resolve({ error: null }),
-    }),
-    storage: {
-      listBuckets: async () => ({ data: [], error: null }),
-      from: () => ({
-        list: async () => ({ data: [], error: null }),
-        remove: async () => ({ data: null, error: null }),
-      }),
-    },
-  } as any;
+  const mockSupabase = createMockSupabase({});
 
   captureConsole();
   
-  // Will attempt Apple revocation (likely fails in test, but shouldn't log email)
   const result = await deleteUserData({
     userId: testUserId,
     userEmail: testEmail,
-    userAppMetadata: { provider: "apple", provider_id: "001234.test" },
+    userAppMetadata: { 
+      provider: "apple",
+      provider_id: "001234.test"
+    },
     userIdentities: [],
     supabase: mockSupabase,
   });
@@ -241,7 +140,4 @@ Deno.test("deleteUserData - email never appears in console logs (Apple revoke pa
 
   assertEquals(result.success, true);
   assertNoEmail(logOutput, testEmail);
-  // Should see Apple-related logs but never the email
-  const hasAppleLog = logOutput.some(log => log.includes("Apple") || log.includes("revoke"));
-  // Apple path may or may not log depending on env vars, but email must not appear
 });

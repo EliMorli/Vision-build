@@ -15,9 +15,13 @@ const RETRY_DELAYS_MS = [
   24 * 60 * 60 * 1000, // 24 hours
 ];
 
+// Takes the NEW retry_attempts count (after increment) and returns delay for next retry
+// attempts=1 (first retry) -> 15m, attempts=2 -> 1h, attempts=3 -> 6h, attempts=4 -> 24h, attempts=5+ -> daily
 function getNextRetryDelay(attempts: number): number {
-  if (attempts < RETRY_DELAYS_MS.length) {
-    return RETRY_DELAYS_MS[attempts];
+  // attempts is the new count after incrementing, so we use attempts-1 as the array index
+  const index = attempts - 1;
+  if (index >= 0 && index < RETRY_DELAYS_MS.length) {
+    return RETRY_DELAYS_MS[index];
   }
   return 24 * 60 * 60 * 1000; // Daily after exhausting schedule
 }
