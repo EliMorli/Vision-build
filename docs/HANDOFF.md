@@ -411,18 +411,18 @@ All AI operations (`analyze-room`, `generate-design`, `assistant-chat`) enforce 
 - `lib/data/supabase.ts` parses 403 consent errors and throws `ConsentError` with `isConsentError`, `reason`, `currentVersion`
 - `lib/data/in-memory.ts` simulates consent checks using `@visionbuild:mock_consent_version` in localStorage
 
-**Store Behavior:**
-- `uploadAndAnalyze` and `generateDesigns` catch `ConsentError`
-- Navigate to `/ai-consent` with:
-  - `reason`: "never" | "outdated"
-  - `resumeData`: JSON-encoded context (imageUri, projectId, stylePrompt, etc.)
+**Store Behavior (Zustand):**
+- `pendingConsent` state holds `{ reason: "never"|"outdated", resume: { type, projectId, imageUri, stylePrompt, roomAnalysis } }`
+- Client-side check (camera.tsx): Sets `pendingConsent` with `reason: "never"` for first-time users before photo upload
+- `uploadAndAnalyze` and `generateDesigns` catch `ConsentError` from server and set `pendingConsent` with `reason: "outdated"`
+- Navigate to `/ai-consent` (no URL params needed - data is in store)
 
 **Consent Screen (`app/ai-consent.tsx`):**
-- Re-consent mode when `reason` param present
+- Reads `pendingConsent` from store (not URL params)
 - `reason=outdated`: Shows update notice "We've updated how your photos are handled. Please review before your next design."
 - `reason=never`: Normal consent screen, no update notice
-- On accept: Writes consent to DB, then retries original operation with saved context
-- On decline: Returns to project/camera with photo preserved, no AI call made
+- On accept: Writes consent to DB, then directly calls uploadAndAnalyze/generateDesigns with saved context, clears pending consent
+- On decline: Clears pending consent, returns to project/camera with photo preserved, no AI call made
 
 **Mock Mode:**
 - Set `@visionbuild:mock_consent_version` to simulate consent states:
@@ -455,7 +455,13 @@ All AI operations (`analyze-room`, `generate-design`, `assistant-chat`) enforce 
 - `e2e/screens/a7-reconsent-never.png` - Normal consent screen (first-time)
 - `e2e/screens/a7-reconsent-declined-project.png` - Camera screen after decline, photo preserved
 
-### Commits
+### Commits (Agent A7 - Server Enforcement)
 1. `33892ab` - feat: enforce AI consent on server
 2. `5d31cb5` - feat: handle consent_required errors in app
+
+### Commits (Agent A8 - Store-Based Flow)
+1. `68b030d` - fix: use Zustand store for consent state instead of URL params
+2. `a464bfa` - fix: make PrivateImage retry test robust with explicit waits
+3. `1470b0f` - fix: remove fixed sleep from consent flow test
+4. `2a2f007` - fix: properly resume AI operations after consent acceptance
 
