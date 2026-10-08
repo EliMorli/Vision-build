@@ -69,11 +69,11 @@ export function MenuSheet({
                     <Ionicons
                       name={option.icon}
                       size={22}
-                      color={
-                        option.variant === "destructive"
-                          ? colors.danger
-                          : colors.textPrimary
-                      }
+                    color={
+                      option.variant === "destructive"
+                        ? colors.error
+                        : colors.textPrimary
+                    }
                     />
                   )}
                   <Text
@@ -146,6 +146,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   destructiveText: {
-    color: colors.danger,
+    color: colors.error,
   },
 });

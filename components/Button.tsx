@@ -90,7 +90,7 @@ const VARIANT_STYLES: Record<Variant, { container: ViewStyle; textColor: string;
   },
   danger: { 
     container: { 
-      backgroundColor: colors.danger,
+      backgroundColor: colors.error,
       borderBottomWidth: 5,
       borderBottomColor: "#B91C1C",
     }, 
