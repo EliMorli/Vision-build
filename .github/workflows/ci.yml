@@ -193,6 +193,8 @@ jobs:
       
       - name: Verify screenshot dimensions
         run: |
+          set -euo pipefail
+          
           echo "Checking screenshot dimensions (expected 780x1688 at DSF 2)..."
           
           # Install ImageMagick if not present
@@ -208,7 +210,7 @@ jobs:
           fi
           
           FAIL=0
-          for screenshot in e2e/screens/ui-*.png; do
+          for screenshot in e2e/screens/*.png; do
             if [ ! -f "$screenshot" ]; then
               continue
             fi
@@ -249,8 +251,7 @@ jobs:
             echo "❌ $CONTACT_SHEET was not generated"
             FAIL=1
           else
-            SHOT_TIME=$(date -r "$CONTACT_SHEET" +%s)
-            if [ $SHOT_TIME -lt $PLAYWRIGHT_START ]; then
+            if [ ! "$CONTACT_SHEET" -nt "$MARKER" ]; then
               echo "❌ $CONTACT_SHEET is stale (older than test run)"
               FAIL=1
             else

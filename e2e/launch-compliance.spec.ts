@@ -217,8 +217,13 @@ test.describe("Launch Compliance Tests", () => {
     await expect(page.getByText(/modern bathroom remodel/i)).toBeVisible();
     
     // Button should say "Join the pros waitlist" not "Get quotes"
-    await expect(page.getByTestId("project-brief-waitlist")).toBeVisible();
-    await expect(page.getByTestId("project-brief-waitlist")).toContainText("Join the pros waitlist");
+    const waitlistButton = page.getByTestId("project-brief-waitlist");
+    await expect(waitlistButton).toBeVisible();
+    await expect(waitlistButton).toContainText("Join the pros waitlist");
+    
+    // Scroll button into view and verify it's in viewport
+    await waitlistButton.evaluate((el) => el.scrollIntoViewIfNeeded());
+    await expect(waitlistButton).toBeInViewport();
     
     await page.screenshot({ path: "e2e/screens/ui-project-brief-waitlist.png", fullPage: false });
   });

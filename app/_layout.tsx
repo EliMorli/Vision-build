@@ -39,13 +39,6 @@ export default function RootLayout() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       
-      if (session) {
-        // Load settings whenever we have a session
-        loadSettings().catch((err) => {
-          console.warn('Failed to load settings:', err);
-        });
-      }
-      
       // In mock mode, fetch profile immediately since there's no real session
       if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
         useAuthStore.getState().fetchProfile();
@@ -57,17 +50,20 @@ export default function RootLayout() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      
-      if (session) {
-        // Load settings on sign-in
-        loadSettings().catch((err) => {
-          console.warn('Failed to load settings:', err);
-        });
-      }
     });
 
     return () => subscription.unsubscribe();
-  }, [setSession, loadSettings]);
+  }, [setSession]);
+  
+  // Load settings whenever we have a user id
+  useEffect(() => {
+    const userId = session?.user?.id;
+    if (userId) {
+      loadSettings().catch((err) => {
+        console.warn('Failed to load settings:', err);
+      });
+    }
+  }, [session?.user?.id, loadSettings]);
 
   // Guard: redirect to root when session becomes null on protected routes
   useEffect(() => {

@@ -212,6 +212,7 @@ export default function ProjectDetailScreen() {
                   key={index}
                   style={styles.designCard}
                   onPress={() => router.push(`/result/${id}`)}
+                  testID="design-card"
                 >
                   <PrivateImage
                     bucket="room-photos"

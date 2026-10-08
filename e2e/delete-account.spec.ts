@@ -45,14 +45,15 @@ test.describe("Delete Account Flow", () => {
     
     // Verify reduced motion works: sheet and all ancestors should be at full opacity immediately
     const combinedOpacity = await confirmSheet.evaluate((el) => {
-      let opacity = 1;
+      let product = 1;
       let current: Element | null = el;
       while (current) {
         const style = getComputedStyle(current);
-        opacity *= parseFloat(style.opacity) || 1;
+        const v = parseFloat(style.opacity);
+        product *= Number.isNaN(v) ? 1 : v;
         current = current.parentElement;
       }
-      return opacity;
+      return product;
     });
     expect(combinedOpacity).toBe(1);
     

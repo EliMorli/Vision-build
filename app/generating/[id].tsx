@@ -117,7 +117,7 @@ export default function GeneratingScreen() {
       locations={[0, 0.75]}
       style={styles.gradient}
     >
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} testID="generating-screen">
         <View style={styles.content}>
         <Text style={styles.step}>STEP 3 OF 3</Text>
         <Text style={styles.title}>Building your{"\n"}{selectedStyle} room</Text>

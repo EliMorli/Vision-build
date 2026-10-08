@@ -95,7 +95,7 @@ export default function DashboardScreen() {
 
   if (projects.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} testID="home-screen">
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Text style={styles.greeting} testID="home-greeting">{greeting}</Text>
@@ -167,7 +167,7 @@ export default function DashboardScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="home-screen">
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={styles.greeting} testID="home-greeting">{greeting}</Text>
