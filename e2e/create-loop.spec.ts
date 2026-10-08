@@ -260,6 +260,9 @@ test.describe("VisionBuild Create Loop", () => {
     let requestCount = 0;
     let resolveHold!: () => void;
     const holdPromise = new Promise<void>((resolve) => { resolveHold = resolve; });
+    let secondRetryReceived = false;
+    let resolveSecondRetry!: () => void;
+    const secondRetryPromise = new Promise<void>((resolve) => { resolveSecondRetry = resolve; });
     
     // Intercept mock design image URLs
     // First request: return 403 to trigger error
@@ -276,6 +279,10 @@ test.describe("VisionBuild Create Loop", () => {
         await route.fulfill({ status: 403, body: 'Forbidden' });
       } else if (reqNum <= 8) {
         // Retry batch: hold on promise so placeholder shows
+        if (!secondRetryReceived) {
+          secondRetryReceived = true;
+          resolveSecondRetry();
+        }
         await holdPromise;
         await route.continue();
       } else {
@@ -299,6 +306,9 @@ test.describe("VisionBuild Create Loop", () => {
     await page.getByText("Modern", { exact: true }).click();
     await page.getByRole("button", { name: /generate 4 designs/i }).click();
     await expect(page.getByText(/swipe to browse/i)).toBeInViewport({ timeout: 30000 });
+
+    // Wait explicitly for the second signed-URL request (retry after 403)
+    await secondRetryPromise;
 
     // Wait for the placeholder to become visible (happens after 403 and during retry)
     const placeholder = page.locator('[data-testid="private-image-placeholder"]').first();
