@@ -1,43 +1,48 @@
 import { assertEquals } from "https://deno.land/std@0.177.0/testing/asserts.ts";
 import { handleConfirmGet, handleConfirmPost, maskEmail, ConfirmDeletionDeps } from "./index.ts";
+import { createMockSupabase } from "../_shared/test-utils.ts";
 
 // Helper to create fake deps
 function createFakeDeps(overrides: Partial<ConfirmDeletionDeps> = {}): ConfirmDeletionDeps {
-  const deletionRequests: any[] = [];
+  const deletionRequests = new Map<string, any>();
   const deletedUsers: string[] = [];
+  const inserts: any[] = [];
+  
+  const mockSupabase = createMockSupabase({});
   
   return {
     supabase: {
       from: (table: string) => ({
         select: () => ({
-          eq: () => ({
+          eq: (col: string, val: any) => ({
             single: () => {
-              const request = deletionRequests.find(r => r.table === table);
+              const request = deletionRequests.get(`${table}:${val}`);
               return request ? { data: request, error: null } : { data: null, error: { message: "Not found" } };
             }
           })
         }),
         update: (data: any) => ({
-          eq: () => {
-            const request = deletionRequests.find(r => r.table === table);
-            if (request) Object.assign(request, data);
-            return { error: null };
+          eq: (col: string, val: any) => {
+            const key = `${table}:${val}`;
+            const request = deletionRequests.get(key);
+            if (request) {
+              Object.assign(request, data);
+              deletionRequests.set(key, request);
+            }
+            return Promise.resolve({ error: null });
           }
         }),
+        insert: (data: any) => {
+          inserts.push({ table, data });
+          return Promise.resolve({ error: null });
+        },
       }),
       rpc: (_name: string, params: any) => {
         // Mock user lookup
         const exists = params.user_email === "known@example.com";
         return { data: exists ? "user-123" : null, error: null };
       },
-      auth: {
-        admin: {
-          getUserById: async (userId: string) => ({
-            data: { user: { app_metadata: { provider: "email" }, identities: [] } },
-            error: null,
-          }),
-        },
-      },
+      auth: mockSupabase.auth,
     },
     clock: { now: () => new Date("2024-01-01T12:00:00Z") },
     deleteUser: async (params) => {
@@ -99,7 +104,8 @@ Deno.test("confirm GET: valid token renders confirm page", async () => {
             })
           })
         }),
-        update: () => ({ eq: () => ({ error: null }) }),
+        update: () => ({ eq: () => Promise.resolve({ error: null }) }),
+        insert: () => Promise.resolve({ error: null }),
       }),
       rpc: () => ({ data: "user-123", error: null }),
       auth: { admin: { getUserById: async () => ({ data: { user: {} }, error: null }) } },
@@ -138,9 +144,10 @@ Deno.test("confirm GET: expired token returns error and marks as expired", async
         update: (data: any) => ({
           eq: () => {
             if (data.status === "expired") markedExpired = true;
-            return { error: null };
+            return Promise.resolve({ error: null });
           }
         }),
+        insert: () => Promise.resolve({ error: null }),
       }),
       rpc: () => ({ data: "user-123", error: null }),
       auth: { admin: { getUserById: async () => ({ data: { user: {} }, error: null }) } },
@@ -174,7 +181,8 @@ Deno.test("confirm GET: already used token returns error", async () => {
             })
           })
         }),
-        update: () => ({ eq: () => ({ error: null }) }),
+        update: () => ({ eq: () => Promise.resolve({ error: null }) }),
+        insert: () => Promise.resolve({ error: null }),
       }),
       rpc: () => ({ data: "user-123", error: null }),
       auth: { admin: { getUserById: async () => ({ data: { user: {} }, error: null }) } },
@@ -209,7 +217,8 @@ Deno.test("confirm POST: valid token deletes user", async () => {
             })
           })
         }),
-        update: () => ({ eq: () => ({ error: null }) }),
+        update: () => ({ eq: () => Promise.resolve({ error: null }) }),
+        insert: () => Promise.resolve({ error: null }),
       }),
       rpc: () => ({ data: "user-123", error: null }),
       auth: { admin: { getUserById: async () => ({ data: { user: { app_metadata: {}, identities: [] } }, error: null }) } },
@@ -251,7 +260,8 @@ Deno.test("confirm POST: expired token does not delete", async () => {
             })
           })
         }),
-        update: () => ({ eq: () => ({ error: null }) }),
+        update: () => ({ eq: () => Promise.resolve({ error: null }) }),
+        insert: () => Promise.resolve({ error: null }),
       }),
       rpc: () => ({ data: "user-123", error: null }),
       auth: { admin: { getUserById: async () => ({ data: { user: {} }, error: null }) } },
@@ -293,7 +303,8 @@ Deno.test("confirm POST: reused token does not delete twice", async () => {
             })
           })
         }),
-        update: () => ({ eq: () => ({ error: null }) }),
+        update: () => ({ eq: () => Promise.resolve({ error: null }) }),
+        insert: () => Promise.resolve({ error: null }),
       }),
       rpc: () => ({ data: "user-123", error: null }),
       auth: { admin: { getUserById: async () => ({ data: { user: {} }, error: null }) } },
@@ -336,7 +347,8 @@ Deno.test("confirm POST: unknown email completes without error", async () => {
             })
           })
         }),
-        update: () => ({ eq: () => ({ error: null }) }),
+        update: () => ({ eq: () => Promise.resolve({ error: null }) }),
+        insert: () => Promise.resolve({ error: null }),
       }),
       rpc: () => ({ data: null, error: null }), // User not found
       auth: { admin: { getUserById: async () => ({ data: { user: {} }, error: null }) } },
