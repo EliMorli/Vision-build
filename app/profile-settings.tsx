@@ -212,7 +212,7 @@ export default function ProfileSettingsScreen() {
         params: { variant: isAppleUser ? 'apple' : 'email' }
       });
     } catch {
-      setErrorMessage("Failed to delete account");
+      setErrorMessage("Failed to delete account. Please try again or contact support.");
       setTimeout(() => setErrorMessage(""), 3000);
     }
   };

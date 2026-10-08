@@ -21,9 +21,13 @@ export function ErrorState({
   retryLabel = "Try again",
   testID,
 }: ErrorStateProps) {
+  const supportEmail = businessConfig.supportEmail || "support@visionbuild.app";
+  const isPlaceholder = supportEmail.startsWith("[") || supportEmail === "TBD" || supportEmail.includes("TBD");
+  
   const handleContactSupport = () => {
-    const supportEmail = businessConfig.supportEmail || "support@visionbuild.app";
-    Linking.openURL(`mailto:${supportEmail}`);
+    Linking.openURL(`mailto:${supportEmail}`).catch(() => {
+      // Silently fail if can't open email client
+    });
   };
 
   return (
@@ -43,9 +47,16 @@ export function ErrorState({
           />
         </View>
       )}
-      <Pressable onPress={handleContactSupport} style={styles.supportLink}>
-        <Text style={styles.supportLinkText}>Contact support</Text>
-      </Pressable>
+      {!isPlaceholder && (
+        <Pressable
+          onPress={handleContactSupport}
+          style={styles.supportLink}
+          accessibilityRole="link"
+          testID="error-contact-support"
+        >
+          <Text style={styles.supportLinkText}>Contact support</Text>
+        </Pressable>
+      )}
     </View>
   );
 }
