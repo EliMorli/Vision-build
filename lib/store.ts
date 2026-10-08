@@ -177,13 +177,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       try {
         await wipeOfflineCache(userId);
       } catch (error) {
-        console.error("Failed to wipe offline cache on sign-out:", error);
+        console.error("offline_cache_wipe_failed");
       }
     }
     
     // Clear all stores
     set({ session: null, profile: null, loading: false, error: null });
     useProjectStore.getState().clear();
+    useInboxStore.getState().unreadCount = 0;
     
     // Set mock signed-out flag if in mock mode
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
@@ -1197,14 +1198,19 @@ export const useInboxStore = create<InboxState>((set, get) => ({
           throw new Error("RAW_SECRET_ERROR_inbox_fetch");
         }
       }
-      // Mock mode: check for seeded unread count
+      // Mock mode: check for seeded inbox messages
       try {
-        const seedJson = await AsyncStorage.getItem("@visionbuild:mock_unread_count");
+        const seedJson = await AsyncStorage.getItem("@visionbuild:mock_seed_inbox");
         if (seedJson) {
-          set({ unreadCount: parseInt(seedJson, 10) });
+          const messages = JSON.parse(seedJson);
+          const unread = messages.filter((m: any) => !m.is_read).length;
+          set({ unreadCount: unread });
+        } else {
+          set({ unreadCount: 0 });
         }
       } catch (e) {
-        console.warn("Failed to load mock unread count:", e);
+        console.error("inbox_mock_seed_parse_failed");
+        set({ unreadCount: 0 });
       }
       return;
     }
@@ -1214,11 +1220,17 @@ export const useInboxStore = create<InboxState>((set, get) => ({
       return;
     }
 
-    const { count } = await (supabase
-      .from("chat_messages") as any)
+    const { count, error } = await (supabase
+      .from("inbox_messages") as any)
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
       .eq("is_read", false);
+
+    if (error) {
+      console.error("inbox_fetch_count_failed");
+      // Don't reset to 0 on error - keep existing count
+      return;
+    }
 
     set({ unreadCount: count || 0 });
   },
@@ -1233,7 +1245,7 @@ export const useInboxStore = create<InboxState>((set, get) => ({
     if (!userId) return;
 
     const { error } = await (supabase
-      .from("chat_messages") as any)
+      .from("inbox_messages") as any)
       .update({ is_read: true })
       .eq("id", messageId)
       .eq("user_id", userId);

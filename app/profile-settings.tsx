@@ -63,7 +63,7 @@ export default function ProfileSettingsScreen() {
 
       setProsWaitlist(!!data);
     } catch (_err) {
-      console.error("Error checking pros waitlist:", _err);
+      console.error("pros_waitlist_check_failed");
     } finally {
       setCheckingWaitlist(false);
     }
@@ -124,7 +124,7 @@ export default function ProfileSettingsScreen() {
         }
       }
     } catch (_err) {
-      console.error("Error updating pros waitlist:", _err);
+      console.error("pros_waitlist_update_failed");
     }
   };
 
@@ -135,14 +135,14 @@ export default function ProfileSettingsScreen() {
         if (!(__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true")) {
           const { error } = await supabase.functions.invoke("revoke-ai-consent");
           if (error) {
-            console.error("Error revoking AI consent:", error);
+            console.error("ai_consent_revoke_failed");
             setErrorMessage("Could not revoke AI consent. Please try again.");
             setTimeout(() => setErrorMessage(""), 3000);
             return;
           }
         }
       } catch (_err) {
-        console.error("Error calling revoke-ai-consent:", _err);
+        console.error("ai_consent_revoke_call_failed");
         setErrorMessage("Could not revoke AI consent. Please try again.");
         setTimeout(() => setErrorMessage(""), 3000);
         return;
@@ -175,7 +175,7 @@ export default function ProfileSettingsScreen() {
         try {
           await wipeOfflineCache(userId);
         } catch (error) {
-          console.error("Failed to wipe offline cache on deletion:", error);
+          console.error("offline_cache_deletion_wipe_failed");
         }
       }
       
@@ -200,7 +200,7 @@ export default function ProfileSettingsScreen() {
         try {
           await wipeOfflineCache(userId);
         } catch (error) {
-          console.error("Failed to wipe offline cache on deletion:", error);
+          console.error("offline_cache_deletion_wipe_failed");
         }
       }
       

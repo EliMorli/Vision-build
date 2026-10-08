@@ -12,6 +12,11 @@ INSERT INTO public.profiles (id, email)
 VALUES ('00000000-0000-0000-0000-000000000099'::uuid, 'retention-test@example.com')
 ON CONFLICT (id) DO NOTHING;
 
+-- Create test project for waitlist foreign key
+INSERT INTO public.projects (id, user_id, original_image_url, status, created_at)
+VALUES ('00000000-0000-0000-0000-000000000098'::uuid, '00000000-0000-0000-0000-000000000099'::uuid, 'https://example.com/test.jpg', 'draft', NOW())
+ON CONFLICT (id) DO NOTHING;
+
 -- Test 1: Verify cron jobs exist
 DO $$
 DECLARE
@@ -54,7 +59,7 @@ BEGIN
   SELECT retention_days INTO v_original_retention FROM public.data_retention_config WHERE id = 'usage_events';
   
   -- Insert test usage events
-  INSERT INTO public.usage_events (user_id, event_type, created_at)
+  INSERT INTO public.usage_events (user_id, action, created_at)
   VALUES
     ('00000000-0000-0000-0000-000000000099'::uuid, 'analyze', NOW() - INTERVAL '100 days'),  -- Should be deleted
     ('00000000-0000-0000-0000-000000000099'::uuid, 'generate', NOW() - INTERVAL '10 days'),  -- Should be deleted with test retention
@@ -95,20 +100,20 @@ DECLARE
   v_new_count INTEGER;
 BEGIN
   -- Insert test deletion requests with various statuses
-  INSERT INTO public.account_deletion_requests (id, user_id, status, verification_token, verification_code, expires_at, completed_at, created_at)
+  INSERT INTO public.account_deletion_requests (id, user_id, email, token_hash, status, expires_at, completed_at, created_at)
   VALUES
     -- Should be deleted (completed, old)
-    ('00000000-0000-0000-0000-000000000001'::uuid, '00000000-0000-0000-0000-000000000099'::uuid, 'completed', 'token1', '123456', NOW() + INTERVAL '1 day', NOW() - INTERVAL '100 days', NOW() - INTERVAL '100 days'),
+    ('00000000-0000-0000-0000-000000000001'::uuid, '00000000-0000-0000-0000-000000000099'::uuid, 'retention-test@example.com', 'hash1', 'completed', NOW() + INTERVAL '1 day', NOW() - INTERVAL '100 days', NOW() - INTERVAL '100 days'),
     -- Should be deleted (used, old)
-    ('00000000-0000-0000-0000-000000000002'::uuid, '00000000-0000-0000-0000-000000000099'::uuid, 'used', 'token2', '123457', NOW() + INTERVAL '1 day', NOW() - INTERVAL '100 days', NOW() - INTERVAL '100 days'),
+    ('00000000-0000-0000-0000-000000000002'::uuid, '00000000-0000-0000-0000-000000000099'::uuid, 'retention-test@example.com', 'hash2', 'used', NOW() + INTERVAL '1 day', NOW() - INTERVAL '100 days', NOW() - INTERVAL '100 days'),
     -- Should be deleted (expired, old expires_at)
-    ('00000000-0000-0000-0000-000000000003'::uuid, '00000000-0000-0000-0000-000000000099'::uuid, 'expired', 'token3', '123458', NOW() - INTERVAL '100 days', NULL, NOW() - INTERVAL '50 days'),
+    ('00000000-0000-0000-0000-000000000003'::uuid, '00000000-0000-0000-0000-000000000099'::uuid, 'retention-test@example.com', 'hash3', 'expired', NOW() - INTERVAL '100 days', NULL, NOW() - INTERVAL '50 days'),
     -- Should be kept (failed_pending_retry)
-    ('00000000-0000-0000-0000-000000000004'::uuid, '00000000-0000-0000-0000-000000000099'::uuid, 'failed_pending_retry', 'token4', '123459', NOW() - INTERVAL '100 days', NULL, NOW() - INTERVAL '100 days'),
+    ('00000000-0000-0000-0000-000000000004'::uuid, '00000000-0000-0000-0000-000000000099'::uuid, 'retention-test@example.com', 'hash4', 'failed_pending_retry', NOW() - INTERVAL '100 days', NULL, NOW() - INTERVAL '100 days'),
     -- Should be kept (confirmed)
-    ('00000000-0000-0000-0000-000000000005'::uuid, '00000000-0000-0000-0000-000000000099'::uuid, 'confirmed', 'token5', '123460', NOW() - INTERVAL '100 days', NULL, NOW() - INTERVAL '100 days'),
+    ('00000000-0000-0000-0000-000000000005'::uuid, '00000000-0000-0000-0000-000000000099'::uuid, 'retention-test@example.com', 'hash5', 'confirmed', NOW() - INTERVAL '100 days', NULL, NOW() - INTERVAL '100 days'),
     -- Should be kept (completed but recent)
-    ('00000000-0000-0000-0000-000000000006'::uuid, '00000000-0000-0000-0000-000000000099'::uuid, 'completed', 'token6', '123461', NOW() + INTERVAL '1 day', NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days');
+    ('00000000-0000-0000-0000-000000000006'::uuid, '00000000-0000-0000-0000-000000000099'::uuid, 'retention-test@example.com', 'hash6', 'completed', NOW() + INTERVAL '1 day', NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days');
   
   SELECT COUNT(*) INTO v_old_count FROM public.account_deletion_requests WHERE user_id = '00000000-0000-0000-0000-000000000099'::uuid;
   
@@ -144,11 +149,11 @@ DECLARE
   v_new_count INTEGER;
 BEGIN
   -- Insert test waitlist entries (only for this test user)
-  INSERT INTO public.pro_waitlist (user_id, project_id, launch_email_sent_at, created_at)
+  INSERT INTO public.pro_waitlist (user_id, email, project_id, launch_email_sent_at, created_at)
   VALUES
-    ('00000000-0000-0000-0000-000000000099'::uuid, NULL, NOW() - INTERVAL '50 days', NOW() - INTERVAL '50 days'),  -- Should be deleted
-    ('00000000-0000-0000-0000-000000000099'::uuid, NULL, NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days'),    -- Should be kept
-    ('00000000-0000-0000-0000-000000000099'::uuid, NULL, NULL, NOW() - INTERVAL '50 days');                        -- Should be kept (no email sent)
+    ('00000000-0000-0000-0000-000000000099'::uuid, 'retention-test-1@example.com', '00000000-0000-0000-0000-000000000098'::uuid, NOW() - INTERVAL '50 days', NOW() - INTERVAL '50 days'),  -- Should be deleted
+    ('00000000-0000-0000-0000-000000000099'::uuid, 'retention-test-2@example.com', NULL, NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days'),    -- Should be kept
+    ('00000000-0000-0000-0000-000000000099'::uuid, 'retention-test-3@example.com', NULL, NULL, NOW() - INTERVAL '50 days');                        -- Should be kept (no email sent)
   
   SELECT COUNT(*) INTO v_old_count FROM public.pro_waitlist WHERE user_id = '00000000-0000-0000-0000-000000000099'::uuid;
   
@@ -169,5 +174,6 @@ END $$;
 DELETE FROM public.usage_events WHERE user_id = '00000000-0000-0000-0000-000000000099'::uuid;
 DELETE FROM public.account_deletion_requests WHERE user_id = '00000000-0000-0000-0000-000000000099'::uuid;
 DELETE FROM public.pro_waitlist WHERE user_id = '00000000-0000-0000-0000-000000000099'::uuid;
+DELETE FROM public.projects WHERE id = '00000000-0000-0000-0000-000000000098'::uuid;
 
 ROLLBACK;

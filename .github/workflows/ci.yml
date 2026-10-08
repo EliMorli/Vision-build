@@ -63,20 +63,24 @@ jobs:
       
       - name: Test legal validation with fixtures (always)
         run: |
-          # Test 1: Planted blank should fail
-          cp app/terms.tsx app/terms.tsx.backup
-          sed -i 's/VisionBuild/[PLACEHOLDER_COMPANY]/g' app/terms.tsx
-          if node scripts/strip-legal-drafts.js 2>&1 | grep -q "ERROR"; then
-            echo "✅ Legal validation correctly detects planted blank"
+          # Test 1: Dirty fixture should fail and name the specific blank
+          echo "Testing dirty fixture..."
+          if ! LEGAL_DIR=scripts/__fixtures__/legal/dirty node scripts/strip-legal-drafts.js 2>&1 | tee /tmp/dirty-output.txt; then
+            if grep -q "\[YOUR_COMPANY_NAME\]" /tmp/dirty-output.txt && grep -q "\[support@yourdomain.com\]" /tmp/dirty-output.txt; then
+              echo "✅ Legal validation correctly detects planted blanks"
+            else
+              echo "❌ Legal validation should have named the specific blanks"
+              cat /tmp/dirty-output.txt
+              exit 1
+            fi
           else
-            echo "❌ Legal validation should have detected planted blank"
-            mv app/terms.tsx.backup app/terms.tsx
+            echo "❌ Legal validation should have failed on dirty fixture"
             exit 1
           fi
-          mv app/terms.tsx.backup app/terms.tsx
           
-          # Test 2: Clean content should pass
-          if node scripts/strip-legal-drafts.js; then
+          # Test 2: Clean fixture should pass
+          echo "Testing clean fixture..."
+          if LEGAL_DIR=scripts/__fixtures__/legal/clean node scripts/strip-legal-drafts.js; then
             echo "✅ Legal validation correctly passes clean content"
           else
             echo "❌ Legal validation should have passed clean content"

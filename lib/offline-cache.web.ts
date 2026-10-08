@@ -31,7 +31,7 @@ export async function wipeOfflineCache(userId: string): Promise<void> {
       await AsyncStorage.multiRemove(cacheKeys);
     }
   } catch (error) {
-    console.error("Error wiping offline cache:", error);
+    console.error("offline_cache_wipe_failed");
     throw error;
   }
 }

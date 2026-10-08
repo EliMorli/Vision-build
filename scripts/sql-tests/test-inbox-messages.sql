@@ -17,11 +17,12 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- Create test project
-INSERT INTO public.projects (id, user_id, title, status, room_analysis, selected_style)
+INSERT INTO public.projects (id, user_id, title, original_image_url, status, room_analysis, selected_style)
 VALUES (
   '00000000-0000-0000-0000-000000000010'::uuid,
   '00000000-0000-0000-0000-000000000001'::uuid,
   'Test Project',
+  'https://example.com/test.jpg',
   'draft',
   '{"roomType": "test", "currentStyle": "test", "estimatedSqFt": 100, "keyElements": [], "rawAnalysis": "test"}',
   'modern'

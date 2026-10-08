@@ -4,24 +4,45 @@
  * Fails if any unfilled blanks (placeholders in brackets) remain
  * 
  * Usage:
- *   node scripts/strip-legal-drafts.js          # Check all legal files
- *   node scripts/strip-legal-drafts.js --check  # Check only (no output)
+ *   node scripts/strip-legal-drafts.js                    # Check app/terms.tsx and app/privacy.tsx
+ *   node scripts/strip-legal-drafts.js path/to/file.tsx   # Check specific file(s)
+ *   LEGAL_DIR=path/to/dir node scripts/strip-legal-drafts.js  # Check all files in directory
  * 
- * Processes: app/terms.tsx, app/privacy.tsx, content/legal/*.md
+ * Processes: app/terms.tsx, app/privacy.tsx, or specified files/directory
  */
 
 const fs = require('fs');
 const path = require('path');
-const glob = require('glob');
 
-const LEGAL_TSX_FILES = [
-  path.join(__dirname, '..', 'app', 'terms.tsx'),
-  path.join(__dirname, '..', 'app', 'privacy.tsx'),
-];
+// Get files to check
+function getLegalFiles() {
+  const args = process.argv.slice(2);
+  
+  // If LEGAL_DIR env var is set, use that directory
+  if (process.env.LEGAL_DIR) {
+    const legalDir = path.resolve(process.env.LEGAL_DIR);
+    if (!fs.existsSync(legalDir)) {
+      console.error(`❌ ERROR: LEGAL_DIR ${legalDir} not found`);
+      process.exit(1);
+    }
+    return fs.readdirSync(legalDir)
+      .filter(file => file.endsWith('.tsx') || file.endsWith('.md'))
+      .map(file => path.join(legalDir, file));
+  }
+  
+  // If file paths provided as arguments, use those
+  if (args.length > 0) {
+    return args.map(arg => path.resolve(arg));
+  }
+  
+  // Default: check app/terms.tsx and app/privacy.tsx
+  return [
+    path.join(__dirname, '..', 'app', 'terms.tsx'),
+    path.join(__dirname, '..', 'app', 'privacy.tsx'),
+  ];
+}
 
-const LEGAL_MD_FILES = glob.sync(path.join(__dirname, '..', 'content', 'legal', '*.md'));
-
-const ALL_LEGAL_FILES = [...LEGAL_TSX_FILES, ...LEGAL_MD_FILES];
+const ALL_LEGAL_FILES = getLegalFiles();
 
 let hasErrors = false;
 
@@ -95,31 +116,7 @@ function stripDraftContent(content, filename) {
       hasErrors = true;
     }
     
-    // Strip DRAFT banner lines
-    let stripped = content.replace(
-      /> \*\*DRAFT.*?\*\*\n/g,
-      ''
-    );
-    
-    // Strip [NOTE: ...] lines
-    stripped = stripped.replace(
-      /> \[NOTE:.*?\]\n/g,
-      ''
-    );
-    
-    // Strip [ATTORNEY DECISION: ...] lines
-    stripped = stripped.replace(
-      /> \[ATTORNEY DECISION:.*?\]\n/g,
-      ''
-    );
-    
-    // Strip [CONFIRM] markers
-    stripped = stripped.replace(
-      /\[CONFIRM\]/g,
-      ''
-    );
-    
-    return stripped;
+    return content;
   } else {
     // Process markdown files directly
     
@@ -137,8 +134,6 @@ function stripDraftContent(content, filename) {
   }
 }
 
-const checkOnly = process.argv.includes('--check');
-
 console.log('🔍 Checking legal files for release...\n');
 
 for (const filePath of ALL_LEGAL_FILES) {
@@ -152,7 +147,7 @@ for (const filePath of ALL_LEGAL_FILES) {
   }
 
   const content = fs.readFileSync(filePath, 'utf-8');
-  const stripped = stripDraftContent(content, filename);
+  stripDraftContent(content, filename);
   
   if (!hasErrors) {
     console.log(`✅ ${filename} is ready for release`);

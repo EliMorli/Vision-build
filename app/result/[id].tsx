@@ -119,7 +119,7 @@ export default function ResultScreen() {
       await selectDesign(id, selectedUrl);
       router.push(`/project/${id}`);
     } catch (_error) {
-      console.error("Error saving design:", _error);
+      console.error("design_save_failed");
       setError("Failed to save selection");
     } finally {
       setIsSaving(false);
@@ -156,7 +156,7 @@ export default function ResultScreen() {
         setIsOnWaitlist(true);
       }
     } catch (_err) {
-      console.error("Error joining waitlist:", _err);
+      console.error("pros_waitlist_join_failed");
     } finally {
       setWaitlistLoading(false);
     }

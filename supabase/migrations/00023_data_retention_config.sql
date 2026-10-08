@@ -22,9 +22,9 @@ REVOKE ALL ON public.data_retention_config FROM PUBLIC, anon, authenticated;
 
 -- Insert default retention periods
 INSERT INTO public.data_retention_config (id, description, retention_days, is_active) VALUES
-  ('usage_events', 'AI usage count events for daily limits', 90, true),
-  ('deletion_requests', 'Completed or expired account deletion requests', 30, true),
-  ('waitlist_post_launch', 'Pro waitlist entries after launch email sent', 14, false)
+  ('usage_events', 'AI usage count events for daily limits', 30, true),
+  ('deletion_requests', 'Completed or expired account deletion requests', 90, true),
+  ('waitlist_post_launch', 'Pro waitlist entries after launch email sent', 30, true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Function to clean up usage events
@@ -94,11 +94,11 @@ BEGIN
   v_completed_cutoff := NOW() - (v_retention_days || ' days')::INTERVAL;
   
   -- Delete old deletion requests:
-  -- - completed/used: use completed_at
+  -- - completed/used: use COALESCE(completed_at, created_at)
   -- - pending/expired: use expires_at
   -- Never touch failed_pending_retry or confirmed
   DELETE FROM public.account_deletion_requests
-  WHERE (status IN ('completed','used') AND completed_at < v_completed_cutoff)
+  WHERE (status IN ('completed','used') AND COALESCE(completed_at, created_at) < v_completed_cutoff)
      OR (status IN ('pending','expired') AND expires_at < v_cutoff_date);
   
   GET DIAGNOSTICS v_deleted_count = ROW_COUNT;

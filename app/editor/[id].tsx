@@ -43,7 +43,7 @@ export default function EditorScreen() {
       // Start generation (will update store which generating screen monitors)
       await generateDesigns(id, selectedStyle.promptModifier);
     } catch (_error) {
-      console.error("Generate error:", _error);
+      console.error("design_generation_failed");
       setError("Failed to generate designs");
     } finally {
       setIsGenerating(false);

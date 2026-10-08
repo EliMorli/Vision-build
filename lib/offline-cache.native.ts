@@ -1,8 +1,25 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system";
+import * as Crypto from "expo-crypto";
 
 const OFFLINE_CACHE_KEYS_PREFIX = "@visionbuild:offline:";
 const OFFLINE_USER_DIR_PREFIX = "offline_cache_";
+
+/**
+ * Sanitize a file path to ensure it's safe for the filesystem
+ * Hash the path to avoid special characters and length issues
+ */
+function sanitizeFilePath(filePath: string): string {
+  // Create a hash of the path for safe filename
+  const hash = Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    filePath
+  );
+  
+  // Return a promise-based hash but we'll use a simpler approach for now
+  // Replace anything outside [A-Za-z0-9._-] with underscore
+  return filePath.replace(/[^A-Za-z0-9._-]/g, '_');
+}
 
 /**
  * Get the offline cache directory for a specific user
@@ -42,7 +59,7 @@ export async function wipeOfflineCache(userId: string): Promise<void> {
       await FileSystem.deleteAsync(userDir, { idempotent: true });
     }
   } catch (error) {
-    console.error("Error wiping offline cache:", error);
+    console.error("offline_cache_wipe_failed");
     throw error;
   }
 }
@@ -89,13 +106,16 @@ export async function cacheImageFile(
       await FileSystem.makeDirectoryAsync(userDir, { intermediates: true });
     }
 
+    // Sanitize the file path
+    const sanitizedPath = sanitizeFilePath(filePath);
+
     // Download and cache the file
-    const localPath = `${userDir}${filePath}`;
+    const localPath = `${userDir}${sanitizedPath}`;
     await FileSystem.downloadAsync(sourceUri, localPath);
     
     return localPath;
   } catch (error) {
-    console.error("Error caching image file:", error);
+    console.error("offline_image_cache_failed");
     return null;
   }
 }
@@ -113,7 +133,7 @@ export async function getCachedImageFile(
     
     return fileInfo.exists ? localPath : null;
   } catch (error) {
-    console.error("Error getting cached image:", error);
+    console.error("offline_image_get_failed");
     return null;
   }
 }

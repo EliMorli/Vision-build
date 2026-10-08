@@ -81,6 +81,14 @@ export default function TabsLayout() {
             </View>
           ),
         }}
+        listeners={{
+          tabPress: () => {
+            // Refresh unread count when tab is focused
+            useInboxStore.getState().fetchUnreadCount().catch(() => {
+              // Errors are already logged in fetchUnreadCount
+            });
+          },
+        }}
       />
       <Tabs.Screen
         name="profile"
