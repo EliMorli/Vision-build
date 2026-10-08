@@ -27,8 +27,8 @@ test.describe("UI Screenshots", () => {
 
     // Check that Nunito fonts are loaded by inspecting document.fonts
     const nunitoFontsLoaded = await page.evaluate(() => {
-      const loadedFonts = Array.from(document.fonts);
-      return loadedFonts.some(font => 
+      const loadedFonts = Array.from(document.fonts as unknown as Iterable<FontFace>);
+      return loadedFonts.some((font: FontFace) => 
         font.family.includes('Nunito') || 
         font.family.includes('nunito')
       );
@@ -60,8 +60,8 @@ test.describe("UI Screenshots", () => {
     
     // Verify Nunito fonts are still loaded on consent screen
     const consentNunitoLoaded = await page.evaluate(() => {
-      const loadedFonts = Array.from(document.fonts);
-      return loadedFonts.some(font => 
+      const loadedFonts = Array.from(document.fonts as unknown as Iterable<FontFace>);
+      return loadedFonts.some((font: FontFace) => 
         font.family.includes('Nunito') || 
         font.family.includes('nunito')
       );
