@@ -278,12 +278,9 @@ test.describe("VisionBuild Create Loop", () => {
       signedUrlRequests.push(url);
       
       if (interceptFailures) {
-        // Return 403 to trigger retry and placeholder display
-        await route.fulfill({ 
-          status: 403, 
-          body: "Forbidden",
-          contentType: "text/plain"
-        });
+        // Abort the request to trigger retry and placeholder display
+        // Note: abort() triggers onError more reliably than fulfill({status: 403})
+        await route.abort('failed');
       } else {
         // Return a green image
         await route.fulfill({
