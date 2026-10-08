@@ -7,6 +7,7 @@ import {
   View,
   Pressable,
   Modal,
+  Platform,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,10 +15,7 @@ import { colors, fonts, spacing, radius } from "@/lib/theme";
 import { licenses } from "@/lib/generated/licenses";
 
 export default function LicensesScreen() {
-  const [selectedLicense, setSelectedLicense] = useState<{
-    name: string;
-    version: string;
-  } | null>(null);
+  const [selectedLicense, setSelectedLicense] = useState<typeof licenses[0] | null>(null);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -81,13 +79,11 @@ export default function LicensesScreen() {
               <Text style={styles.modalVersion}>
                 Version: {selectedLicense?.version || ""}
               </Text>
-              <Text style={styles.modalText}>
-                License information for this package can be found in its npm
-                registry page or repository.
+              <Text style={styles.modalLicense}>
+                License: {selectedLicense?.license || ""}
               </Text>
-              <Text style={styles.modalNote}>
-                Visit npmjs.com/package/{selectedLicense?.name || ""} for full
-                license details.
+              <Text style={styles.modalLicenseText}>
+                {selectedLicense?.licenseText || ""}
               </Text>
             </ScrollView>
           </View>
@@ -183,18 +179,18 @@ const styles = StyleSheet.create({
   modalVersion: {
     ...fonts.body,
     color: colors.textSecondary,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
-  modalText: {
+  modalLicense: {
     ...fonts.body,
-    lineHeight: 22,
-    marginBottom: spacing.md,
-  },
-  modalNote: {
-    ...fonts.regular,
-    fontSize: 13,
     color: colors.textSecondary,
-    lineHeight: 20,
-    fontStyle: "italic",
+    marginBottom: spacing.lg,
+  },
+  modalLicenseText: {
+    ...fonts.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    color: colors.textPrimary,
   },
 });

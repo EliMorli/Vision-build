@@ -61,8 +61,36 @@ jobs:
       - name: Check launch copy compliance
         run: npm run check:launch-copy
       
-      - name: Validate legal pages for release
+      - name: Test legal validation with fixtures (always)
+        run: |
+          # Test 1: Planted blank should fail
+          cp app/terms.tsx app/terms.tsx.backup
+          sed -i 's/VisionBuild/[PLACEHOLDER_COMPANY]/g' app/terms.tsx
+          if node scripts/strip-legal-drafts.js 2>&1 | grep -q "ERROR"; then
+            echo "✅ Legal validation correctly detects planted blank"
+          else
+            echo "❌ Legal validation should have detected planted blank"
+            mv app/terms.tsx.backup app/terms.tsx
+            exit 1
+          fi
+          mv app/terms.tsx.backup app/terms.tsx
+          
+          # Test 2: Clean content should pass
+          if node scripts/strip-legal-drafts.js; then
+            echo "✅ Legal validation correctly passes clean content"
+          else
+            echo "❌ Legal validation should have passed clean content"
+            exit 1
+          fi
+      
+      - name: Validate legal pages for release (main/tags only)
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         run: node scripts/strip-legal-drafts.js
+      
+      - name: Check licenses are up-to-date
+        run: |
+          node scripts/generate-licenses.js
+          git diff --exit-code lib/generated/licenses.ts || (echo "❌ Licenses are out of date. Run 'node scripts/generate-licenses.js'" && exit 1)
       
       - name: Install pg_cron and pg_net in PostgreSQL container
         env:
