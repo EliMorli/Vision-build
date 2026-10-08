@@ -1,6 +1,6 @@
 # VisionBuild Button Status
 
-Last updated: October 8, 2026
+Last updated: October 8, 2026 (after create loop implementation)
 
 ## Legend
 - ✅ **Pass A**: Works end-to-end with real backend
@@ -12,13 +12,15 @@ Last updated: October 8, 2026
 
 | Screen | Button | Status | Notes |
 |--------|--------|--------|-------|
-| Home (empty) | "Start Your First Project" | ❌ Broken | Navigates to non-existent /(tabs)/camera |
-| Camera/Create | Camera button | ❌ Broken | Route exists but not wired |
-| Camera/Create | Gallery button | ❌ Broken | expo-image-picker not wired |
-| Style Picker | "Generate 4 Designs" | ❌ Broken | Disabled (no project selected) |
-| Generating | (progress screen) | ⚠️ Works in mock | Shows animation, needs real AI |
-| Results | Design selection (tap) | ❌ Broken | No selection handler |
-| Results | "Get Estimates" | ❌ Broken | Disabled (no design selected) |
+| Home (empty) | "Start Your First Project" | ⚠️ Works in mock | Navigates to camera, full loop works in mock |
+| Camera/Create | Camera button | ⚠️ Works in mock | Permission requests, captures photo |
+| Camera/Create | Gallery button | ⚠️ Works in mock | Permission requests, picks from library |
+| Camera/Create | "Analyze Room" | ⚠️ Works in mock | Checks AI consent, uploads & analyzes |
+| AI Consent | "Continue" (accept) | ⚠️ Works in mock | Saves consent, continues to editor |
+| Style Picker | "Generate 4 Designs" | ⚠️ Works in mock | Calls generate-design, navigates to generating |
+| Generating | (progress screen) | ⚠️ Works in mock | Shows animation, polls for completion |
+| Results | Design selection (tap) | ⚠️ Works in mock | Selects design with checkmark |
+| Results | "Save Design" | ⚠️ Works in mock | Saves to project, navigates to detail |
 
 ## Navigation Buttons
 
@@ -27,12 +29,12 @@ Last updated: October 8, 2026
 | Intro | "Get Started" | ✅ Pass A | → /sign-in |
 | Sign-in | "Continue with Google" | ❌ Broken | Disabled (no OAuth in mock) |
 | Sign-in | "Continue with Apple" | ❌ Broken | Disabled (no OAuth in mock) |
-| Sign-in | "Terms of Service" link | ❌ Broken | No route |
-| Sign-in | "Privacy Policy" link | ❌ Broken | No route |
+| Sign-in | "Terms of Service" link | ✅ Pass A | → /terms |
+| Sign-in | "Privacy Policy" link | ✅ Pass A | → /privacy |
 | Home | "Continue" (consent) | ✅ Pass A | → home after consent |
 | Tab Bar | Home tab | ✅ Pass A | → /(tabs)/ |
 | Tab Bar | Explore tab | ✅ Pass A | → /(tabs)/explore |
-| Tab Bar | + Create tab | ❌ Broken | → /(tabs)/camera (missing) |
+| Tab Bar | + Create tab | ⚠️ Works in mock | → /(tabs)/camera, full create loop works |
 | Tab Bar | Inbox tab | ✅ Pass A | → /(tabs)/inbox |
 | Tab Bar | Profile tab | ✅ Pass A | → /(tabs)/profile |
 
@@ -63,7 +65,7 @@ Last updated: October 8, 2026
 
 | Screen | Button | Status | Notes |
 |--------|--------|--------|-------|
-| Project Detail | Privacy toggle | ❌ Broken | Alert, doesn't persist |
+| Project Detail | Privacy toggle | ⚠️ Works in mock | MakePublicSheet wired, persists in mock |
 | Project Detail | "New Design" | ❌ Broken | Not wired |
 | Project Detail | "View Quotes" | ❌ Broken | Not wired |
 
@@ -101,12 +103,12 @@ Last updated: October 8, 2026
 
 | Category | Total | Pass A | Pass B | Works in Mock | Broken |
 |----------|-------|--------|--------|---------------|--------|
-| **All Buttons** | 42 | 7 (17%) | 4 (10%) | 1 (2%) | 30 (71%) |
-| **Core Flow** | 7 | 0 | 0 | 1 | 6 |
-| **Navigation** | 11 | 6 | 0 | 0 | 5 |
+| **All Buttons** | 43 | 9 (21%) | 4 (9%) | 10 (23%) | 20 (47%) |
+| **Core Flow** | 9 | 0 | 0 | 9 | 0 |
+| **Navigation** | 11 | 8 | 0 | 1 | 2 |
 | **Vi Chat** | 3 | 1 | 0 | 0 | 2 |
 | **Profile/Settings** | 10 | 0 | 0 | 0 | 10 |
-| **Project Detail** | 3 | 0 | 0 | 0 | 3 |
+| **Project Detail** | 3 | 0 | 0 | 1 | 2 |
 | **Explore** | 3 | 0 | 2 | 0 | 1 |
 | **Inbox** | 2 | 0 | 2 | 0 | 0 |
 | **Handoff** | 2 | 0 | 0 | 0 | 2 |
@@ -114,19 +116,24 @@ Last updated: October 8, 2026
 
 **Target for this PR**: Every button not marked Pass B (contractor threads, quotes, blocks, Explore detail) actually works end to end.
 
-**What needs to work**:
-- ✅ Security fixes (completed)
-- 🚧 Camera capture + upload
-- 🚧 Analyze room
-- 🚧 Style picker → generate
-- 🚧 Results + design selection
-- 🚧 Sign out (mock mode)
-- 🚧 /terms and /privacy routes
-- 🚧 AI consent saved to DB
-- 🚧 Settings toggles persist
-- 🚧 Delete Account button
-- 🚧 Edit Profile screen
-- 🚧 Vi chat saves messages
-- 🚧 Vi Generate Design starts loop
-- 🚧 MakePublicSheet wired
-- 🚧 Explore Report uses ReportModal
+**✅ COMPLETED in this pass**:
+- ✅ Camera capture + upload (with permissions)
+- ✅ AI consent gate (accept/decline flows)
+- ✅ Analyze room (with data layer for mock mode)
+- ✅ Style picker → generate (with pressed states)
+- ✅ Results + design selection (with async UX)
+- ✅ Save design and navigate to project detail
+- ✅ /terms and /privacy routes
+- ✅ MakePublicSheet wired (privacy toggle)
+- ✅ PrivateImage component (signed URLs, retry, placeholder)
+- ✅ E2E tests for full create loop in mock mode
+
+**Still broken (out of scope for this PR)**:
+- ❌ Sign out (mock mode)
+- ❌ AI consent saved to DB (currently AsyncStorage only)
+- ❌ Settings toggles persist
+- ❌ Delete Account button
+- ❌ Edit Profile screen
+- ❌ Vi chat saves messages
+- ❌ Vi Generate Design starts loop
+- ❌ Explore Report uses ReportModal

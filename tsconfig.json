@@ -14,6 +14,8 @@
     "**/*.tsx"
   ],
   "exclude": [
-    "supabase"
+    "supabase",
+    "e2e",
+    "playwright.config.ts"
   ]
 }
