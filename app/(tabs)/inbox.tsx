@@ -1,13 +1,67 @@
+import { useState, useEffect } from "react";
 import {
   SafeAreaView,
   StyleSheet,
 } from "react-native";
-import { EmptyState, OfflineBanner } from "@/components";
+import { EmptyState, OfflineBanner, LoadingSkeleton, ErrorState } from "@/components";
 import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
+import { useInboxStore } from "@/lib/store";
 
 export default function InboxScreen() {
   const networkStatus = useNetworkStatus();
   const isOffline = !networkStatus.isConnected;
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const fetchUnreadCount = useInboxStore((s) => s.fetchUnreadCount);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        await fetchUnreadCount();
+      } catch {
+        setError("Failed to load messages");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [fetchUnreadCount]);
+
+  // Loading state
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {isOffline && <OfflineBanner testID="offline-banner" />}
+        <LoadingSkeleton variant="list" count={3} testID="inbox-loading" />
+      </SafeAreaView>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {isOffline && <OfflineBanner testID="offline-banner" />}
+        <ErrorState
+          message="Failed to load messages"
+          onRetry={async () => {
+            try {
+              setLoading(true);
+              setError(null);
+              await fetchUnreadCount();
+            } catch {
+              setError("Failed to load messages");
+            } finally {
+              setLoading(false);
+            }
+          }}
+          testID="inbox-error"
+        />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} testID="inbox-empty">

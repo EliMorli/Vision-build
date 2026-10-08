@@ -46,6 +46,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
       const userId = get().session?.user?.id ?? MOCK_USER_ID;
       
+      // Check for state override
+      const overrideJson = await AsyncStorage.getItem("@visionbuild:mock_state_override");
+      if (overrideJson) {
+        const overrides = JSON.parse(overrideJson);
+        if (overrides.profile === "loading") {
+          set({ loading: true });
+          return; // Hang until override is cleared
+        }
+        if (overrides.profile === "error") {
+          set({ loading: false });
+          throw new Error("RAW_SECRET_ERROR_profile_fetch");
+        }
+      }
+      
       try {
         const seedJson = await AsyncStorage.getItem("@visionbuild:mock_seed_profile");
         if (seedJson) {
@@ -260,6 +274,22 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     
     // Dev mode: Check for seeded mock projects first (for E2E testing)
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      // Check for state override - home, project, results, editor all use fetchProjects
+      const overrideJson = await AsyncStorage.getItem("@visionbuild:mock_state_override");
+      if (overrideJson) {
+        const overrides = JSON.parse(overrideJson);
+        // Check any of the screens that use fetchProjects
+        for (const screen of ["home", "project", "results", "editor"]) {
+          if (overrides[screen] === "loading") {
+            set({ loading: true });
+            return; // Hang until override is cleared
+          }
+          if (overrides[screen] === "error") {
+            set({ loading: false });
+            throw new Error(`RAW_SECRET_ERROR_${screen}_fetch`);
+          }
+        }
+      }
       try {
         const seedJson = await AsyncStorage.getItem("@visionbuild:mock_seed_projects");
         if (seedJson) {
@@ -1020,6 +1050,22 @@ export const useExploreStore = create<ExploreState>((set, get) => ({
     
     // Dev mode: Check for seeded mock projects first (for E2E testing)
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      // Check for state override
+      const overrideJson = await AsyncStorage.getItem("@visionbuild:mock_state_override");
+      if (overrideJson) {
+        const overrides = JSON.parse(overrideJson);
+        if (overrides.explore === "loading") {
+          return; // Hang until override is cleared
+        }
+        if (overrides.explore === "error") {
+          set({ loading: false });
+          throw new Error("RAW_SECRET_ERROR_explore_fetch");
+        }
+        if (overrides.explore === "empty") {
+          set({ publicDesigns: [], loading: false });
+          return;
+        }
+      }
       try {
         const seedJson = await AsyncStorage.getItem("@visionbuild:mock_seed_projects");
         if (seedJson) {
@@ -1031,7 +1077,7 @@ export const useExploreStore = create<ExploreState>((set, get) => ({
           
           // Check blocks
           const blocksJson = await AsyncStorage.getItem("@visionbuild:blocks");
-          const blocksData: Array<{ blocked_id: string }> = blocksJson ? JSON.parse(blocksJson) : [];
+          const blocksData: { blocked_id: string }[] = blocksJson ? JSON.parse(blocksJson) : [];
           const blockedIds = blocksData.map(b => b.blocked_id);
           
           // Filter out blocked users
@@ -1136,6 +1182,17 @@ export const useInboxStore = create<InboxState>((set, get) => ({
     const userId = useAuthStore.getState().session?.user?.id;
 
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      // Check for state override
+      const overrideJson = await AsyncStorage.getItem("@visionbuild:mock_state_override");
+      if (overrideJson) {
+        const overrides = JSON.parse(overrideJson);
+        if (overrides.inbox === "loading") {
+          return; // Hang until override is cleared
+        }
+        if (overrides.inbox === "error") {
+          throw new Error("RAW_SECRET_ERROR_inbox_fetch");
+        }
+      }
       // Mock mode: check for seeded unread count
       try {
         const seedJson = await AsyncStorage.getItem("@visionbuild:mock_unread_count");
