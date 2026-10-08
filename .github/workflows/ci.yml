@@ -240,7 +240,9 @@ jobs:
           done
           
           # Regenerate ui-contact-sheet.png from all current ui-* shots
-          montage e2e/screens/ui-!(contact-sheet).png -tile 4x -geometry 195x422+2+2 -background white e2e/screens/ui-contact-sheet.png
+          cd e2e/screens
+          montage $(ls ui-*.png | grep -v contact-sheet) -tile 4x -geometry 195x422+2+2 -background white ui-contact-sheet.png
+          cd ../..
           echo "✓ Regenerated ui-contact-sheet.png"
           
           if [ $FAIL -eq 1 ]; then
