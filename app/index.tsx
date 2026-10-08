@@ -17,12 +17,7 @@ export default function Index() {
   const [introSeen, setIntroSeen] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // In mock mode, skip intro and go straight to tabs
-    if (DEV_MOCK_ENABLED) {
-      setIntroSeen(true);
-    } else {
-      checkIntroSeen();
-    }
+    checkIntroSeen();
   }, []);
   
   // Set mock session in dev mode
@@ -70,7 +65,7 @@ export default function Index() {
   }
 
   // Returning users go straight to auth or tabs
-  if (session || DEV_MOCK_ENABLED) {
+  if (session) {
     return <Redirect href="/(tabs)" />;
   }
 

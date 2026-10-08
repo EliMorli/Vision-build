@@ -20,11 +20,6 @@ export function useAIConsentCheck() {
   const session = useAuthStore((s) => s.session);
 
   const checkConsentVersion = useCallback(async () => {
-    // Skip consent check in mock mode
-    if (DEV_MOCK_ENABLED) {
-      return;
-    }
-
     try {
       const [consented, storedVersion] = await Promise.all([
         AsyncStorage.getItem(AI_CONSENT_KEY),
