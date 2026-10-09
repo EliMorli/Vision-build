@@ -11,7 +11,7 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
-import { IsoRoom, Button, ReportModal, ConfirmationSheet, MenuSheet, LoadingSkeleton, ErrorState, OfflineBanner } from "@/components";
+import { AiGeneratedBadge, IsoRoom, Button, ReportModal, ConfirmationSheet, MenuSheet, LoadingSkeleton, ErrorState, OfflineBanner } from "@/components";
 import { useExploreStore, useReportStore } from "@/lib/store";
 import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
 
@@ -319,6 +319,7 @@ export default function ExploreScreen() {
                 accessible={false}
                 importantForAccessibility="no-hide-descendants"
               />
+              <AiGeneratedBadge compact style={{ top: 8, left: 8 }} testID="explore-ai-badge" />
               <Pressable
                 style={styles.moreButton}
                 onPress={() => handleReportMenu(item.id, item.user_id || "")}

@@ -35,7 +35,7 @@ Some information stays for a limited time, as described in Section 6 of our [Pri
 
 {{RETENTION_TABLE}}
 
-Remixes other users made from your public designs belong to them and stay until they delete them. We may also keep information longer if the law requires it or to resolve disputes, prevent fraud or abuse, or enforce our Terms.
+We may also keep information longer if the law requires it or to resolve disputes, prevent fraud or abuse, or enforce our Terms.
 
 ## Questions
 

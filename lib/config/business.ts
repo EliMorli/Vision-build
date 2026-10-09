@@ -21,6 +21,11 @@ export const businessConfig = {
   
   supportEmail: process.env.EXPO_PUBLIC_SUPPORT_EMAIL || "[support@yourdomain.com]",
   websiteDomain: "[yourdomain.com]",
+
+  // Designated DMCA agent (Terms → "Copyright complaints (DMCA)"). Can be the
+  // support email. The LLC must also register this agent at dmca.copyright.gov.
+  // Release builds fail while this is the placeholder.
+  dmcaAgentEmail: process.env.EXPO_PUBLIC_DMCA_AGENT_EMAIL || "[dmca-agent@yourdomain.com]",
   
   // Email configuration (for Resend)
   email: {
@@ -52,6 +57,10 @@ export function getIncompleteBusinessConfig(): string[] {
     missing.push("SUPPORT_EMAIL");
   }
   
+  if (businessConfig.dmcaAgentEmail.startsWith("[") || !businessConfig.dmcaAgentEmail.includes("@")) {
+    missing.push("DMCA_AGENT_EMAIL");
+  }
+
   if (businessConfig.websiteDomain.startsWith("[")) {
     missing.push("WEBSITE_DOMAIN");
   }

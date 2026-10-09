@@ -10,6 +10,12 @@
  *                            <meta name="policy-version" content="N"> where N is
  *                            PRIVACY_POLICY_VERSION, the version the consent
  *                            screen records.
+ *   Gate 3 (dmca-agent):     the Terms name a designated DMCA agent
+ *                            ({{DMCA_AGENT_EMAIL}}). EXPO_PUBLIC_DMCA_AGENT_EMAIL,
+ *                            or dmcaAgentEmail in lib/config/business.ts, must be
+ *                            a real email, not the placeholder. It can be the
+ *                            support email; the agent must also be registered
+ *                            at dmca.copyright.gov.
  *
  * Usage:
  *   EXPO_PUBLIC_LEGAL_BASE_URL=https://example.com/legal node scripts/check-legal-release.js
@@ -18,13 +24,14 @@
  * Test hooks (used by scripts/test-legal-release-gates.js with fixtures):
  *   LEGAL_CONFIG_FILE                 read versions/placeholder from this file
  *   LEGAL_RELEASE_PRIVACY_HTML_FILE   read the privacy page from a file instead of fetching
+ *   LEGAL_BUSINESS_CONFIG_FILE        read dmcaAgentEmail from this file
  */
 const fs = require("fs");
 const path = require("path");
 
 const ROOT = path.join(__dirname, "..");
 const gateArg = (process.argv.find((a) => a.startsWith("--gate=")) || "").slice(7);
-const gates = gateArg ? gateArg.split(",") : ["base-url", "policy-version"];
+const gates = gateArg ? gateArg.split(",") : ["base-url", "policy-version", "dmca-agent"];
 
 function readLegalConfig() {
   const file = process.env.LEGAL_CONFIG_FILE
@@ -61,6 +68,26 @@ function checkBaseUrl(config) {
     return { ok: false, base, message: `EXPO_PUBLIC_LEGAL_BASE_URL must use https: ${base}` };
   }
   return { ok: true, base, message: `EXPO_PUBLIC_LEGAL_BASE_URL is ${base}` };
+}
+
+function checkDmcaAgent() {
+  let value = (process.env.EXPO_PUBLIC_DMCA_AGENT_EMAIL || "").trim();
+  let source = "EXPO_PUBLIC_DMCA_AGENT_EMAIL";
+  if (!value) {
+    const file = process.env.LEGAL_BUSINESS_CONFIG_FILE
+      ? path.resolve(process.env.LEGAL_BUSINESS_CONFIG_FILE)
+      : path.join(ROOT, "lib", "config", "business.ts");
+    const m = fs.readFileSync(file, "utf8").match(/dmcaAgentEmail:\s*(?:process\.env\.\w+\s*\|\|\s*)?"([^"]*)"/);
+    value = m ? m[1] : "";
+    source = "dmcaAgentEmail in lib/config/business.ts";
+  }
+  if (!value || value.startsWith("[")) {
+    return { ok: false, message: `DMCA agent email is unfilled (${value || "missing"}). Set EXPO_PUBLIC_DMCA_AGENT_EMAIL or dmcaAgentEmail; it can be the support email. Register the agent at dmca.copyright.gov.` };
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+    return { ok: false, message: `DMCA agent email is not a valid email: ${value}` };
+  }
+  return { ok: true, message: `DMCA agent email is ${value} (${source})` };
 }
 
 function readPolicyVersion(html) {
@@ -122,6 +149,11 @@ async function main() {
       if (!r.ok) failed = true;
     }
   }
+  if (gates.includes("dmca-agent")) {
+    const r = checkDmcaAgent();
+    console.log(`${r.ok ? "✅" : "❌"} [dmca-agent] ${r.message}`);
+    if (!r.ok) failed = true;
+  }
   if (failed) {
     console.error("❌ Legal release gates FAILED");
     process.exit(1);
@@ -136,4 +168,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { readPolicyVersion, checkBaseUrl, normalize };
+module.exports = { readPolicyVersion, checkBaseUrl, checkDmcaAgent, normalize };

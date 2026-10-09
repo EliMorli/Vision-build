@@ -109,9 +109,9 @@ These companies process information for us, only on our instructions, to run the
 
 ### Other users — only designs you make Public
 
-Projects are **Private** by default. If you make a project **Public**, you'll be asked to confirm. Only the **AI-generated designs** are copied to public storage and shown on Explore, with your name or handle and level. **Your original room photo, chats, and briefs are never made public.** Other users can view, like, save, and remix public designs.
+Projects are **Private** by default. If you make a project **Public**, you'll be asked to confirm. Only the **AI-generated designs** are copied to public storage and shown on Explore, with your name or handle and level. **Your original room photo, chats, and briefs are never made public.** Other users can view public designs.
 
-If you switch a project back to **Private**, we remove its public copies and it leaves Explore. **Remixes other users already made stay with them**, even if you switch your project to Private or delete your account. Someone could also have taken a screenshot while it was public.
+If you switch a project back to **Private**, we remove its public copies and it leaves Explore. Someone could also have taken a screenshot while it was public.
 
 ### Moderators
 
@@ -151,7 +151,6 @@ We keep information only as long as we need it for the reasons in this Policy. P
 | Account information and public profile | Until you delete your account [CONFIRM] |
 | Room photos, room analysis, designs, design briefs | Until you delete them or your account [CONFIRM] |
 | Public copies of designs | Until you switch the project to Private, delete it, or delete your account [CONFIRM] |
-| Other users' remixes of your public designs | They belong to the user who made them and stay until that user deletes them [CONFIRM] |
 | AI consent records | While your account exists, and deleted with your account [CONFIRM] [NOTE: The code deletes consent records with the account. The attorney may want a minimal record kept longer as proof of consent.] |
 | Usage counts (for daily limits) | 30 days [CONFIRM] [NOTE: Limits only need 24 hours of data. The code currently keeps these until the account is deleted, so a cleanup job is needed.] |
 | XP, levels, badges | Until you delete your account [CONFIRM] |
@@ -174,7 +173,7 @@ We may keep information longer if the law requires it or to resolve disputes, pr
 - **On the web (if you're signed out or can't use the app):** go to **https://{{WEBSITE_DOMAIN}}/delete-account** and enter your email address. We'll email you a single-use confirmation link that works for 24 hours. Nothing is deleted until you open the link and press the delete button on the confirmation page.
 - **By email:** write to {{SUPPORT_EMAIL}} from the email address on your account.
 
-Deletion can't be undone. Some information may remain for a limited time as described in Section 6, such as backups until they are overwritten and records we must keep. Remixes other users made from your public designs stay with them.
+Deletion can't be undone. Some information may remain for a limited time as described in Section 6, such as backups until they are overwritten and records we must keep.
 
 ## 8. Security
 

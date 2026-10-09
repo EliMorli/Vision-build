@@ -57,8 +57,33 @@ test.describe("Hosted legal website", () => {
     await expect(page.locator('meta[name="policy-version"]')).toHaveAttribute("content", "1");
     await expect(page.getByRole("note")).toContainText("earlier version");
     await expect(page.locator("article")).toContainText("Likes, saves, and remixes of public designs");
+    // Privacy v2 no longer mentions remixes anywhere (sections 4, 6 and 7)
+    await page.goto(pageUrl("privacy"));
+    await expect(page.locator("article")).not.toContainText(/remix/i);
+  });
+
+  test("terms page is v2 without remix rules and keeps v1 online", async ({ page }) => {
     await page.goto(pageUrl("terms"));
-    await expect(page.getByTestId("policy-version")).toHaveText("Version 1");
+    await expect(page.locator('meta[name="policy-version"]')).toHaveAttribute("content", "2");
+    await expect(page.getByTestId("policy-version")).toHaveText("Version 2");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("VisionBuild Terms of Service");
+    await expect(page.locator("article")).not.toContainText(/remix/i);
+    await expect(page.locator("article")).not.toContainText(/\blike, save\b/i);
+    await expect(page.locator("article")).toContainText("license to view its designs");
+    // Commercial use stays an open attorney question
+    await expect(page.locator("article")).toContainText("Decide whether users may use their own designs for commercial purposes");
+    // Copyright (DMCA) section; the agent email is a recognized blank until filled in
+    await expect(page.getByRole("heading", { name: "Copyright complaints (DMCA)" })).toBeAttached();
+    await expect(page.locator("article")).toContainText("designated agent at [dmca-agent@yourdomain.com]");
+    await expect(page.getByRole("link", { name: /Version 1, effective/ })).toHaveAttribute("href", "../terms/v1/");
+    await page.screenshot({ path: "e2e/screens/ui-legal-web-terms.png", fullPage: false });
+
+    await page.goto(pageUrl("terms/v2"));
+    await expect(page.locator('meta[name="policy-version"]')).toHaveAttribute("content", "2");
+    await page.goto(pageUrl("terms/v1"));
+    await expect(page.locator('meta[name="policy-version"]')).toHaveAttribute("content", "1");
+    await expect(page.getByRole("note")).toContainText("earlier version");
+    await expect(page.locator("article")).toContainText("Remix rules");
   });
 
   test("delete-account page explains in-app and email deletion and what is kept", async ({ page }) => {
@@ -70,6 +95,7 @@ test.describe("Hosted legal website", () => {
     await expect(page.getByRole("heading", { name: /What we keep/ })).toBeAttached();
     // Retention table copied from Privacy Policy section 6
     await expect(page.locator("table")).toContainText("Backups");
+    await expect(page.locator("main")).not.toContainText(/remix/i);
     await expect(page.getByRole("link", { name: "Privacy Policy" }).first()).toHaveAttribute("href", /privacy\/#6-/);
     await page.screenshot({ path: "e2e/screens/ui-legal-web-delete-account.png", fullPage: false });
 

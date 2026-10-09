@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore, useAuthStore } from "@/lib/store";
 import { Project, ProjectStatus } from "@/lib/types";
-import { Button, IsoRoom, PrivateImage, ProsTeaserCard, LoadingSkeleton, ErrorState, OfflineBanner, NeedsInternetNotice } from "@/components";
+import { AiGeneratedBadge, Button, IsoRoom, PrivateImage, ProsTeaserCard, LoadingSkeleton, ErrorState, OfflineBanner, NeedsInternetNotice } from "@/components";
 import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
 import { getDisplayName, getFirstName } from "@/lib/helpers/user";
 
@@ -264,6 +264,8 @@ export default function DashboardScreen() {
                   />
                 </View>
               ) : null}
+              {/* The thumbnail is the chosen AI design once one is selected */}
+              {item.selected_generation_url ? <AiGeneratedBadge compact style={{ top: 10, left: 10 }} testID="home-ai-badge" /> : null}
               <View style={[styles.statusChip, { backgroundColor: status.color + "E6" }]}>
                 <Ionicons name={status.icon} size={12} color="#fff" />
                 <Text style={styles.statusText}>{status.label}</Text>
@@ -392,8 +394,9 @@ const styles = StyleSheet.create({
   },
   statusText: { color: "#fff", fontSize: 11, fontFamily: "Nunito_700Bold" },
   designCountBadge: {
+    // Bottom-left of the 170pt thumbnail; the top-left corner is kept for the AI-generated label
     position: "absolute",
-    top: 10,
+    top: 136,
     left: 10,
     flexDirection: "row",
     alignItems: "center",

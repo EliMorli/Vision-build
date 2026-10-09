@@ -62,6 +62,7 @@ function readBusinessConfig() {
     SUPPORT_EMAIL: field("supportEmail"),
     MAILING_ADDRESS: address,
     WEBSITE_DOMAIN: field("websiteDomain"),
+    DMCA_AGENT_EMAIL: field("dmcaAgentEmail"),
   };
 }
 

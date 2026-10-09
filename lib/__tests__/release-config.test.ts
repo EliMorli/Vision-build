@@ -35,6 +35,26 @@ describe("app.json release config", () => {
     expect(app.ios.config.usesNonExemptEncryption).toBe(false);
   });
 
+  it("uses the square icon-B splash on brand blue (SDK 52 centered splash)", () => {
+    const splash = plugin("expo-splash-screen");
+    expect(splash).toEqual({
+      image: "./assets/images/splash-icon.png",
+      imageWidth: 200,
+      resizeMode: "contain",
+      backgroundColor: "#1A73E8",
+    });
+    expect(app.splash).toEqual({
+      image: "./assets/images/splash-icon.png",
+      resizeMode: "contain",
+      backgroundColor: "#1A73E8",
+    });
+    const png = fs.readFileSync(path.join(root, "assets", "images", "splash-icon.png"));
+    // PNG IHDR: width/height at bytes 16-23, color type 6 = RGBA (transparent)
+    expect(png.readUInt32BE(16)).toBe(1024);
+    expect(png.readUInt32BE(20)).toBe(1024);
+    expect(png[25]).toBe(6);
+  });
+
   it("enables Sign in with Apple", () => {
     expect(app.ios.usesAppleSignIn).toBe(true);
     expect(plugin("expo-apple-authentication")).toBeDefined();

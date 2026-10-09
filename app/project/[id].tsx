@@ -11,7 +11,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore, useAuthStore } from "@/lib/store";
-import { IsoRoom, MakePublicSheet, PrivateImage, LoadingSkeleton, ErrorState, OfflineBanner } from "@/components";
+import { AiGeneratedBadge, IsoRoom, MakePublicSheet, PrivateImage, LoadingSkeleton, ErrorState, OfflineBanner } from "@/components";
 import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
 
 // Helper to format text to sentence case
@@ -283,6 +283,7 @@ export default function ProjectDetailScreen() {
                     containerStyle={styles.designImage}
                     accessibilityLabel={`Design option ${index + 1}`}
                   />
+                  <AiGeneratedBadge compact style={{ top: spacing.md, left: spacing.md }} testID="project-ai-badge" />
                   {designUrl === project?.selected_generation_url && (
                     <View style={styles.favoritebadge}>
                       <Ionicons name="heart" size={16} color={colors.error} />
