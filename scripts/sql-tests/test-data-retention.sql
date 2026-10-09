@@ -16,9 +16,11 @@ VALUES
   ('00000000-0000-0000-0000-000000000098'::uuid, 'retention-test-2@example.com')
 ON CONFLICT (id) DO NOTHING;
 
--- Create test project for waitlist foreign key
+-- Create test projects for waitlist foreign keys
 INSERT INTO public.projects (id, user_id, original_image_url, status, created_at)
-VALUES ('00000000-0000-0000-0000-000000000097'::uuid, '00000000-0000-0000-0000-000000000099'::uuid, 'https://example.com/test.jpg', 'draft', NOW())
+VALUES 
+  ('00000000-0000-0000-0000-000000000097'::uuid, '00000000-0000-0000-0000-000000000099'::uuid, 'https://example.com/test.jpg', 'draft', NOW()),
+  ('00000000-0000-0000-0000-000000000096'::uuid, '00000000-0000-0000-0000-000000000099'::uuid, 'https://example.com/test2.jpg', 'draft', NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- Test 1: Verify cron jobs exist
@@ -155,10 +157,10 @@ BEGIN
   -- Insert test waitlist entries (only for this test user)
   INSERT INTO public.pro_waitlist (user_id, email, project_id, launch_email_sent_at, created_at)
   VALUES
-    ('00000000-0000-0000-0000-000000000099'::uuid, 'retention-test-1@example.com', '00000000-0000-0000-0000-000000000097'::uuid, NOW() - INTERVAL '50 days', NOW() - INTERVAL '50 days'),  -- Should be deleted
+    ('00000000-0000-0000-0000-000000000099'::uuid, 'retention-test-1@example.com', '00000000-0000-0000-0000-000000000097'::uuid, NOW() - INTERVAL '50 days', NOW() - INTERVAL '50 days'),  -- Should be deleted (old + emailed)
     ('00000000-0000-0000-0000-000000000098'::uuid, 'retention-test-2@example.com', NULL, NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days'),    -- Should be kept (different user, control)
-    ('00000000-0000-0000-0000-000000000099'::uuid, 'retention-test-3@example.com', NULL, NULL, NOW() - INTERVAL '50 days'),                        -- Should be kept (no email sent)
-    ('00000000-0000-0000-0000-000000000099'::uuid, 'retention-test-4@example.com', NULL, NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days');    -- Should be kept (recent)
+    ('00000000-0000-0000-0000-000000000099'::uuid, 'retention-test-3@example.com', NULL, NULL, NOW() - INTERVAL '50 days'),                        -- Should be kept (old but no email sent)
+    ('00000000-0000-0000-0000-000000000099'::uuid, 'retention-test-4@example.com', '00000000-0000-0000-0000-000000000096'::uuid, NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days');    -- Should be kept (recent + emailed)
   
   SELECT COUNT(*) INTO v_old_count FROM public.pro_waitlist WHERE user_id = '00000000-0000-0000-0000-000000000099'::uuid;
   
@@ -179,7 +181,7 @@ END $$;
 DELETE FROM public.usage_events WHERE user_id IN ('00000000-0000-0000-0000-000000000099'::uuid, '00000000-0000-0000-0000-000000000098'::uuid);
 DELETE FROM public.account_deletion_requests WHERE user_id = '00000000-0000-0000-0000-000000000099'::uuid;
 DELETE FROM public.pro_waitlist WHERE user_id IN ('00000000-0000-0000-0000-000000000099'::uuid, '00000000-0000-0000-0000-000000000098'::uuid);
-DELETE FROM public.projects WHERE id = '00000000-0000-0000-0000-000000000097'::uuid;
+DELETE FROM public.projects WHERE id IN ('00000000-0000-0000-0000-000000000097'::uuid, '00000000-0000-0000-0000-000000000096'::uuid);
 
 -- Restore original data_retention_config values
 UPDATE public.data_retention_config SET retention_days = 30 WHERE id = 'usage_events';
