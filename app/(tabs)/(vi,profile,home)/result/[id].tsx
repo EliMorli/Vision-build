@@ -215,6 +215,38 @@ export default function ResultScreen() {
     );
   }
 
+  // XP reward banner (with its spacer) and the swipe hint
+  const xpBanner = showXPBanner ? (
+    <>
+      <Animated.View style={[styles.xpBanner, { transform: [{ scale: xpBannerScale }] }]}>
+        <View style={styles.xpIconCircle}>
+          <Ionicons name="star" size={18} color="#fff" />
+        </View>
+        <View style={styles.xpTextWrapper}>
+          <Text style={styles.xpTitle}>Room redesigned!</Text>
+          <Text style={styles.xpSubtitle}>Quest complete</Text>
+        </View>
+        {/* Amount + dismiss wrap to their own line at large text sizes */}
+        <View style={styles.xpRight}>
+          <Text style={styles.xpAmount}>+50 XP</Text>
+          <Pressable accessibilityRole="button"
+            onPress={() => setShowXPBanner(false)}
+            hitSlop={8}
+            accessibilityLabel="Dismiss"
+          >
+            <Ionicons name="close" size={18} color="#8A6A00" />
+          </Pressable>
+        </View>
+      </Animated.View>
+      <View style={styles.xpSpacer} />
+    </>
+  ) : null;
+  const subtitle = (
+    <Text style={styles.subtitle}>
+      Swipe to browse. Tap to select your favorite.
+    </Text>
+  );
+
   return (
     <SafeAreaView style={styles.container} testID="results-screen">
       {isOffline && <OfflineBanner testID="offline-banner" />}
@@ -224,35 +256,10 @@ export default function ResultScreen() {
         contentContainerStyle={styles.scrollContent}
         testID="results-scroll"
       >
-      {/* XP reward banner */}
-      {showXPBanner && (
-        <Animated.View style={[styles.xpBanner, { transform: [{ scale: xpBannerScale }] }]}>
-          <View style={styles.xpIconCircle}>
-            <Ionicons name="star" size={18} color="#fff" />
-          </View>
-          <View style={styles.xpTextWrapper}>
-            <Text style={styles.xpTitle}>Room redesigned!</Text>
-            <Text style={styles.xpSubtitle}>Quest complete</Text>
-          </View>
-          {/* Amount + dismiss wrap to their own line at large text sizes */}
-          <View style={styles.xpRight}>
-            <Text style={styles.xpAmount}>+50 XP</Text>
-            <Pressable accessibilityRole="button"
-              onPress={() => setShowXPBanner(false)}
-              hitSlop={8}
-              accessibilityLabel="Dismiss"
-            >
-              <Ionicons name="close" size={18} color="#8A6A00" />
-            </Pressable>
-          </View>
-        </Animated.View>
-      )}
-
-      {showXPBanner && <View style={styles.xpSpacer} />}
-
-      <Text style={styles.subtitle}>
-        Swipe to browse. Tap to select your favorite.
-      </Text>
+      {/* At the largest text sizes the reward banner and swipe hint move below the
+          designs, so the design itself gets the room on arrival (the tab bar stays). */}
+      {!largestText && xpBanner}
+      {!largestText && subtitle}
 
       {/* AI disclaimer */}
       <View style={styles.aiDisclaimer}>
@@ -354,6 +361,14 @@ export default function ResultScreen() {
           />
         ))}
       </View>
+
+      {/* Largest text: swipe hint and reward banner, after the designs */}
+      {largestText && (
+        <View style={styles.belowDesigns}>
+          {subtitle}
+          {xpBanner}
+        </View>
+      )}
 
       {/* Waitlist Card */}
       {!isOnWaitlist && (
@@ -547,6 +562,7 @@ const styles = StyleSheet.create({
   },
   hintText: { fontSize: 12, color: colors.textSecondary },
   hintSpacer: { height: spacing.sm },
+  belowDesigns: { paddingTop: spacing.md, paddingHorizontal: spacing.md },
   card: {
     width: CARD_WIDTH,
     marginRight: spacing.md,
