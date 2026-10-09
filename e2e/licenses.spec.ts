@@ -29,20 +29,24 @@ test.describe("Licenses Screen", () => {
     
     // Assert licenses-list is visible
     await expect(page.getByTestId("licenses-list")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId(/^license-item-/).first()).toBeVisible();
     
     // Screenshot
     await page.screenshot({ path: "e2e/screens/ui-licenses.png", fullPage: false });
     
-    // Click a license entry (format: license-item-${name}@${version})
-    // Find react package version first
-    const reactEntry = page.getByTestId(/license-item-react@/).first();
+    // The list is virtualized; filter to the package before tapping it
+    await page.getByPlaceholder("Search packages...").fill("react");
+    const reactEntry = page.getByTestId("license-item-react@18.3.1");
     await expect(reactEntry).toBeVisible({ timeout: 10000 });
     await reactEntry.click();
-    await page.waitForLoadState("networkidle");
-    
+
     // Assert license-text is visible and contains expected text
     const licenseText = page.getByTestId("license-text");
     await expect(licenseText).toBeVisible({ timeout: 10000 });
     await expect(licenseText).toContainText("Permission is hereby granted");
+    await expect(licenseText).toContainText(/Copyright/i);
+    // The modal slides in; wait until the sheet is fully on screen before capturing
+    await expect(licenseText).toBeInViewport({ ratio: 1 });
+    await page.screenshot({ path: "e2e/screens/ui-licenses-text.png", fullPage: false });
   });
 });

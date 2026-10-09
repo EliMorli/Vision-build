@@ -104,7 +104,22 @@ test.describe("UI Screenshots", () => {
     await expect(page.getByText(/take a photo or pick one/i)).toBeVisible();
     await page.screenshot({ path: "e2e/screens/ui-camera.png", fullPage: false });
 
-    // 4. Style picker - navigate to editor with mock project
+    // 4. Style picker - seed an analyzed project; the editor resolves it by id
+    await page.evaluate(() => {
+      localStorage.setItem("@visionbuild:mock_seed_projects", JSON.stringify([{
+        id: "mock-project-id",
+        user_id: "mock-user",
+        title: "Living room",
+        status: "analyzed",
+        selected_style: null,
+        room_analysis: { roomType: "living_room", currentStyle: "traditional", estimatedSqFt: 200, keyElements: ["sectional sofa", "large windows"], rawAnalysis: "Living room" },
+        original_image_url: null,
+        generated_image_urls: [],
+        is_public: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }]));
+    });
     await page.goto(`${BASE_URL}/editor/mock-project-id`);
     await page.waitForLoadState("networkidle");
     await expect(page.getByTestId("style-picker-header")).toBeVisible({ timeout: 10000 });
@@ -116,7 +131,14 @@ test.describe("UI Screenshots", () => {
     await expect(page.getByText(/building your/i)).toBeVisible({ timeout: 10000 });
     await page.screenshot({ path: "e2e/screens/ui-generating.png", fullPage: false });
 
-    // 6. Results
+    // 6. Results - the project now has four generated designs
+    await page.evaluate(() => {
+      const seeded = JSON.parse(localStorage.getItem("@visionbuild:mock_seed_projects") || "[]");
+      const withDesigns = seeded.map((p: any) => p.id === "mock-project-id"
+        ? { ...p, status: "generated", selected_style: "modern", generated_image_urls: ["mock/gen1.jpg", "mock/gen2.jpg", "mock/gen3.jpg", "mock/gen4.jpg"] }
+        : p);
+      localStorage.setItem("@visionbuild:mock_seed_projects", JSON.stringify(withDesigns));
+    });
     await page.goto(`${BASE_URL}/result/mock-project-id`);
     await page.waitForLoadState("networkidle");
     await expect(page.getByText(/your designs/i)).toBeVisible({ timeout: 10000 });

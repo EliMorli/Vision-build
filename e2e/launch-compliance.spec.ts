@@ -124,6 +124,22 @@ test.describe("Launch Compliance Tests", () => {
   });
 
   test("style picker header is sentence case", async ({ page }: { page: Page }) => {
+    // The editor resolves the project by id, so seed a real (analyzed) project
+    await page.addInitScript(() => {
+      localStorage.setItem("@visionbuild:mock_seed_projects", JSON.stringify([{
+        id: "mock-project-id",
+        user_id: "mock-user",
+        title: "Living room",
+        status: "analyzed",
+        selected_style: null,
+        room_analysis: { roomType: "living_room", currentStyle: "traditional", estimatedSqFt: 200, keyElements: [], rawAnalysis: "Living room" },
+        original_image_url: null,
+        generated_image_urls: [],
+        is_public: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }]));
+    });
     await page.goto(`${BASE_URL}/editor/mock-project-id`);
     await page.waitForLoadState("networkidle");
     

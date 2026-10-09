@@ -57,14 +57,13 @@ test.describe("Offline Cache Wipe", () => {
     expect(keys.length).toBeGreaterThan(0);
     
     // Sign out
-    await page.locator('[href="/(tabs)/profile"]').first().click();
+    await page.locator('[href="/profile"]').first().click();
     await page.waitForLoadState("networkidle");
     await page.getByRole("button", { name: /sign out/i }).click();
     await page.waitForLoadState("networkidle");
     
     // Check cache is wiped
-    keys = await page.evaluate(() => Object.keys(localStorage).filter(k => k.startsWith("@visionbuild:offline:mock-user:")));
-    expect(keys.length).toBe(0);
+    await expect.poll(() => page.evaluate(() => Object.keys(localStorage).filter(k => k.startsWith("@visionbuild:offline:mock-user:")).length)).toBe(0);
   });
 
   test("account deletion leaves 0 offline cache entries by the time deleted screen shows", async ({ page }: { page: Page }) => {
@@ -99,7 +98,7 @@ test.describe("Offline Cache Wipe", () => {
     // Wait for deleted screen
     await expect(page.getByText(/account.*deleted/i)).toBeVisible({ timeout: 10000 });
     
-    // Check cache is wiped
+    // Wiped before navigation, so it must already be 0 when the deleted screen is visible
     keys = await page.evaluate(() => Object.keys(localStorage).filter(k => k.startsWith("@visionbuild:offline:mock-user:")));
     expect(keys.length).toBe(0);
   });

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,8 @@ import { STYLE_OPTIONS, StyleOption } from "@/lib/types";
 import { useProjectStore } from "@/lib/store";
 import { Button, Banner, IsoRoom, LoadingSkeleton, ErrorState, OfflineBanner } from "@/components";
 import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
+import { useProjectById } from "@/lib/hooks/useProjectById";
+import { usePrivacyStore } from "@/lib/store";
 
 export default function EditorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -24,16 +26,19 @@ export default function EditorScreen() {
   const networkStatus = useNetworkStatus();
   const isOffline = !networkStatus.isConnected;
   
-  const { 
-    currentProject, 
-    loading, 
-    generateDesigns,
-  } = useProjectStore();
+  const { loading, generateDesigns } = useProjectStore();
+  const { project: currentProject, resolving, retry } = useProjectById(id);
+  const privacyOptOut = usePrivacyStore((s) => s.privacyOptOut);
+  const loadPrivacySettings = usePrivacyStore((s) => s.loadPrivacySettings);
+
+  useEffect(() => {
+    loadPrivacySettings();
+  }, [loadPrivacySettings]);
 
   const analysis = currentProject?.room_analysis;
 
   const handleGenerate = async () => {
-    if (!selectedStyle || !id || isGenerating || isOffline) return;
+    if (!selectedStyle || !id || isGenerating || isOffline || privacyOptOut) return;
     setIsGenerating(true);
     
     try {
@@ -54,7 +59,7 @@ export default function EditorScreen() {
     s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, " ");
 
   // Loading state
-  if (loading && !currentProject) {
+  if (resolving && !currentProject) {
     return (
       <SafeAreaView style={styles.container}>
         {isOffline && <OfflineBanner testID="offline-banner" />}
@@ -64,7 +69,7 @@ export default function EditorScreen() {
   }
 
   // Error state - only show if not loading
-  if (!loading && !currentProject) {
+  if (!currentProject) {
     return (
       <SafeAreaView style={styles.container}>
         {isOffline && <OfflineBanner testID="offline-banner" />}
@@ -72,7 +77,7 @@ export default function EditorScreen() {
           message={error || "Project not found"}
           onRetry={() => {
             setError(null);
-            router.back();
+            retry();
           }}
           testID="editor-error"
         />
@@ -156,11 +161,18 @@ export default function EditorScreen() {
             <Text style={styles.offlineNoticeText}>Needs internet</Text>
           </View>
         )}
+        {privacyOptOut && (
+          <View style={styles.offlineNotice} testID="ai-opt-out-notice">
+            <Text style={styles.offlineNoticeText}>
+              You opted out of AI processing. Turn it back on in Settings to generate designs.
+            </Text>
+          </View>
+        )}
         <Button
           label={selectedStyle ? "Generate 4 designs" : "Pick a style"}
           icon="sparkles"
           onPress={handleGenerate}
-          disabled={!selectedStyle || loading || isGenerating || isOffline}
+          disabled={!selectedStyle || loading || isGenerating || isOffline || privacyOptOut}
           loading={isGenerating}
           variant="primary"
         />

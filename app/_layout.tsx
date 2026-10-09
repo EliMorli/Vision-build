@@ -181,6 +181,7 @@ export default function RootLayout() {
         <Stack.Screen name="pros-coming-soon" options={{ title: "Find a pro" }} />
         <Stack.Screen name="terms" options={{ title: "Terms of Service" }} />
         <Stack.Screen name="privacy" options={{ title: "Privacy Policy" }} />
+        <Stack.Screen name="licenses" options={{ headerShown: false }} />
       </Stack>
     </>
   );

@@ -9,7 +9,7 @@ import { Project, Profile, Contractor } from "./types";
 import { getDataLayer } from "./data";
 import { InMemoryDataLayer } from "./data/in-memory";
 import { MOCK_USER_ID } from "./constants/mock";
-import { wipeOfflineCache, setOfflineCacheData, cacheImageFile } from "./offline-cache";
+import { wipeOfflineCache, setOfflineCacheData, getOfflineCacheData, cacheImageFile } from "./offline-cache";
 
 // ─── Auth Store ────────────────────────────────────────────
 
@@ -169,10 +169,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signOut: async () => {
     const userId = get().session?.user?.id;
     
-    // Clear Supabase session
-    await supabase.auth.signOut();
-    
-    // Wipe offline cache for this user
+    // Wipe offline cache for this user first, so a failing network sign-out
+    // can never leave cached data behind
     if (userId) {
       try {
         await wipeOfflineCache(userId);
@@ -181,10 +179,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     }
     
+    // Clear Supabase session (may fail offline; local state is cleared regardless)
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      console.error("supabase_sign_out_failed");
+    }
+    
     // Clear all stores
     set({ session: null, profile: null, loading: false, error: null });
     useProjectStore.getState().clear();
-    useInboxStore.getState().unreadCount = 0;
+    useInboxStore.setState({ unreadCount: 0 });
     
     // Set mock signed-out flag if in mock mode
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
@@ -303,10 +308,18 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         if (seedJson) {
           const seedProjects = JSON.parse(seedJson);
           set({ projects: seedProjects, loading: false, error: null });
+          // Exercise the real offline cache write path with the seeded data
+          await setOfflineCacheData(userId ?? MOCK_USER_ID, "projects", seedProjects).catch(() => {});
           return;
         }
       } catch (e) {
         console.warn("Failed to load mock seed projects:", e);
+      }
+      // Mock session with no seed: there is no backend to query. Keep whatever
+      // is already in memory (e.g. projects created this session) and stop loading.
+      if (userId) {
+        set({ loading: false });
+        return;
       }
     }
     
@@ -398,13 +411,24 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       return;
     }
 
-    const { data } = await supabase
+    const { data, error: fetchError } = await supabase
       .from("projects")
       .select("*")
       .eq("user_id", userId)
       .order("updated_at", { ascending: false });
 
-    if (data) {
+    if (fetchError || !data) {
+      // Offline or request failed: fall back to what's saved on this device
+      const cached = await getOfflineCacheData(userId, "projects").catch(() => null);
+      if (Array.isArray(cached)) {
+        set({ projects: cached as Project[], loading: false, error: null });
+      } else {
+        set({ loading: false, error: "projects_fetch_failed" });
+      }
+      return;
+    }
+
+    {
       set({ projects: data, loading: false, error: null });
       
       // Cache projects for offline use in background
@@ -634,6 +658,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
 
   generateDesigns: async (projectId: string, stylePrompt: string) => {
+    if (usePrivacyStore.getState().privacyOptOut) {
+      // User opted out of AI processing: never call the model
+      set({ error: "ai_opted_out" });
+      return null;
+    }
     const startTime = Date.now();
     set({ 
       loading: true, 
@@ -1171,6 +1200,9 @@ export const usePrivacyStore = create<PrivacyState>((set, get) => ({
     const userId = useAuthStore.getState().session?.user?.id;
 
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      // Mock mode: the opt-out persists locally, standing in for profiles.privacy_opt_out
+      const stored = await AsyncStorage.getItem("@visionbuild:mock_privacy_opt_out").catch(() => null);
+      set({ privacyOptOut: stored === "true" });
       return;
     }
 
@@ -1191,6 +1223,7 @@ export const usePrivacyStore = create<PrivacyState>((set, get) => ({
     const userId = useAuthStore.getState().session?.user?.id;
 
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      await AsyncStorage.setItem("@visionbuild:mock_privacy_opt_out", optOut ? "true" : "false").catch(() => {});
       set({ privacyOptOut: optOut });
       return;
     }

@@ -19,6 +19,7 @@ import { useProjectStore, useAuthStore } from "@/lib/store";
 import { Button, IsoRoom, PrivateImage, LoadingSkeleton, ErrorState, OfflineBanner } from "@/components";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
+import { useProjectById } from "@/lib/hooks/useProjectById";
 import { supabase } from "@/lib/supabase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -28,7 +29,8 @@ const CARD_WIDTH = width * 0.82;
 export default function ResultScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { currentProject, selectDesign, loading } = useProjectStore();
+  const { selectDesign, loading } = useProjectStore();
+  const { project: currentProject, resolving, retry } = useProjectById(id);
   const profile = useAuthStore((s) => s.profile);
   const [error, setError] = useState<string | null>(null);
   const networkStatus = useNetworkStatus();
@@ -163,7 +165,7 @@ export default function ResultScreen() {
   };
 
   // Loading state
-  if (loading && images.length === 0) {
+  if ((loading || resolving) && images.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
         {isOffline && <OfflineBanner testID="offline-banner" />}
@@ -181,7 +183,7 @@ export default function ResultScreen() {
           message={error || "No designs available"}
           onRetry={() => {
             setError(null);
-            router.back();
+            retry();
           }}
           testID="results-error"
         />
