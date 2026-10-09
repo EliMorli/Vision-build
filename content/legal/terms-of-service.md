@@ -117,7 +117,7 @@ If you believe content on VisionBuild infringes your copyright, send a notice to
 
 ## 10. Pros waitlist (pros are coming soon)
 
-VisionBuild doesn't connect you with contractors at launch. You can tap "**Join the waitlist**" on Home or on a Results screen. You'll see a short confirmation that you're on the list. We save the email on your account and, if you joined from a project, that project's ID. Joining doesn't earn XP.
+VisionBuild doesn't connect you with contractors at launch. You can tap "**Join the waitlist**" on Home, on a Results screen or on a project page. You'll see a short confirmation that you're on the list. We save the email on your account and, if you joined from a project, that project's ID. Joining doesn't earn XP.
 
 The only email we'll send because you joined is a one-time notice when pros are live, with an unsubscribe link. You can leave the waitlist at any time with the **Pros waitlist** switch in Settings, and your entries are deleted if you delete your account.
 
