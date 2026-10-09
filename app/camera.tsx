@@ -101,7 +101,7 @@ export default function CameraScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="camera-screen">
       {/* Instruction */}
       <Text style={styles.instruction}>
         Take a photo or pick one from your gallery to get started.

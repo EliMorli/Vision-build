@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   Animated,
 } from "react-native";
+import { tabHref } from "@/lib/navigation/tabs";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -60,7 +61,9 @@ export default function GeneratingScreen() {
   // Navigate to results when generation is complete
   useEffect(() => {
     if (!loading && currentProject?.status === "generated" && id) {
-      router.replace(`/result/${id}`);
+      // Close the create flow and show the designs inside the tab it started
+      // from (Home for the + button), with the tab bar visible.
+      router.dismissTo(tabHref(`/result/${id}`) as any);
     }
   }, [loading, currentProject?.status, id, router]);
 
@@ -108,7 +111,7 @@ export default function GeneratingScreen() {
   }, [loading, reduceMotion, layerOpacity]);
 
   const handleGoHome = () => {
-    router.push("/(tabs)/");
+    router.dismissTo("/(tabs)/(home)" as any);
   };
 
   return (
@@ -196,7 +199,7 @@ export default function GeneratingScreen() {
         ) : readyCount > 0 ? (
           <Button
             label={`Peek at the ${readyCount} that ${readyCount === 1 ? "is" : "are"} ready`}
-            onPress={() => router.push(`/result/${id}`)}
+            onPress={() => router.dismissTo(tabHref(`/result/${id}`) as any)}
             variant="outline"
           />
         ) : null}

@@ -125,6 +125,10 @@ test.describe("VisionBuild Create Loop", () => {
     // Click "Save to my project"
     await page.getByTestId("results-save").click();
 
+    // Saving keeps you on Results with a confirmation; View opens the project
+    await expect(page.getByTestId("results-saved-confirmation")).toContainText("Saved to your project");
+    await page.getByTestId("results-saved-view").click();
+
     // Assert Project Detail screen, then screenshot
     await expect(page.getByText("Original photo")).toBeInViewport({ timeout: 5000 });
     
@@ -144,17 +148,11 @@ test.describe("VisionBuild Create Loop", () => {
     // and below that, a "Designs" grid with the generated designs.
     // We don't need to verify image sources here - the screenshot will show whether they loaded.
 
-    // Use browser back to return (likely to results, not home)
-    await page.goBack();
-
-    // Should be back on results screen, go back again
-    await page.goBack();
-
-    // Should be on editor/style screen, go back again
-    await page.goBack();
-
-    // Should be on camera screen, go back again
-    await page.goBack();
+    // The project opens inside the Home tab: the tab bar is there, and
+    // tapping Home pops back to the Home screen
+    await expect(page.getByTestId("tab-home")).toHaveAttribute("aria-selected", "true");
+    await page.getByTestId("tab-home").click();
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 5000 });
 
     // Assert Home with project, then screenshot
     await expect(page.getByText(/renovation/i)).toBeVisible({ timeout: 5000 });

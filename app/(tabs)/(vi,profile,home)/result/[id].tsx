@@ -25,6 +25,7 @@ import { useProjectById } from "@/lib/hooks/useProjectById";
 import { useIsLargestText } from "@/lib/hooks/useFontScale";
 import { supabase } from "@/lib/supabase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useTabNavigation } from "@/lib/navigation/useTabNavigation";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.82;
@@ -32,6 +33,7 @@ const CARD_WIDTH = width * 0.82;
 export default function ResultScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const tabNav = useTabNavigation();
   const { selectDesign, loading } = useProjectStore();
   const { project: currentProject, resolving, retry } = useProjectById(id);
   const profile = useAuthStore((s) => s.profile);
@@ -41,6 +43,8 @@ export default function ResultScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  // The design last saved to the project; shows "Saved to your project" with a View button
+  const [savedUrl, setSavedUrl] = useState<string | null>(null);
   const reduceMotion = useReducedMotion();
   const [showCompare, setShowCompare] = useState(false);
   const [compareUrl, setCompareUrl] = useState("");
@@ -123,13 +127,23 @@ export default function ResultScreen() {
     setSelectedUrl(url);
   };
 
+  const isSaved = !!savedUrl && savedUrl === selectedUrl;
+
+  // Back to the project page in this tab: pops to it if Results was opened
+  // from the project, otherwise replaces Results with it (back then goes Home).
+  const viewProject = () => {
+    if (!id) return;
+    tabNav.dismissTo(`/project/${id}`);
+  };
+
   const handleContinue = async () => {
     if (!selectedUrl || !id || isSaving || isOffline) return;
     
     setIsSaving(true);
     try {
       await selectDesign(id, selectedUrl);
-      router.push(`/project/${id}`);
+      // Stay on Results and confirm; View opens the project in this tab
+      setSavedUrl(selectedUrl);
     } catch (_error) {
       console.error("design_save_failed");
       setError("Failed to save selection");
@@ -202,7 +216,7 @@ export default function ResultScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="results-screen">
       {isOffline && <OfflineBanner testID="offline-banner" />}
       {/* Scrolls when text is large so nothing is squeezed off-screen; the Save button stays pinned below */}
       <ScrollView
@@ -366,11 +380,32 @@ export default function ResultScreen() {
         {!selectedUrl && (
           <Text style={styles.ctaHint}>Pick a favorite to save</Text>
         )}
+        {isSaved && (
+          <View
+            style={styles.savedRow}
+            testID="results-saved-confirmation"
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite"
+          >
+            <Ionicons name="checkmark-circle" size={22} color={colors.success} />
+            <Text style={styles.savedText}>Saved to your project</Text>
+            <Pressable
+              onPress={viewProject}
+              style={styles.savedViewButton}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="View your project"
+              testID="results-saved-view"
+            >
+              <Text style={styles.savedViewText}>View</Text>
+            </Pressable>
+          </View>
+        )}
         <Button
           label="Save to my project"
           icon="checkmark-circle"
           onPress={handleContinue}
-          disabled={!selectedUrl || isSaving}
+          disabled={!selectedUrl || isSaving || isSaved}
           loading={isSaving}
           variant="secondary"
           testID="results-save"
@@ -603,7 +638,37 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#fff",
   },
-  cta: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg },
+  // The tab bar sits right below, so the Save area needs less bottom padding.
+  cta: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md },
+  savedRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    backgroundColor: "#E6F4EA",
+    borderRadius: radius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  savedText: {
+    ...fonts.label,
+    fontSize: 15,
+    flex: 1,
+    color: colors.textPrimary,
+  },
+  savedViewButton: {
+    minHeight: 44,
+    minWidth: 64,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  savedViewText: {
+    ...fonts.button,
+    color: "#fff",
+  },
   ctaHint: {
     ...fonts.body,
     color: colors.textSecondary,

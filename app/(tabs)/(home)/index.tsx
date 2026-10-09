@@ -18,6 +18,7 @@ import { AiGeneratedBadge, Button, IsoRoom, PrivateImage, ProsTeaserCard, Loadin
 import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
 import { getDisplayName, getFirstName } from "@/lib/helpers/user";
 import { isOutreachEnabled } from "@/lib/config/features";
+import { useTabNavigation } from "@/lib/navigation/useTabNavigation";
 
 // Long-running threshold for showing "Rendering..." card in Home
 const LONG_RUNNING_THRESHOLD_MS = 45000; // 45 seconds
@@ -36,6 +37,8 @@ const SHOW_DEV_BUTTON =
 
 export default function DashboardScreen() {
   const router = useRouter();
+  // Detail screens open inside the Home tab, so the tab bar stays visible
+  const tabNav = useTabNavigation();
   const { projects, fetchProjects, generatingStartTime, loading, error } = useProjectStore();
   const profile = useAuthStore((s) => s.profile);
   const session = useAuthStore((s) => s.session);
@@ -92,7 +95,7 @@ export default function DashboardScreen() {
   const openProject = (project: Project) => {
     useProjectStore.getState().setCurrentProject(project);
     // Navigate to project detail page
-    router.push(`/project/${project.id}`);
+    tabNav.push(`/project/${project.id}`);
   };
 
   // ─── Shared header (greeting + XP) ────────────────────────
@@ -106,7 +109,7 @@ export default function DashboardScreen() {
         <Text style={[styles.greeting, styles.headerLeft]} testID="home-greeting">{greeting}</Text>
         <View style={styles.headerRight}>
           <Pressable
-            onPress={() => router.push("/profile-settings")}
+            onPress={() => tabNav.push("/profile-settings")}
             hitSlop={12}
             accessibilityRole="button"
             accessibilityLabel={`${xp} experience points, tap to view profile`}
@@ -120,7 +123,7 @@ export default function DashboardScreen() {
           {/* With outreach on, Inbox takes Vi's tab slot and Vi lives here */}
           {isOutreachEnabled() && (
             <Pressable
-              onPress={() => router.push("/assistant-chat")}
+              onPress={() => tabNav.push("/assistant-chat")}
               hitSlop={8}
               style={styles.viButton}
               accessibilityRole="button"
@@ -132,7 +135,7 @@ export default function DashboardScreen() {
           )}
           {SHOW_DEV_BUTTON && (
             <Pressable
-              onPress={() => router.push("/profile-settings")}
+              onPress={() => tabNav.push("/profile-settings")}
               hitSlop={12}
               style={styles.devButton} // SHOW_DEV_BUTTON && gated
               accessibilityRole="button"
@@ -193,7 +196,7 @@ export default function DashboardScreen() {
             </Text>
             <Button
               label="Start your first project"
-              onPress={() => router.push("/(tabs)/camera")}
+              onPress={() => router.push("/camera")}
               icon="add-circle-outline"
               disabled={isOffline}
             />
@@ -213,7 +216,7 @@ export default function DashboardScreen() {
       <Button
         label="Start a new room"
         icon="add-circle-outline"
-        onPress={() => router.push("/(tabs)/camera")}
+        onPress={() => router.push("/camera")}
         disabled={isOffline}
         fullWidth
         testID="home-start-new-room"

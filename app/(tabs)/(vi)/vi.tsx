@@ -1,5 +1,5 @@
 import { Redirect } from "expo-router";
-import { AssistantChat } from "../assistant-chat";
+import { AssistantChat } from "@/components/AssistantChat";
 import { isOutreachEnabled } from "@/lib/config/features";
 
 /**
@@ -7,6 +7,6 @@ import { isOutreachEnabled } from "@/lib/config/features";
  * with outreach on, Inbox takes the slot and Vi is a button on Home instead.
  */
 export default function ViTab() {
-  if (isOutreachEnabled()) return <Redirect href="/assistant-chat" />;
+  if (isOutreachEnabled()) return <Redirect href="/(tabs)/(home)/assistant-chat" />;
   return <AssistantChat asTab />;
 }

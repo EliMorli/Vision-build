@@ -7,12 +7,12 @@ import {
   SafeAreaView,
   Linking,
 } from "react-native";
-import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { SUPPORT_EMAIL } from "@/lib/config";
 import Constants from "expo-constants";
 import { openLegalPage } from "@/lib/helpers/openLegalPage";
+import { useTabNavigation } from "@/lib/navigation/useTabNavigation";
 
 const FAQ_ITEMS = [
   {
@@ -33,7 +33,7 @@ const FAQ_ITEMS = [
 ];
 
 export default function HelpContactScreen() {
-  const router = useRouter();
+  const tabNav = useTabNavigation();
 
   const sendEmail = () => {
     if (SUPPORT_EMAIL) {
@@ -42,10 +42,10 @@ export default function HelpContactScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="help-screen">
       {/* Header */}
       <View style={styles.header}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()} hitSlop={12}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => tabNav.back()} hitSlop={12}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </Pressable>
         <Text style={styles.headerTitle}>Help & contact</Text>

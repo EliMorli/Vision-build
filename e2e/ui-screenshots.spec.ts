@@ -98,7 +98,7 @@ test.describe("UI Screenshots", () => {
     await page.screenshot({ path: "e2e/screens/ui-home-empty.png", fullPage: false });
 
     // 3. Camera
-    await page.goto(`${BASE_URL}/(tabs)/camera`);
+    await page.goto(`${BASE_URL}/camera`);
     await page.waitForLoadState("networkidle");
     await expect(page.getByText("New design")).toBeVisible();
     await expect(page.getByText(/take a photo or pick one/i)).toBeVisible();

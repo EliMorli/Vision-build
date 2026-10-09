@@ -37,7 +37,7 @@ export default function PermissionPrimerScreen() {
     // In production, this would trigger the system permission request
     // For now, just navigate back or to the appropriate screen
     if (type === "camera") {
-      router.push("/(tabs)/camera");
+      router.push("/camera");
     } else {
       router.back();
     }
@@ -46,7 +46,7 @@ export default function PermissionPrimerScreen() {
   const handleSecondaryAction = () => {
     if (type === "camera") {
       // Go to photo library picker
-      router.push("/(tabs)/camera");
+      router.push("/camera");
     } else {
       router.back();
     }

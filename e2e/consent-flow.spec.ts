@@ -361,7 +361,11 @@ test.describe("VisionBuild AI Consent Flow", () => {
     // Verify design options are visible (proves generation completed successfully)
     await expect(page.getByText("Option 1")).toBeVisible();
     
-    // Verify the original photo is still the same one uploaded
+    // Verify the original photo is still the same one uploaded. Results open
+    // inside the tab (the style picker is no longer kept underneath), so read
+    // it from the before/after view, which shows the project's original photo.
+    await page.getByTestId("result-design-card").first().click({ delay: 900 });
+    await expect(page.getByText("Before & after")).toBeVisible({ timeout: 5000 });
     const finalPhotoSrc = await page.evaluate(() => {
       const imgs = Array.from(document.querySelectorAll('img'));
       for (const img of imgs) {
@@ -373,6 +377,7 @@ test.describe("VisionBuild AI Consent Flow", () => {
     });
     expect(finalPhotoSrc).toBeTruthy();
     expect(finalPhotoSrc).toBe(originalPhotoSrc);
+    await page.getByRole("button", { name: /before and after comparison/i }).click();
     
     // Take screenshot showing results screen with designs from the resumed generation
     await page.screenshot({ path: "e2e/screens/a7-reconsent-resumed-results.png", fullPage: true });

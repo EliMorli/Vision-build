@@ -195,7 +195,7 @@ export default function ExploreScreen() {
           <Button
             label="Start a new room"
             icon="add-circle-outline"
-            onPress={() => router.push("/(tabs)/camera")}
+            onPress={() => router.push("/camera")}
           />
         </View>
       </SafeAreaView>
@@ -306,41 +306,46 @@ export default function ExploreScreen() {
         columnWrapperStyle={styles.row}
         testID="explore-grid"
         renderItem={({ item }) => (
-          <Pressable
-            style={styles.card}
-            accessibilityRole="button"
-            accessibilityLabel={`${item.title || "Design"}, ${styleName(item.selected_style)} style`}
-            testID="explore-design-card"
-          >
-            <View style={styles.cardImageWrapper}>
-              <IsoRoom
-                palette={item.selected_style || "modern"}
-                size={150}
-                accessible={false}
-                importantForAccessibility="no-hide-descendants"
-              />
-              <AiGeneratedBadge compact style={{ top: 8, left: 8 }} testID="explore-ai-badge" />
-              <Pressable
-                style={styles.moreButton}
-                onPress={() => handleReportMenu(item.id, item.user_id || "")}
-                accessibilityLabel="Report or block"
-                accessibilityRole="button"
-                hitSlop={12}
-                testID="explore-report-button"
-              >
-                <Ionicons name="ellipsis-horizontal" size={20} color="#fff" />
-              </Pressable>
-            </View>
-            {/* White caption strip under the image (matches the loading skeleton) */}
-            <View style={styles.cardCaption} testID="explore-card-caption">
-              <Text style={styles.cardTitle} numberOfLines={1}>
-                {item.title}
-              </Text>
-              <Text style={styles.cardStyle} numberOfLines={1}>
-                {styleName(item.selected_style)}
-              </Text>
-            </View>
-          </Pressable>
+          // The card opens the design; the ••• menu is a sibling (not nested
+          // inside the card's button) so each is its own control.
+          <View style={styles.card} testID="explore-design-card">
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${item.title || "Design"}, ${styleName(item.selected_style)} style`}
+              accessibilityHint="Opens the design"
+              onPress={() => router.push(`/explore/${item.id}`)}
+              testID="explore-design-open"
+            >
+              <View style={styles.cardImageWrapper}>
+                <IsoRoom
+                  palette={item.selected_style || "modern"}
+                  size={150}
+                  accessible={false}
+                  importantForAccessibility="no-hide-descendants"
+                />
+                <AiGeneratedBadge compact style={{ top: 8, left: 8 }} testID="explore-ai-badge" />
+              </View>
+              {/* White caption strip under the image (matches the loading skeleton) */}
+              <View style={styles.cardCaption} testID="explore-card-caption">
+                <Text style={styles.cardTitle} numberOfLines={1}>
+                  {item.title}
+                </Text>
+                <Text style={styles.cardStyle} numberOfLines={1}>
+                  {styleName(item.selected_style)}
+                </Text>
+              </View>
+            </Pressable>
+            <Pressable
+              style={styles.moreButton}
+              onPress={() => handleReportMenu(item.id, item.user_id || "")}
+              accessibilityLabel="Report or block"
+              accessibilityRole="button"
+              hitSlop={12}
+              testID="explore-report-button"
+            >
+              <Ionicons name="ellipsis-horizontal" size={20} color="#fff" />
+            </Pressable>
+          </View>
         )}
       />
     </SafeAreaView>
