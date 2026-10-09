@@ -17,7 +17,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore, useAuthStore } from "@/lib/store";
-import { Button, IsoRoom, PrivateImage, LoadingSkeleton, ErrorState, OfflineBanner } from "@/components";
+import { AiGeneratedBadge, Button, IsoRoom, PrivateImage, LoadingSkeleton, ErrorState, OfflineBanner } from "@/components";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
 import { useProjectById } from "@/lib/hooks/useProjectById";
@@ -290,6 +290,7 @@ export default function ResultScreen() {
                     containerStyle={styles.cardImage}
                     accessibilityLabel={`Design option ${index + 1}`}
                   />
+                  <AiGeneratedBadge style={{ top: 16, left: 16 }} testID="result-ai-badge" />
                   {isSelected && (
                     <View style={styles.checkBadge}>
                       <Ionicons name="checkmark" size={22} color="#fff" />
@@ -391,6 +392,7 @@ export default function ResultScreen() {
                   containerStyle={styles.compareImg}
                   accessibilityLabel="Redesigned room"
                 />
+                <AiGeneratedBadge compact testID="detail-ai-badge" />
                 <Text style={styles.compareLabel}>Redesign</Text>
               </View>
             </View>

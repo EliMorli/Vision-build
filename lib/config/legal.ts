@@ -26,7 +26,7 @@ export const LEGAL_BASE_URL = (
 export const PRIVACY_POLICY_VERSION = "2";
 
 /** Current Terms of Service version (shown on the hosted /terms page). */
-export const TERMS_VERSION = "1";
+export const TERMS_VERSION = "2";
 
 export type LegalPage = "terms" | "privacy" | "licenses" | "deleteAccount";
 

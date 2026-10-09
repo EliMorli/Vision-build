@@ -16,10 +16,11 @@ function run(env, args = []) {
   const clean = { ...process.env };
   delete clean.EXPO_PUBLIC_LEGAL_BASE_URL;
   delete clean.LEGAL_RELEASE_PRIVACY_HTML_FILE;
+  delete clean.EXPO_PUBLIC_DMCA_AGENT_EMAIL;
   // Async spawn so the local HTTP server below keeps serving while it runs.
   return new Promise((resolve) => {
     const child = spawn(process.execPath, [CHECK, ...args], {
-      env: { ...clean, LEGAL_CONFIG_FILE: path.join(FIX, "legal.ts"), ...env },
+      env: { ...clean, LEGAL_CONFIG_FILE: path.join(FIX, "legal.ts"), LEGAL_BUSINESS_CONFIG_FILE: path.join(FIX, "business.ts"), ...env },
     });
     let out = "";
     child.stdout.on("data", (d) => (out += d));
@@ -58,9 +59,14 @@ async function main() {
     { name: "policy-version fetch passes (HTTP)", env: { EXPO_PUBLIC_LEGAL_BASE_URL: `${local}/good` }, args: ["--gate=policy-version"], code: 0, expect: /matches/ },
     { name: "policy-version fetch fails on stale page (HTTP)", env: { EXPO_PUBLIC_LEGAL_BASE_URL: `${local}/stale/` }, args: ["--gate=policy-version"], code: 1, expect: /version "6"/ },
     { name: "policy-version fetch fails on 404 (HTTP)", env: { EXPO_PUBLIC_LEGAL_BASE_URL: `${local}/missing` }, args: ["--gate=policy-version"], code: 1, expect: /HTTP 404/ },
-    // Both gates together
+    // Gate 3: designated DMCA agent ({{DMCA_AGENT_EMAIL}})
+    { name: "dmca-agent fails on the placeholder", env: {}, args: ["--gate=dmca-agent"], code: 1, expect: /DMCA agent email is unfilled \(\[dmca-agent@yourdomain\.com\]\)/ },
+    { name: "dmca-agent fails on an invalid email", env: { EXPO_PUBLIC_DMCA_AGENT_EMAIL: "copyright-at-example" }, args: ["--gate=dmca-agent"], code: 1, expect: /not a valid email/ },
+    { name: "dmca-agent passes with a real email", env: { EXPO_PUBLIC_DMCA_AGENT_EMAIL: "support@example.com" }, args: ["--gate=dmca-agent"], code: 0, expect: /\[dmca-agent\] DMCA agent email is support@example.com/ },
+    // All gates together
     { name: "all gates fail on the placeholder", env: { EXPO_PUBLIC_LEGAL_BASE_URL: "https://visionbuild.app/legal", LEGAL_RELEASE_PRIVACY_HTML_FILE: path.join(FIX, "privacy-v7.html") }, args: [], code: 1, expect: /still the placeholder/ },
-    { name: "all gates pass with a real URL and matching page", env: { EXPO_PUBLIC_LEGAL_BASE_URL: "https://legal.example.com", LEGAL_RELEASE_PRIVACY_HTML_FILE: path.join(FIX, "privacy-v7.html") }, args: [], code: 0, expect: /Legal release gates passed/ },
+    { name: "all gates fail while the DMCA agent is unfilled", env: { EXPO_PUBLIC_LEGAL_BASE_URL: "https://legal.example.com", LEGAL_RELEASE_PRIVACY_HTML_FILE: path.join(FIX, "privacy-v7.html") }, args: [], code: 1, expect: /❌ \[dmca-agent\]/ },
+    { name: "all gates pass with a real URL, matching page and DMCA agent", env: { EXPO_PUBLIC_LEGAL_BASE_URL: "https://legal.example.com", LEGAL_RELEASE_PRIVACY_HTML_FILE: path.join(FIX, "privacy-v7.html"), EXPO_PUBLIC_DMCA_AGENT_EMAIL: "copyright@example.com" }, args: [], code: 0, expect: /Legal release gates passed/ },
   ];
 
   let failures = 0;

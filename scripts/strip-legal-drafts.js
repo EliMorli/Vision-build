@@ -9,6 +9,11 @@
  *   LEGAL_DIR=path/to/dir node scripts/strip-legal-drafts.js  # Check all files in directory
  * 
  * Processes: app/terms.tsx, app/privacy.tsx, or specified files/directory
+ *
+ * Recognized blanks filled from lib/config/business.ts at build time:
+ *   {{DMCA_AGENT_EMAIL}}  needs EXPO_PUBLIC_DMCA_AGENT_EMAIL or a real
+ *                         dmcaAgentEmail (LEGAL_BUSINESS_CONFIG_FILE overrides
+ *                         the config path, for fixtures).
  */
 
 const fs = require('fs');
@@ -54,7 +59,42 @@ const PLACEHOLDER_PATTERNS = [
   /\bTBD\b/,
   /\[TBD\]/,
   /\[INSERT.*?\]/i,
+  /\[dmca-agent@yourdomain\.com\]/,
 ];
+
+// {{TOKENS}} that must resolve to a real value before release. Value comes from
+// the env var, else the literal in lib/config/business.ts.
+const RECOGNIZED_TOKENS = {
+  DMCA_AGENT_EMAIL: {
+    env: 'EXPO_PUBLIC_DMCA_AGENT_EMAIL',
+    field: 'dmcaAgentEmail',
+    valid: (v) => /^[^\s@[\]]+@[^\s@[\]]+\.[^\s@[\]]+$/.test(v),
+    hint: 'set EXPO_PUBLIC_DMCA_AGENT_EMAIL or dmcaAgentEmail in lib/config/business.ts (it can be the support email; register the agent at dmca.copyright.gov)',
+  },
+};
+
+function resolveToken(spec) {
+  const fromEnv = (process.env[spec.env] || '').trim();
+  if (fromEnv) return fromEnv;
+  const file = process.env.LEGAL_BUSINESS_CONFIG_FILE
+    ? path.resolve(process.env.LEGAL_BUSINESS_CONFIG_FILE)
+    : path.join(__dirname, '..', 'lib', 'config', 'business.ts');
+  if (!fs.existsSync(file)) return '';
+  const m = fs.readFileSync(file, 'utf-8').match(new RegExp(`${spec.field}:\\s*(?:process\\.env\\.\\w+\\s*\\|\\|\\s*)?"([^"]*)"`));
+  return m ? m[1] : '';
+}
+
+function checkRecognizedTokens(content, filename) {
+  for (const [token, spec] of Object.entries(RECOGNIZED_TOKENS)) {
+    if (!content.includes(`{{${token}}}`)) continue;
+    const value = resolveToken(spec);
+    if (!spec.valid(value)) {
+      console.error(`❌ ERROR in ${filename}:`);
+      console.error(`   Found unfilled placeholder: {{${token}}}${value ? ` (current value: ${value})` : ''}. To fix: ${spec.hint}`);
+      hasErrors = true;
+    }
+  }
+}
 
 function checkPlaceholders(content, filename) {
   for (const pattern of PLACEHOLDER_PATTERNS) {
@@ -91,6 +131,7 @@ function stripDraftContent(content, filename) {
     
     // Check for unfilled placeholders
     checkPlaceholders(markdownContent, filename);
+    checkRecognizedTokens(markdownContent, filename);
     
     // Check for [brackets] that indicate unfilled blanks
     const bracketRegex = /\[([^\]]{1,100})\]/g;
@@ -129,6 +170,7 @@ function stripDraftContent(content, filename) {
     
     // Check for unfilled placeholders
     checkPlaceholders(content, filename);
+    checkRecognizedTokens(content, filename);
     
     return content;
   }

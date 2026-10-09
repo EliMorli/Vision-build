@@ -263,8 +263,7 @@ export default function DeleteAccountConfirm() {
         <Text style={styles.title}>Delete your account?</Text>
         <Text style={styles.warning}>
           {/* Summary already starts with "your"; capitalize it instead of repeating "Your your" */}
-          {DELETED_DATA_SUMMARY.charAt(0).toUpperCase() + DELETED_DATA_SUMMARY.slice(1)} will be deleted, including your posts on Explore. Remixes other
-          people made stay with them.
+          {DELETED_DATA_SUMMARY.charAt(0).toUpperCase() + DELETED_DATA_SUMMARY.slice(1)} will be deleted, including your posts on Explore.
         </Text>
         {data.isAppleUser && Platform.OS === "ios" && (
           <Text style={styles.appleNote}>

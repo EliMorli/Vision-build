@@ -12,7 +12,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useAuthStore, useProjectStore } from "@/lib/store";
-import { Button, PrivateImage } from "@/components";
+import { AiGeneratedBadge, Button, PrivateImage } from "@/components";
 import { IsoRoom } from "@/components/IsoRoom";
 import { supabase } from "@/lib/supabase";
 
@@ -138,11 +138,14 @@ export default function ProsComingSoonScreen() {
         {/* Design Preview */}
         <View style={styles.designPreview}>
           {designUrl ? (
-            <PrivateImage
-              bucket="room-photos"
-              path={designUrl}
-              style={styles.designImage}
-            />
+            <View style={styles.designImage}>
+              <PrivateImage
+                bucket="room-photos"
+                path={designUrl}
+                style={styles.designImage}
+              />
+              <AiGeneratedBadge compact testID="pros-ai-badge" />
+            </View>
           ) : (
             <View style={styles.placeholderContainer}>
               <IsoRoom palette="modern" size={180} />

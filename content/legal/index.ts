@@ -2,223 +2,211 @@ export const TERMS_OF_SERVICE = `> **DRAFT — not legal advice; review with an 
 
 # VisionBuild Terms of Service
 
-**Effective date:** [EFFECTIVE DATE]
-**Last updated:** [EFFECTIVE DATE]
+**Effective date:** {{EFFECTIVE_DATE}}
+**Last updated:** {{EFFECTIVE_DATE}}
 
-Welcome to VisionBuild. These Terms of Service ("Terms") are an agreement between you and [COMPANY LEGAL NAME], a [ENTITY TYPE] based in California ("VisionBuild," "we," "us," or "our"). They cover your use of the VisionBuild mobile app (iOS and Android), the web version of the app, and related services (together, the "Service").
+These Terms of Service ("Terms") are an agreement between you and {{COMPANY_LEGAL_NAME}}, a {{ENTITY_TYPE}} ("VisionBuild," "we," "us," or "our"). They cover the VisionBuild mobile app (iOS and Android), its supporting web pages, and related services (together, the "Service"). Our Privacy Policy at https://{{WEBSITE_DOMAIN}}/privacy explains how we handle your information.
 
-Please read them carefully. Our Privacy Policy explains how we handle your information and is part of these Terms.
+> [NOTE: If no company has been formed by launch, the contracting party is Elimar Morli as an individual. Fill {{COMPANY_LEGAL_NAME}} and {{ENTITY_TYPE}} to match.]
 
-> [NOTE: Until a legal entity is formed, the contracting party would be Elimar Morli as an individual. Decide which name goes here before publishing.]
+> [ATTORNEY DECISION: Section 19 includes an optional arbitration agreement. If you choose it, put a plain notice here at the top, for example: "These Terms include an arbitration agreement and class-action waiver in Section 19 that affect your rights."]
 
 ---
 
 ## 1. Accepting these Terms
 
-By creating an account or using the Service, you agree to these Terms. If you don't agree, don't use the Service.
+By signing in or using the Service, you agree to these Terms. If you don't agree, don't use the Service.
 
 ## 2. Who can use VisionBuild
 
-- You must be **at least 13 years old**. VisionBuild is not available to children under 13, and you must confirm your age when you sign up.
-- If you are **under 18**, you may use VisionBuild only with the permission of a parent or legal guardian, who agrees to these Terms on your behalf and is responsible for your use.
-- You can't use VisionBuild if we have previously banned you, or if you are barred from using it under applicable law.
+- You must be **at least 13 years old**. When you sign in, you'll be asked to check a box confirming you are 13 or older. VisionBuild is not for children under 13.
+- If you are **13 to 17**, you may use VisionBuild only with permission from a parent or legal guardian, who agrees to these Terms for you.
+- You can't use VisionBuild if we've banned you before or if the law doesn't allow you to.
 
 ## 3. Your account
 
-- You sign in with **Google** or **Sign in with Apple**. You're responsible for keeping that account secure and for activity under your VisionBuild account.
-- Give us accurate information, and keep it up to date.
-- Your public handle must not impersonate anyone or be offensive or misleading.
-- Tell us right away at [SUPPORT EMAIL] if you think someone else has accessed your account.
+- You sign in with **Apple** or **Google**. Keep that account secure. You're responsible for activity under your VisionBuild account.
+- Your name or handle must not impersonate anyone or be offensive or misleading.
+- Tell us at {{SUPPORT_EMAIL}} if you think someone else has used your account.
 
 ## 4. What VisionBuild does
 
-VisionBuild helps you imagine changes to your space. You can photograph a room, home exterior, or backyard, or brainstorm with our AI assistant ("Vi"), pick a style, and get AI-generated design visualizations. Your work is organized into projects. You can also ask us to find local contractors ("Find me a pro"), message them, and receive quotes.
+You photograph a room, pick a style, and get AI-generated redesign ideas. You can chat with our AI assistant, Vi, save projects in your library, and choose to share designs on the Explore feed, where other users can view them. VisionBuild also has game features such as XP, levels, and badges.
 
-We may add, change, or remove features at any time. VisionBuild is currently free.
+VisionBuild is free. [NOTE: There are no payments. If paid features are added, these Terms will need sections on billing, auto-renewal (including California's automatic renewal law), refunds, and App Store and Google Play purchase rules.]
 
-## 5. Your content
+We may add, change, or remove features.
 
-"**Your content**" means anything you upload, submit, or create in VisionBuild: photos, chats with Vi, prompts, style choices, project briefs, messages, and the designs generated for you.
+## 5. AI processing and consent
+
+- Before any AI processing, we ask for your permission. **Your photos and chats are sent through OpenRouter only to AI providers that don't keep or train on your data, and only to create your designs.** You can choose "Not now," but AI features won't work until you agree.
+- When we change how AI processing works, we'll ask again.
+- To keep things fair, AI features have **daily usage limits**. We may change them.
+- Don't use the AI to create content that breaks Section 8 or our AI providers' rules, and don't try to trick Vi into producing harmful content.
+
+## 6. AI designs are inspiration, not construction plans
+
+**Please read this carefully.**
+
+- Designs, Vi's replies, and design briefs are created by AI. They are **for inspiration only**. They may be inaccurate, unrealistic, or impossible to build, and may not match your actual room, its measurements, structure, or materials.
+- They are **not** construction plans, architectural or engineering drawings, building code or permit advice, or price quotes.
+- Any cost, material, or timeline that Vi mentions is a rough guess at best.
+- **Before you build, buy, or hire, check with a licensed professional** (such as a licensed contractor, architect, or engineer) and **your local building department about permits**.
+- In California, home improvement work worth **$1,000 or more** (labor and materials combined) generally must be done by a contractor licensed by the Contractors State License Board (Cal. Bus. & Prof. Code § 7048). You can check a license at https://www.cslb.ca.gov.
+- You use AI output at your own risk.
+
+## 7. Your content
+
+"**Your content**" means what you upload or create in VisionBuild: photos, chats, style choices, project names, and the designs created for you.
 
 ### You own your content
 
-As between you and VisionBuild, you keep whatever rights you have in your content. For AI-generated designs, we give you whatever rights we have in them, but please know that AI-generated material may not be protected by copyright, and other users may receive similar results.
+As between you and us, you keep whatever rights you have in your content. We give you whatever rights we have in the AI designs made for you. AI-generated images may not be protected by copyright, and other people may get similar results.
 
 ### The license you give us
 
-To run the Service, you give VisionBuild a worldwide, non-exclusive, royalty-free license to **host, store, copy, process, modify (for example, resize or format), and display** your content, and to **send it to our AI providers and other service providers**, only as needed to operate, secure, and provide the Service to you (including sending the information you choose to contractors). This license ends when you delete the content or your account, except as described in the Privacy Policy (for example, backups until they are overwritten, or copies already sent to contractors at your request).
+You give VisionBuild a non-exclusive, royalty-free, worldwide license to host, store, copy, process, resize, and display your content, and to send it to our service providers (including AI providers under Section 5), **only to operate the Service for you and to show designs you make Public** on Explore and in the app. We won't use your content in advertising or marketing, or sell it. This license ends when you delete the content or your account, except for backups until they are overwritten, as described in the Privacy Policy.
 
-### Public projects
+> [ATTORNEY DECISION: If you ever want to feature users' public designs in marketing, add a separate, opt-in permission for that. It's left out on purpose.]
 
-Projects are **Private** by default. If you make a project **Public**, you also give:
+### Public designs
 
-- **VisionBuild** permission to display the project's designs in the Explore feed, together with your handle and level; and
-- **Other VisionBuild users** a non-exclusive, royalty-free license to view, like, and save those designs, and to **"remix"** them — use them as inspiration or a style reference for designs of their own rooms within VisionBuild.
+- Projects are **Private** by default. Making a project Public is your choice, and you'll be asked to confirm.
+- Only the **AI-generated designs** become public, shown with your name or handle and level. **Your original room photo is never made public**, and neither are your chats or briefs.
+- When a project is Public, you give other VisionBuild users a non-exclusive, royalty-free license to view its designs **inside VisionBuild**.
+- You can switch back to **Private** at any time. We'll remove the public copies and take the designs off Explore.
+- Don't sell another user's design or present it as your own original work outside VisionBuild. [ATTORNEY DECISION: Decide whether users may use their own designs for commercial purposes, such as real estate listings or a design business.]
 
-You can switch a project back to Private at any time. That stops new viewing and remixing, but remixes or saves other users already made may remain.
+### Your promises
 
-> [NOTE: Confirm that only generated designs — not the original room photo — become public when a project is made Public. If original photos can become public, this section and the Privacy Policy must say so.]
+You promise you have the rights to upload your content and give these licenses, and that your content follows these Terms. **Don't upload photos of people without their permission**, or photos of places you aren't allowed to photograph.
 
-### Your promises about your content
+## 8. Prohibited content and conduct
 
-You promise that you have the rights needed to upload your content and give these licenses, and that your content doesn't violate these Terms or anyone else's rights. **Don't upload photos of people without their permission**, and don't upload photos of property you aren't allowed to photograph.
+Don't upload, create, or share content, and don't act in a way, that:
 
-## 6. Acceptable use
+- is illegal, or helps someone break the law;
+- infringes anyone's copyright, trademark, privacy, or other rights;
+- is sexually explicit, or sexualizes minors in any way;
+- is hateful, harassing, threatening, violent, or bullying;
+- shows people without their permission, or exposes someone's private information (such as an address, documents, or family photos visible in a room);
+- is spam, advertising, or misleading;
+- impersonates a person or business;
+- promotes dangerous activity, such as unsafe electrical, gas, or structural work presented as safe.
 
-You agree **not** to:
+Also don't:
 
-- Break the law or help anyone else break it.
-- Upload or create content that infringes someone's copyright, trademark, privacy, or other rights.
-- Upload or create content that is hateful, harassing, threatening, violent, sexually explicit, or that sexualizes minors in any way.
-- Upload photos of people without their permission, or use VisionBuild to stalk, harass, or expose anyone.
-- Impersonate any person or business, or misrepresent your connection to a property.
-- **Abuse contractor outreach** — for example, submitting fake projects or fake leads, sending briefs for property you have no interest in improving, spamming contractors, or using the Inbox to harass or solicit contractors for unrelated purposes.
-- **Scrape**, crawl, or collect data from the Service (including Explore content or contractor information) by automated means, or build a competing database from it.
-- Try to get around usage limits, bans, or security measures; create multiple accounts to do so; or interfere with the Service's operation.
-- Reverse engineer, decompile, or copy the app, except as the law expressly allows.
-- Use VisionBuild's AI features to generate content that violates our AI providers' usage policies, or try to make Vi produce harmful content.
-- Use the Service to send spam or for commercial advertising.
+- scrape or bulk-collect content or data from the Service, or build a competing database from it;
+- get around daily limits, bans, or security, including by making extra accounts;
+- reverse engineer or copy the app, except as the law allows;
+- interfere with the Service or other users.
 
-## 7. AI visualizations are not plans or quotes
+## 9. Report, Block, and moderation
 
-**Please read this carefully.** VisionBuild's designs, Vi's replies, and AI-written project briefs are generated by artificial intelligence. Designs are labeled **"AI visualization, not a plan or quote."**
+- You can **Report** content or users, and **Block** users you don't want to interact with. Blocked users' content is hidden from you.
+- Our team reviews reports with an admin review tool. We aim to review reports within **24 hours**. [CONFIRM] We may remove or hide content, limit features, or suspend or ban accounts that break these Terms, with or without notice.
+- We don't review everything before it's posted, but we act on reports.
+- If we take action on your account or content and you think we made a mistake, email {{SUPPORT_EMAIL}}.
+- For urgent safety issues or illegal content, email {{SUPPORT_EMAIL}}.
 
-- They are **for inspiration only**. They may be inaccurate, unrealistic, or impossible to build, and may show dimensions, materials, structures, or features that don't match your space.
-- They are **not** architectural, engineering, structural, permitting, building code, legal, or cost advice, and they are **not** construction plans or quotes.
-- Any cost, material, or timeline information from Vi or in a brief is a rough estimate at best and may be wrong.
-- Before you build, buy, or hire, **consult qualified professionals** (such as a licensed contractor, architect, or engineer) and your local building department about permits, codes, and safety.
-- **Review every AI-written project brief** before it is sent to contractors. You are responsible for its accuracy.
+### Copyright complaints (DMCA)
 
-You use AI output at your own risk.
+If you believe content on VisionBuild infringes your copyright, send a notice to our designated agent at {{DMCA_AGENT_EMAIL}} or {{MAILING_ADDRESS}}, Attn: Copyright Agent. Include: your signature; the work you say is infringed; where the content is in VisionBuild (for example, a link or screenshot of the Explore post); your contact details; a statement that you believe in good faith the use isn't authorized; and a statement, under penalty of perjury, that your notice is accurate and you're the owner or authorized to act for them. If your content was removed and you believe that was a mistake, you can send a counter-notice to the same address. We remove content in response to valid notices and close the accounts of repeat infringers when appropriate.
 
-## 8. Contractors
+> [NOTE: Register {{COMPANY_LEGAL_NAME}}'s designated agent with the U.S. Copyright Office (dmca.copyright.gov, about $6, renew every 3 years). Safe harbor protection for user posts depends on it.]
 
-### VisionBuild is not a contractor
+## 10. Pros waitlist (pros are coming soon)
 
-VisionBuild is a technology platform. **We are not a contractor, and we do not perform, supervise, guarantee, or warrant any construction or home improvement work.** We are not a party to any agreement between you and a contractor, and we don't receive payment from contractors or set their prices.
+VisionBuild doesn't connect you with contractors at launch. You can tap "**Join the waitlist**" on Home, on a Results screen, or on the "Pros are coming soon" screen you see when you tap "Find me a pro." You'll see "You're on the list." We save the email on your account and, if you joined from a project, that project's ID. Joining doesn't earn XP.
 
-### We don't verify licenses yet
+The only email we'll send because you joined is a one-time notice when pros are live, with an unsubscribe link. You can leave the waitlist at any time with the **Pros waitlist** switch in Settings, and your entries are deleted if you delete your account.
 
-**We do not currently verify contractor licenses, insurance, bonding, reviews, or qualifications.** The app says "License check coming soon." Until then, and even after, **you are responsible for vetting, choosing, and hiring any contractor**, and for any agreement you make with them.
+**Joining the waitlist is not a promise of anything.** We don't promise that pros or contractors will ever be available, or when, where, or for which projects, and we don't promise you'll get any quotes, prices, or responses. Pros won't be shown as "verified" unless we can actually check their license. If and when pros launch, we'll update these Terms first.
 
-### Licensing in California
+## 11. XP, levels, and badges
 
-In California, any work where the total cost of labor, materials, and all other items on a project is **$1,000 or more** — or that requires a building permit, or where the worker uses employees — must be done by a contractor licensed by the **Contractors State License Board (CSLB)**. You can check a contractor's license at **https://www.cslb.ca.gov** (use "Check a License" or call 800-321-CSLB). CSLB also advises that a down payment on a home improvement contract generally may not exceed $1,000 or 10% of the contract price, whichever is less.
+XP, levels, and badges are just for fun. They have **no cash value**, can't be bought, sold, or transferred, and aren't your property. There are no prizes. We may change or reset them, including to fix errors or address abuse.
 
-### Before you hire, we recommend you:
+## 12. Third-party services
 
-- Verify the license, insurance, and bonding.
-- Get several written bids and a written contract.
-- Don't pay large amounts up front.
-- Check permits with your local building department.
+The Service relies on others, including Apple and Google (sign-in and app stores), OpenRouter and the AI providers it routes to, and the providers listed in our Privacy Policy. Your use of Apple or Google sign-in is also covered by their terms. We aren't responsible for third-party services, and their outages or changes may affect the Service.
 
-## 9. "Find me a pro" and messaging with contractors
+## 13. Our intellectual property
 
-- When you use "Find me a pro," you enter a ZIP code and budget range, and **you authorize us to write a project brief with AI and email it to local contractors on your behalf**.
-- Before anything is sent, you'll see exactly what contractors will receive and can switch each item on or off. **Your phone number and email stay hidden until you pick a pro.**
-- Every outreach send is logged. Contractor emails include an unsubscribe link and our mailing address, and we honor unsubscribe requests.
-- Contractor replies and quotes come into your in-app **Inbox**, where you can chat with them. Be respectful, honest, and don't use the Inbox for spam or harassment.
-- We can't guarantee that any contractor will respond, be available, or quote a particular price. Quotes come from contractors, not from VisionBuild, and we're not responsible for them.
-- We may limit how often you can send outreach to protect contractors and prevent abuse.
+The VisionBuild app, name, logo, look (including the clay room art), and software belong to us or our licensors. We give you a personal, limited, non-exclusive, non-transferable, revocable license to use the app on devices you own or control, under these Terms. If you send us feedback, we may use it freely.
 
-## 10. Reporting, blocking, and moderation
+## 14. Ending your use; deleting your account
 
-- You can **Report** or **Block** content and users in Explore, AI results, Vi replies, and contractor chats.
-- We review reports and may, at our discretion, remove or hide content, limit features, or suspend or ban accounts that violate these Terms — with or without notice.
-- We don't pre-screen all content and aren't responsible for content posted by users or contractors, but we act on reports.
-- To report urgent safety issues or illegal content, email [SUPPORT EMAIL].
+- You can stop using VisionBuild at any time. You can delete your account in the app (Profile → Settings → Delete account) or at https://{{WEBSITE_DOMAIN}}/delete-account. Deletion is permanent.
+- We may suspend or end your access if you break these Terms, if the law requires it, or if we stop offering the Service. If we shut down the Service, we'll try to give reasonable notice.
+- Parts of these Terms that should continue after your account ends will continue, including Sections 6, 7, 15, 16, 17, and 19.
 
-## 11. Usage limits
+## 15. Disclaimer of warranties
 
-To keep the Service running fairly, AI features have **daily usage limits** per user. We may change these limits at any time.
-
-## 12. XP, levels, badges, and rewards
-
-VisionBuild has XP, levels, badges, quests, and weekly challenges for fun.
-
-- **XP and other in-app rewards have no cash or monetary value**, can't be bought, sold, transferred, or exchanged for money or anything else, and aren't your property.
-- There are currently **no prizes**.
-- We may change, reset, or remove XP, levels, badges, quests, or challenges at any time, including to correct errors or address abuse.
-
-## 13. Third-party services
-
-VisionBuild relies on third-party services, including Apple and Google (sign-in and app stores), AI model providers (accessed through OpenRouter, including Google and Anthropic), and other service providers listed in our Privacy Policy. Your use of Sign in with Apple or Google is also subject to their terms. We aren't responsible for third-party services, and a third party's outage or change may affect the Service.
-
-Contractors are independent third parties. Any website or link a contractor shares is not controlled by us.
-
-## 14. Our intellectual property
-
-The VisionBuild app, name, logo, design, software, and other materials we provide (excluding your content) belong to us or our licensors. We give you a personal, limited, non-exclusive, non-transferable, revocable license to use the app on devices you own or control, for your personal, non-commercial use, under these Terms.
-
-If you send us feedback or ideas, we may use them without any obligation to you.
-
-## 15. Ending your use; deleting your account
-
-- You can stop using VisionBuild at any time. You can **delete your account** from **Settings → Delete account**. This permanently deletes your account, projects, designs, and related data, and revokes your Sign in with Apple token. Deletion can't be undone. See the Privacy Policy for what limited information may remain.
-- We may suspend or end your access at any time if you violate these Terms, if required by law, or if we stop offering the Service. If we discontinue the Service, we'll try to give you reasonable notice so you can save your designs.
-- Sections that by their nature should survive (such as content licenses for Public designs already remixed, disclaimers, limitation of liability, indemnity, and dispute terms) survive termination.
-
-## 16. Disclaimer of warranties
-
-THE SERVICE, INCLUDING ALL AI OUTPUT AND ANY CONTRACTOR INFORMATION, IS PROVIDED **"AS IS" AND "AS AVAILABLE."** TO THE FULLEST EXTENT ALLOWED BY LAW, VISIONBUILD DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, NON-INFRINGEMENT, AND ACCURACY. WE DON'T PROMISE THAT THE SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, OR SECURE, THAT AI OUTPUT WILL BE ACCURATE OR BUILDABLE, OR THAT ANY CONTRACTOR IS LICENSED, QUALIFIED, OR TRUSTWORTHY.
+THE SERVICE, INCLUDING ALL AI OUTPUT, IS PROVIDED **"AS IS" AND "AS AVAILABLE."** TO THE FULLEST EXTENT THE LAW ALLOWS, WE DISCLAIM ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, NON-INFRINGEMENT, AND ACCURACY. WE DON'T PROMISE THAT THE SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, OR SECURE, OR THAT ANY AI OUTPUT WILL BE ACCURATE, SAFE, BUILDABLE, OR PERMITTED UNDER LOCAL CODES.
 
 Some places don't allow these disclaimers, so some may not apply to you.
 
-## 17. Limitation of liability
+## 16. Limitation of liability
 
-TO THE FULLEST EXTENT ALLOWED BY LAW:
+TO THE FULLEST EXTENT THE LAW ALLOWS:
 
-- VISIONBUILD WILL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY, OR PUNITIVE DAMAGES, OR FOR LOST PROFITS, DATA, OR GOODWILL, ARISING FROM OR RELATED TO THE SERVICE.
-- VISIONBUILD IS NOT LIABLE FOR ANY WORK, DAMAGE, INJURY, LOSS, OR DISPUTE ARISING FROM YOUR DEALINGS WITH ANY CONTRACTOR, OR FROM DECISIONS YOU MAKE BASED ON AI OUTPUT.
-- VISIONBUILD'S TOTAL LIABILITY FOR ALL CLAIMS RELATED TO THE SERVICE IS LIMITED TO THE GREATER OF (A) THE AMOUNT YOU PAID US IN THE 12 MONTHS BEFORE THE CLAIM, OR (B) US $100.
+- WE ARE NOT LIABLE FOR INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY, OR PUNITIVE DAMAGES, OR FOR LOST PROFITS, DATA, OR GOODWILL.
+- WE ARE NOT LIABLE FOR ANY CONSTRUCTION, PURCHASE, OR HIRING DECISION YOU MAKE BASED ON AI OUTPUT, OR FOR ANY RESULTING WORK, DAMAGE, INJURY, OR LOSS.
+- OUR TOTAL LIABILITY FOR ALL CLAIMS ABOUT THE SERVICE IS LIMITED TO THE GREATER OF (A) WHAT YOU PAID US IN THE 12 MONTHS BEFORE THE CLAIM, OR (B) US $100. [ATTORNEY DECISION: Confirm the cap amount.]
 
-These limits apply to any theory of liability and even if we were told the damages were possible. They don't limit liability that can't be limited by law (for example, for fraud, gross negligence, or willful misconduct where the law prohibits limiting it).
+These limits apply under any legal theory, even if we were told the damages were possible. They don't limit liability the law doesn't allow us to limit.
 
-## 18. Indemnity
+## 17. Indemnity
 
-To the extent allowed by law, you agree to defend, indemnify, and hold harmless VisionBuild and its owners, employees, and agents from claims, losses, and expenses (including reasonable attorneys' fees) arising from: your content; your use of the Service; your violation of these Terms or anyone's rights; or your dealings with any contractor.
+To the extent the law allows, you agree to defend, indemnify, and hold harmless VisionBuild and its owners, employees, and agents from claims, losses, and costs (including reasonable attorneys' fees) arising from your content, your use of the Service, or your breaking these Terms or anyone's rights.
 
-## 19. Disputes and governing law
+## 18. Changes to these Terms
 
-- **Talk to us first.** Most issues can be solved quickly — please email [SUPPORT EMAIL] and give us a chance to resolve it before taking formal action.
-- **Governing law.** These Terms are governed by the laws of the State of California, without regard to its conflict-of-laws rules.
-- **Where.** Subject to any arbitration provision below, disputes will be resolved in the state or federal courts located in Los Angeles County, California, and you and we consent to their jurisdiction. Either party may bring an individual claim in small claims court instead.
+We may update these Terms. If a change is material, we'll tell you in the app or by email before it takes effect and update the "Last updated" date. If you keep using VisionBuild after that, you accept the new Terms. If you don't agree, stop using the Service and delete your account.
 
-**California users:** Under California Civil Code § 1789.3, California users are entitled to the following notice: the Complaint Assistance Unit of the Division of Consumer Services of the California Department of Consumer Affairs may be contacted in writing at 1625 North Market Blvd., Suite N 112, Sacramento, CA 95834, or by telephone at (800) 952-5210.
+## 19. Disputes
+
+- **Talk to us first.** Email {{SUPPORT_EMAIL}} and give us 30 days to try to fix the problem before starting a formal claim.
+- **Governing law.** These Terms are governed by the laws of the State of {{GOVERNING_STATE}}, without regard to its conflict-of-law rules.
+
+> [ATTORNEY DECISION: Choose Option A or Option B and delete the other.]
+
+**Option A — Courts.** Disputes will be resolved in the state or federal courts in [NOTE: county] County, {{GOVERNING_STATE}}, and you and we agree to their jurisdiction. Either of us may bring an individual claim in small claims court instead.
+
+**Option B — Individual arbitration (optional).** [ATTORNEY DECISION: whether to use arbitration at all, which provider (for example, AAA or JAMS) and rules, who pays fees, mass-arbitration procedures, and whether it can be enforced against users under 18.]
+- You and we agree to resolve disputes through binding **individual** arbitration instead of in court, except that either of us may use small claims court, and either of us may go to court over intellectual property misuse.
+- **Class-action waiver:** claims may be brought only individually, not as a plaintiff or class member in any class or representative action.
+- **Opt-out:** you can opt out of arbitration by emailing {{SUPPORT_EMAIL}} within 30 days of first accepting these Terms.
+- If the class-action waiver is found unenforceable for a claim, that claim goes to court under Option A.
+
+**California users:** Under California Civil Code § 1789.3, you can contact the Complaint Assistance Unit of the Division of Consumer Services of the California Department of Consumer Affairs in writing at 1625 North Market Blvd., Suite N 112, Sacramento, CA 95834, or by phone at (800) 952-5210. [NOTE: Check that the address and phone are still current before publishing.]
 
 ## 20. Apple App Store
 
-If you downloaded VisionBuild from the Apple App Store, the following also applies:
+If you got VisionBuild from the Apple App Store:
 
-- These Terms are between you and VisionBuild only, **not Apple**. VisionBuild, not Apple, is solely responsible for the app and its content.
-- Your license to use the app is limited to use on Apple-branded products you own or control, as permitted by the App Store Usage Rules (except that the app may be accessed by other accounts associated with you via Family Sharing or volume purchasing).
-- **Apple has no obligation to provide maintenance or support** for the app.
-- If the app fails to conform to any applicable warranty, you may notify Apple, and Apple will refund the purchase price (if any) for the app. To the maximum extent permitted by law, Apple has no other warranty obligation for the app, and any other claims, losses, or costs from a failure to conform to a warranty are VisionBuild's responsibility (to the extent not disclaimed in these Terms).
-- **VisionBuild, not Apple, is responsible for addressing any claims** by you or a third party relating to the app or your use of it, including product liability claims, claims that the app fails to meet legal or regulatory requirements, and claims under consumer protection, privacy, or similar laws.
-- If a third party claims the app or your use of it infringes their intellectual property rights, **VisionBuild, not Apple, is responsible** for investigating, defending, settling, and discharging that claim.
-- You represent that you are not located in a country subject to a U.S. Government embargo or designated as a "terrorist supporting" country, and that you are not on any U.S. Government list of prohibited or restricted parties.
-- You must comply with any applicable third-party terms (such as your wireless data service agreement) when using the app.
-- Questions, complaints, or claims about the app should be sent to VisionBuild at the contact information in Section 22.
-- **Apple and its subsidiaries are third-party beneficiaries** of these Terms, and once you accept these Terms, Apple has the right (and is deemed to have accepted the right) to enforce them against you as a third-party beneficiary.
+- These Terms are between you and VisionBuild only, **not Apple**. VisionBuild, not Apple, is responsible for the app and its content.
+- Your license is limited to use on Apple-branded products you own or control, as the App Store Usage Rules allow (including Family Sharing).
+- Apple has no obligation to provide maintenance or support for the app.
+- If the app doesn't meet an applicable warranty, you may notify Apple, and Apple will refund the purchase price (if any). Apple has no other warranty obligation for the app, to the fullest extent the law allows.
+- VisionBuild, not Apple, is responsible for handling any claims about the app, including product liability claims, claims that the app doesn't meet legal or regulatory requirements, and consumer protection, privacy, or similar claims.
+- VisionBuild, not Apple, is responsible for investigating, defending, settling, and resolving any claim that the app infringes someone's intellectual property.
+- You confirm you are not in a country under a U.S. government embargo or designated as "terrorist supporting," and you aren't on any U.S. government list of prohibited or restricted parties.
+- You must follow any third-party terms that apply when you use the app.
+- Send questions or claims about the app to the contact details in Section 22.
+- Apple and its subsidiaries are third-party beneficiaries of these Terms and may enforce them against you.
 
-## 21. Changes to these Terms
+## 21. General
 
-We may update these Terms from time to time. If we make material changes, we'll notify you in the app or by email before they take effect and update the "Last updated" date. If you keep using VisionBuild after the changes take effect, you accept the new Terms. If you don't agree, stop using the Service and delete your account.
+These Terms and the Privacy Policy are the whole agreement between you and VisionBuild about the Service. If part of these Terms can't be enforced, the rest still applies. If we don't enforce something right away, we haven't given up the right to. You can't transfer these Terms without our permission. We may transfer them as part of a merger, acquisition, or sale of assets. We're not responsible for delays caused by events beyond our reasonable control.
 
-## 22. General
+## 22. Contact us
 
-- These Terms and the Privacy Policy are the entire agreement between you and VisionBuild about the Service.
-- If any part of these Terms is found unenforceable, the rest stays in effect.
-- If we don't enforce a provision right away, we haven't waived it.
-- You can't transfer these Terms without our consent; we may transfer them in connection with a merger, acquisition, or sale of assets.
-- We're not liable for delays or failures caused by events beyond our reasonable control.
-
-## 23. Contact us
-
-[COMPANY LEGAL NAME]
-[MAILING ADDRESS]
-Email: [SUPPORT EMAIL]
-Website: https://[WEBSITE DOMAIN]
+{{COMPANY_LEGAL_NAME}}
+{{MAILING_ADDRESS}}
+Email: {{SUPPORT_EMAIL}}
+Website: https://{{WEBSITE_DOMAIN}}
 `;
 
 export const PRIVACY_POLICY = `> **DRAFT — not legal advice; review with an attorney before publishing.**
@@ -332,9 +320,9 @@ These companies process information for us, only on our instructions, to run the
 
 ### Other users — only designs you make Public
 
-Projects are **Private** by default. If you make a project **Public**, you'll be asked to confirm. Only the **AI-generated designs** are copied to public storage and shown on Explore, with your name or handle and level. **Your original room photo, chats, and briefs are never made public.** Other users can view, like, save, and remix public designs.
+Projects are **Private** by default. If you make a project **Public**, you'll be asked to confirm. Only the **AI-generated designs** are copied to public storage and shown on Explore, with your name or handle and level. **Your original room photo, chats, and briefs are never made public.** Other users can view public designs.
 
-If you switch a project back to **Private**, we remove its public copies and it leaves Explore. **Remixes other users already made stay with them**, even if you switch your project to Private or delete your account. Someone could also have taken a screenshot while it was public.
+If you switch a project back to **Private**, we remove its public copies and it leaves Explore. Someone could also have taken a screenshot while it was public.
 
 ### Moderators
 
@@ -374,7 +362,6 @@ We keep information only as long as we need it for the reasons in this Policy. P
 | Account information and public profile | Until you delete your account [CONFIRM] |
 | Room photos, room analysis, designs, design briefs | Until you delete them or your account [CONFIRM] |
 | Public copies of designs | Until you switch the project to Private, delete it, or delete your account [CONFIRM] |
-| Other users' remixes of your public designs | They belong to the user who made them and stay until that user deletes them [CONFIRM] |
 | AI consent records | While your account exists, and deleted with your account [CONFIRM] [NOTE: The code deletes consent records with the account. The attorney may want a minimal record kept longer as proof of consent.] |
 | Usage counts (for daily limits) | 30 days [CONFIRM] [NOTE: Limits only need 24 hours of data. The code currently keeps these until the account is deleted, so a cleanup job is needed.] |
 | XP, levels, badges | Until you delete your account [CONFIRM] |
@@ -397,7 +384,7 @@ We may keep information longer if the law requires it or to resolve disputes, pr
 - **On the web (if you're signed out or can't use the app):** go to **https://{{WEBSITE_DOMAIN}}/delete-account** and enter your email address. We'll email you a single-use confirmation link that works for 24 hours. Nothing is deleted until you open the link and press the delete button on the confirmation page.
 - **By email:** write to {{SUPPORT_EMAIL}} from the email address on your account.
 
-Deletion can't be undone. Some information may remain for a limited time as described in Section 6, such as backups until they are overwritten and records we must keep. Remixes other users made from your public designs stay with them.
+Deletion can't be undone. Some information may remain for a limited time as described in Section 6, such as backups until they are overwritten and records we must keep.
 
 ## 8. Security
 
