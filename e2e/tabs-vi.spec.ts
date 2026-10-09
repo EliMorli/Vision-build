@@ -76,6 +76,24 @@ test.describe("Tab bar and Vi", () => {
     await page.screenshot({ path: "e2e/screens/ui-vi-tab.png", fullPage: false });
   });
 
+  test("Vi has no pro or contractor button; Generate design stays", async ({ page }) => {
+    await seed(page);
+    // Vi as a tab, and Vi opened as a screen (old /assistant-chat link)
+    for (const entry of [
+      { open: async () => { await page.goto(BASE_URL); await page.getByTestId("tab-vi").click(); }, screen: "vi-tab-screen" },
+      { open: async () => { await page.goto(`${BASE_URL}/assistant-chat`); }, screen: "vi-screen" },
+    ]) {
+      await entry.open();
+      const vi = page.getByTestId(entry.screen);
+      await expect(vi).toBeVisible({ timeout: 10000 });
+      await expect(vi.getByRole("button", { name: "Generate design" })).toBeVisible();
+      await expect(vi.getByText("Find me a pro")).toHaveCount(0);
+      await expect(vi.getByRole("button", { name: /\bpros?\b|contractor|quote|estimate/i })).toHaveCount(0);
+      await expect(vi.locator('a[href*="pros-coming-soon"]')).toHaveCount(0);
+    }
+    await page.screenshot({ path: "e2e/screens/ui-vi-no-pro-button.png", fullPage: false });
+  });
+
   test("outreach on: Inbox takes the slot, Vi is a button on Home", async ({ page }) => {
     await seed(page, { outreach: true });
     await page.addInitScript(() => localStorage.setItem("@visionbuild:mock_seed_inbox", JSON.stringify([])));
