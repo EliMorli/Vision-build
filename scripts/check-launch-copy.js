@@ -42,6 +42,21 @@ const DELETION_FORBIDDEN_PATTERNS = [
   /\bquotes\b/i,
 ];
 
+// Vi (the AI assistant) must not offer pros, contractors or quotes: no
+// "Find me a pro" button and no link to the pros screen. The Pros waitlist
+// lives on Home and Results only.
+const VI_FILES = [
+  'components/AssistantChat.tsx',
+  'app/(tabs)/(vi)/vi.tsx',
+  'app/(tabs)/(vi,profile,home)/assistant-chat.tsx',
+];
+const VI_FORBIDDEN_PATTERNS = [
+  /find me a pro/i,
+  /pros-coming-soon/,
+  /\bcontractors?\b/i,
+  /\bquotes?\b/i,
+];
+
 function walkDir(dir, fileList = []) {
   const files = fs.readdirSync(dir);
   
@@ -88,6 +103,7 @@ function main() {
 
     // Check if this is a deletion file
     const isDeletionFile = normalizedFile.includes('app/delete-account/');
+    const isViFile = VI_FILES.some((viFile) => normalizedFile.endsWith(viFile));
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -102,6 +118,20 @@ function main() {
             content: line.trim(),
             term: pattern.source,
           });
+        }
+      }
+
+      // Check Vi-specific patterns
+      if (isViFile) {
+        for (const pattern of VI_FORBIDDEN_PATTERNS) {
+          if (pattern.test(line)) {
+            violations.push({
+              file: normalizedFile,
+              line: lineNum,
+              content: line.trim(),
+              term: pattern.source + ' (no pros or contractor actions in Vi)',
+            });
+          }
         }
       }
 
@@ -134,7 +164,8 @@ function main() {
     console.error(
       `Found ${violations.length} violation(s). Remove contractor-related terms from homeowner-facing UI,\n` +
       `or add the file to the ALLOWLIST in scripts/check-launch-copy.js if it's gated behind CONTRACTOR_OUTREACH_ENABLED.\n` +
-      `For deletion screens, 'quote'/'quotes' are forbidden (no quotes at launch).\n`
+      `For deletion screens, 'quote'/'quotes' are forbidden (no quotes at launch).\n` +
+      `In Vi, "Find me a pro", links to pros-coming-soon, contractors and quotes are forbidden.\n`
     );
     process.exit(1);
   }

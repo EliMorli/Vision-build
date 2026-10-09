@@ -255,22 +255,6 @@ export function AssistantChat({ asTab = false }: { asTab?: boolean }) {
               loading={isLoading}
             />
           </View>
-          <View style={{ flex: 1 }}>
-            <Button
-              label="Find me a pro"
-              icon="people-outline"
-              onPress={() => {
-                const projects = require("@/lib/store").useProjectStore.getState().projects;
-                const latestProject = projects[0];
-                if (latestProject) {
-                  tabNav.push(`/pros-coming-soon?projectId=${latestProject.id}`);
-                } else {
-                  tabNav.push("/pros-coming-soon");
-                }
-              }}
-              variant="secondary"
-            />
-          </View>
         </View>
 
         {/* Input */}
