@@ -11,12 +11,20 @@ INSERT INTO public.profiles (id, email)
 VALUES ('00000000-0000-0000-0000-000000000091'::uuid, 'waitlist-rpc-test@example.com')
 ON CONFLICT (id) DO NOTHING;
 
--- Insert test waitlist entries
+-- Create test projects for unique constraint
+INSERT INTO public.projects (id, user_id, original_image_url, status, created_at)
+VALUES
+  ('00000000-0000-0000-0000-000000000091'::uuid, '00000000-0000-0000-0000-000000000091'::uuid, 'https://example.com/test1.jpg', 'draft', NOW()),
+  ('00000000-0000-0000-0000-000000000092'::uuid, '00000000-0000-0000-0000-000000000091'::uuid, 'https://example.com/test2.jpg', 'draft', NOW()),
+  ('00000000-0000-0000-0000-000000000093'::uuid, '00000000-0000-0000-0000-000000000091'::uuid, 'https://example.com/test3.jpg', 'draft', NOW())
+ON CONFLICT (id) DO NOTHING;
+
+-- Insert test waitlist entries (distinct project_id per entry to avoid unique constraint)
 INSERT INTO public.pro_waitlist (id, user_id, email, project_id, created_at)
 VALUES
-  ('00000000-0000-0000-0000-000000000081'::uuid, '00000000-0000-0000-0000-000000000091'::uuid, 'test1@example.com', NULL, NOW()),
-  ('00000000-0000-0000-0000-000000000082'::uuid, '00000000-0000-0000-0000-000000000091'::uuid, 'test2@example.com', NULL, NOW()),
-  ('00000000-0000-0000-0000-000000000083'::uuid, '00000000-0000-0000-0000-000000000091'::uuid, 'test3@example.com', NULL, NOW());
+  ('00000000-0000-0000-0000-000000000081'::uuid, '00000000-0000-0000-0000-000000000091'::uuid, 'test1@example.com', '00000000-0000-0000-0000-000000000091'::uuid, NOW()),
+  ('00000000-0000-0000-0000-000000000082'::uuid, '00000000-0000-0000-0000-000000000091'::uuid, 'test2@example.com', '00000000-0000-0000-0000-000000000092'::uuid, NOW()),
+  ('00000000-0000-0000-0000-000000000083'::uuid, '00000000-0000-0000-0000-000000000091'::uuid, 'test3@example.com', '00000000-0000-0000-0000-000000000093'::uuid, NOW());
 
 -- Test: Mark entries as launch email sent
 DO $$
@@ -56,5 +64,6 @@ END $$;
 
 -- Cleanup
 DELETE FROM public.pro_waitlist WHERE user_id = '00000000-0000-0000-0000-000000000091'::uuid;
+DELETE FROM public.projects WHERE id IN ('00000000-0000-0000-0000-000000000091'::uuid, '00000000-0000-0000-0000-000000000092'::uuid, '00000000-0000-0000-0000-000000000093'::uuid);
 
 ROLLBACK;
