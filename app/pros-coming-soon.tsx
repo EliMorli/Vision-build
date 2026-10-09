@@ -119,14 +119,21 @@ export default function ProsComingSoonScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header row: back arrow on the left, title centered (same as other screens) */}
+      <View style={styles.header} testID="pros-header">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          onPress={() => router.back()}
+          hitSlop={12}
+          testID="pros-back"
+        >
+          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+        </Pressable>
+        <Text style={styles.headerTitle} accessibilityRole="header">Find a pro</Text>
+        <View style={{ width: 24 }} />
+      </View>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-          </Pressable>
-          <View style={{ flex: 1 }} />
-        </View>
 
         {/* Design Preview */}
         <View style={styles.designPreview}>
@@ -225,8 +232,14 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontFamily: "Nunito_800ExtraBold",
+    color: colors.textPrimary,
   },
   designPreview: {
     alignItems: "center",

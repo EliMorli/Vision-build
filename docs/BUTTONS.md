@@ -138,7 +138,7 @@ Comprehensive audit of all interactive controls across VisionBuild screens, docu
 | Email Support (Pressable) | - | Send email | Opens mailto link | Manual |
 | Terms of Service (Pressable) | - | Open terms | `openLink()` | Manual |
 | Privacy Policy (Pressable) | - | Open privacy | `openLink()` | Manual |
-| Open Source Licenses (Pressable) | - | Open licenses | `openLink()` | Manual |
+| Open-source licenses (Pressable) | - | Open licenses | `openLink()` | Manual |
 
 ## Pros Coming Soon Screen (`app/pros-coming-soon.tsx`)
 

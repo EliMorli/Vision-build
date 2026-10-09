@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore, useAuthStore } from "@/lib/store";
 import { Project, ProjectStatus } from "@/lib/types";
-import { Button, IsoRoom, PrivateImage, ProsTeaserCard, LoadingSkeleton, ErrorState, OfflineBanner } from "@/components";
+import { Button, IsoRoom, PrivateImage, ProsTeaserCard, LoadingSkeleton, ErrorState, OfflineBanner, NeedsInternetNotice } from "@/components";
 import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
 import { getDisplayName, getFirstName } from "@/lib/helpers/user";
 
@@ -27,7 +27,7 @@ const STATUS_MAP: Record<ProjectStatus, { label: string; color: string; icon: ke
   rendering: { label: "Rendering...", color: colors.accent, icon: "hourglass-outline" },
   generated: { label: "Designs ready", color: colors.primary, icon: "color-palette-outline" },
   connected: { label: "Designs ready", color: colors.primary, icon: "color-palette-outline" }, // Hidden at launch
-  completed: { label: "Completed", color: colors.secondary, icon: "checkmark-circle-outline" },
+  completed: { label: "Completed", color: colors.success, icon: "checkmark-circle-outline" },
 };
 
 const SHOW_DEV_BUTTON = 
@@ -94,26 +94,52 @@ export default function DashboardScreen() {
     router.push(`/project/${project.id}`);
   };
 
+  // ─── Shared header (greeting + XP) ────────────────────────
+  // Rendered in every state, including errors, so a failed load never looks like a crash.
+
+  const renderTopHeader = () => (
+    <View style={styles.header}>
+      {/* Greeting and XP share the top row; the heading gets the full width below
+          so it wraps on word boundaries at large text sizes. */}
+      <View style={styles.headerTopRow}>
+        <Text style={[styles.greeting, styles.headerLeft]} testID="home-greeting">{greeting}</Text>
+        <View style={styles.headerRight}>
+          <Pressable
+            onPress={() => router.push("/profile-settings")}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={`${xp} experience points, tap to view profile`}
+            testID="home-xp-chip"
+          >
+            <View style={styles.xpChip}>
+              <Ionicons name="star" size={14} color={colors.accent} />
+              <Text style={styles.xpText}>{xp} XP</Text>
+            </View>
+          </Pressable>
+          {SHOW_DEV_BUTTON && (
+            <Pressable
+              onPress={() => router.push("/profile-settings")}
+              hitSlop={12}
+              style={styles.devButton} // SHOW_DEV_BUTTON && gated
+              accessibilityRole="button"
+              accessibilityLabel="Developer tools"
+            >
+              <Ionicons name="flash" size={18} color={colors.accent} />
+            </Pressable>
+          )}
+        </View>
+      </View>
+      <Text style={[fonts.heading, styles.heading]} accessibilityRole="header">Ready to redesign?</Text>
+    </View>
+  );
+
   // ─── Loading state ────────────────────────────────────────
 
   if (loading && projects.length === 0) {
     return (
       <SafeAreaView style={styles.container} testID="home-screen">
         {isOffline && <OfflineBanner testID="offline-banner" />}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.greeting} testID="home-greeting">{greeting}</Text>
-            <Text style={fonts.heading}>Ready to redesign?</Text>
-          </View>
-          <View style={styles.headerRight}>
-            <Pressable onPress={() => router.push("/profile-settings")} hitSlop={12}>
-              <View style={styles.xpChip}>
-                <Ionicons name="star" size={14} color={colors.accent} />
-                <Text style={styles.xpText}>{xp} XP</Text>
-              </View>
-            </Pressable>
-          </View>
-        </View>
+        {renderTopHeader()}
         <LoadingSkeleton variant="card" count={3} testID="home-loading" />
       </SafeAreaView>
     );
@@ -125,8 +151,9 @@ export default function DashboardScreen() {
     return (
       <SafeAreaView style={styles.container} testID="home-screen">
         {isOffline && <OfflineBanner testID="offline-banner" />}
+        {renderTopHeader()}
         <ErrorState
-          message="Failed to load projects"
+          message="We couldn't load your projects."
           onRetry={() => fetchProjects()}
           testID="home-error"
         />
@@ -140,35 +167,7 @@ export default function DashboardScreen() {
     return (
       <SafeAreaView style={styles.container} testID="home-screen">
         {isOffline && <OfflineBanner testID="offline-banner" />}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.greeting} testID="home-greeting">{greeting}</Text>
-            <Text style={fonts.heading}>Ready to redesign?</Text>
-          </View>
-          <View style={styles.headerRight}>
-            <Pressable 
-              onPress={() => router.push("/profile-settings")} 
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel={`${xp} experience points, tap to view profile`}
-            >
-              <View style={styles.xpChip}>
-                <Ionicons name="star" size={14} color={colors.accent} />
-                <Text style={styles.xpText}>{xp} XP</Text>
-              </View>
-            </Pressable>
-            {SHOW_DEV_BUTTON && (
-              <Pressable 
-                onPress={() => router.push("/profile-settings")} 
-                hitSlop={12}
-                style={styles.devButton} // SHOW_DEV_BUTTON && gated
-                accessibilityLabel="Developer tools"
-              >
-                <Ionicons name="flash" size={18} color={colors.accent} />
-              </Pressable>
-            )}
-          </View>
-        </View>
+        {renderTopHeader()}
         <View style={styles.emptyContent}>
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIllustration}>
@@ -182,7 +181,9 @@ export default function DashboardScreen() {
               label="Start your first project"
               onPress={() => router.push("/(tabs)/camera")}
               icon="add-circle-outline"
+              disabled={isOffline}
             />
+            {isOffline && <NeedsInternetNotice testID="home-needs-internet" style={styles.emptyNeedsInternet} />}
           </View>
           
           <ProsTeaserCard key={prosCardKey} />
@@ -194,13 +195,16 @@ export default function DashboardScreen() {
   // ─── Project list ─────────────────────────────────────────
 
   const renderHeader = () => (
-    <View style={styles.headerSection}>
+    <View style={[styles.headerSection, styles.listHeaderSection]} testID="home-list-header">
       <Button
         label="Start a new room"
         icon="add-circle-outline"
         onPress={() => router.push("/(tabs)/camera")}
+        disabled={isOffline}
         fullWidth
+        testID="home-start-new-room"
       />
+      {isOffline && <NeedsInternetNotice testID="home-needs-internet" />}
     </View>
   );
   
@@ -213,30 +217,7 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView style={styles.container} testID="home-screen">
       {isOffline && <OfflineBanner testID="offline-banner" />}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.greeting} testID="home-greeting">{greeting}</Text>
-          <Text style={fonts.heading}>Ready to redesign?</Text>
-        </View>
-        <View style={styles.headerRight}>
-          <Pressable onPress={() => router.push("/profile-settings")} hitSlop={12}>
-            <View style={styles.xpChip}>
-              <Ionicons name="star" size={14} color={colors.accent} />
-              <Text style={styles.xpText}>{xp} XP</Text>
-            </View>
-          </Pressable>
-          {SHOW_DEV_BUTTON && (
-            <Pressable 
-              onPress={() => router.push("/profile-settings")} 
-              hitSlop={12}
-              style={styles.devButton} // SHOW_DEV_BUTTON && gated
-              accessibilityLabel="Developer tools"
-            >
-              <Ionicons name="flash" size={18} color={colors.accent} />
-            </Pressable>
-          )}
-        </View>
-      </View>
+      {renderTopHeader()}
 
       <FlatList
         data={projects}
@@ -312,15 +293,21 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
   },
+  headerTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
   headerLeft: {
     flex: 1,
+  },
+  heading: {
+    marginTop: 2,
   },
   headerRight: {
     flexDirection: "row",
@@ -366,6 +353,12 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingTop: spacing.md,
   },
+  // ~16px between the "Start a new room" button (and its 5px clay base) and the first card
+  listHeaderSection: {
+    gap: spacing.sm,
+    paddingBottom: spacing.md,
+  },
+  emptyNeedsInternet: { marginTop: spacing.sm, alignSelf: "stretch" },
   list: { padding: spacing.md, paddingTop: 0 },
   card: {
     backgroundColor: "#fff",

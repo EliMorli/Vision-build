@@ -7,7 +7,7 @@ Home renovation visualization tool — from imagination to contractor execution.
 - **Frontend**: React Native + Expo Router + TypeScript
 - **Backend**: Supabase (PostgreSQL, Auth, Storage, Edge Functions)
 - **AI**: OpenRouter (enforced in production for zero data retention)
-- **Image Generation**: OpenRouter or Mock (Replicate allowed in dev/staging only)
+- **Image Generation**: OpenRouter by default (same `AI_API_KEY`), or Mock locally. No Replicate token needed.
 - **Email**: Resend
 - **State**: Zustand
 
@@ -115,7 +115,7 @@ VisionBuild uses swappable provider interfaces for easy backend integration:
 
 ### RenderProvider
 
-Handles image generation. Swap `MockRenderProvider` with `ReplicateRenderProvider` for real generation.
+Handles image generation. In production the `generate-design` edge function renders via OpenRouter (the default and only allowed provider); `MockRenderProvider` is used in mock mode.
 
 ```typescript
 interface RenderProvider {
@@ -127,7 +127,7 @@ interface RenderProvider {
 
 ### AssistantProvider
 
-Handles AI chat. Swap `MockAssistantProvider` with OpenAI integration.
+Handles AI chat. In production the `assistant-chat` edge function calls OpenRouter with `AI_API_KEY`; `MockAssistantProvider` is used in mock mode.
 
 ```typescript
 interface AssistantProvider {
@@ -154,7 +154,7 @@ interface AssistantProvider {
 - ✅ 13+ age gate with confirmation
 - ✅ Terms of Service and Privacy Policy links on sign-in
 - ✅ Permission primers before system prompts
-- ✅ AI consent with OpenAI/Replicate disclosure (versioned)
+- ✅ AI consent disclosing Google and Anthropic models via OpenRouter (versioned)
 - ✅ "AI visualization, not a plan or quote" disclaimer
 - ✅ Granular privacy toggles for contractor data sharing
 - ✅ Report/Block on all user-generated content
@@ -218,15 +218,12 @@ Migrations include:
 Required secrets:
 
 ```bash
-# AI Layer (OpenRouter recommended, OpenAI optional)
-npx supabase secrets set AI_API_KEY=sk-...
-npx supabase secrets set AI_BASE_URL=https://openrouter.ai/api/v1
+# AI: ONE OpenRouter key (also used for image generation; render provider defaults to OpenRouter).
+# Turn on zero data retention in your OpenRouter settings.
+# No Replicate token and no direct OpenAI key are needed (production refuses both).
+npx supabase secrets set AI_API_KEY=sk-or-...
 
-# Image generation (if using Replicate)
-npx supabase secrets set RENDER_PROVIDER=replicate
-npx supabase secrets set REPLICATE_API_TOKEN=r8_...
-
-# Email
+# Email (Resend)
 npx supabase secrets set RESEND_API_KEY=re_...
 npx supabase secrets set BUSINESS_MAILING_ADDRESS="YourCompany Inc., 123 Main St, City, ST 12345"
 npx supabase secrets set UNSUBSCRIBE_SECRET="$(openssl rand -base64 32)"
@@ -252,9 +249,6 @@ npx supabase secrets set APPLE_TEAM_ID=YOUR_TEAM_ID
 npx supabase secrets set APPLE_KEY_ID=YOUR_KEY_ID
 npx supabase secrets set APPLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----..."
 npx supabase secrets set APPLE_CLIENT_ID=com.yourapp.service
-
-# Backward compatibility (dev/staging only, use AI_API_KEY instead)
-npx supabase secrets set OPENAI_API_KEY=sk-...
 
 # Environment (fail-closed security: missing/unknown → production)
 # Only "development" or "staging" (case-insensitive) unlock non-prod features
@@ -311,6 +305,9 @@ Required:
 - [ ] `EXPO_PUBLIC_SUPABASE_URL` - Your Supabase project URL
 - [ ] `EXPO_PUBLIC_SUPABASE_ANON_KEY` - Supabase anon key
 - [ ] `EXPO_PUBLIC_SUPPORT_EMAIL` - Support email (same as business config)
+- [ ] `EXPO_PUBLIC_LEGAL_BASE_URL` - **Elimar fill-in.** URL where `web-legal/dist` is deployed (e.g. `https://visionbuild.app/legal`). The default is a placeholder and release CI fails until this is set. Also add it as a GitHub Actions repository variable.
+- [ ] Deploy the legal website: `npm run legal:build -- --release`, then upload `web-legal/dist/` to your static host (see docs/HANDOFF.md → Legal pages). Not deployed by CI.
+- [ ] Fill in the Privacy Policy v2 effective date in `web-legal/versions.json`
 
 Optional:
 
@@ -321,9 +318,12 @@ Optional:
 
 Required (set via `npx supabase secrets set KEY=value`):
 
-- [ ] `AI_API_KEY` - OpenRouter API key
+- [ ] `AI_API_KEY` - your OpenRouter API key (the only AI key; covers analysis, chat and image generation)
+- [ ] In OpenRouter settings, turn on zero data retention (ZDR)
 - [ ] `RESEND_API_KEY` - Resend API key for emails
-- [ ] `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key (for edge functions)
+- [ ] `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key (Supabase is the database)
+
+Not needed: there is no Replicate token and no direct OpenAI key. Production only allows OpenRouter.
 
 Optional:
 

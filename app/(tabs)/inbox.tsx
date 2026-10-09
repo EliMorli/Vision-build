@@ -6,8 +6,16 @@ import {
 import { EmptyState, OfflineBanner, LoadingSkeleton, ErrorState } from "@/components";
 import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
 import { useInboxStore } from "@/lib/store";
+import { Redirect } from "expo-router";
+import { isOutreachEnabled } from "@/lib/config/features";
 
 export default function InboxScreen() {
+  // Hidden at launch: nothing can arrive here until pros are live.
+  if (!isOutreachEnabled()) return <Redirect href="/(tabs)" />;
+  return <InboxContent />;
+}
+
+function InboxContent() {
   const networkStatus = useNetworkStatus();
   const isOffline = !networkStatus.isConnected;
   const [loading, setLoading] = useState(false);

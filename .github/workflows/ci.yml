@@ -88,9 +88,25 @@ jobs:
             exit 1
           fi
       
+      - name: Build legal website
+        run: npm run legal:build
+
+      - name: Test legal release gates with fixtures (always)
+        run: npm run legal:test-gates
+
       - name: Validate legal pages for release (main/tags only)
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
-        run: node scripts/strip-legal-drafts.js
+        env:
+          # Repository variable (Settings → Secrets and variables → Actions → Variables).
+          EXPO_PUBLIC_LEGAL_BASE_URL: ${{ vars.EXPO_PUBLIC_LEGAL_BASE_URL }}
+        run: |
+          set -e
+          node scripts/strip-legal-drafts.js
+          # Release build of the hosted site: no DRAFT banners, notes or placeholders
+          node scripts/build-legal-site.js --release --out=/tmp/web-legal-release
+          # Gate 1: base URL is not the placeholder. Gate 2: live /privacy
+          # <meta name="policy-version"> matches the version the consent screen records.
+          node scripts/check-legal-release.js
       
       - name: Check licenses are up-to-date
         run: |
@@ -172,6 +188,17 @@ jobs:
       
       - name: Run unit tests
         run: npm test
+
+      - name: Release config tests (app.json / eas.json match the store answers)
+        run: npx jest lib/__tests__/release-config.test.ts
+
+      # Web e2e never loads *.native.ts files, so bundle the real native apps
+      # too. A broken native import can never pass CI again.
+      - name: Export iOS bundle (expo export)
+        run: npx expo export --platform ios --output-dir /tmp/expo-export-ios
+
+      - name: Export Android bundle (expo export)
+        run: npx expo export --platform android --output-dir /tmp/expo-export-android
       
       - name: Run function tests
         run: npm run fn:test

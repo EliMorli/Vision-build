@@ -15,14 +15,14 @@ const PERMISSION_INFO: Record<PermissionType, {
 }> = {
   camera: {
     icon: "camera",
-    title: "Camera Access",
+    title: "Camera access",
     description: "We need camera access so you can take photos of your rooms. Your photos are only used to generate your personalized designs and are never shared without your permission.",
     primaryAction: "Allow Camera",
     secondaryAction: "Use Gallery Instead",
   },
   photos: {
     icon: "images",
-    title: "Photo Library Access",
+    title: "Photo library access",
     description: "We need access to your photo library so you can select existing photos of your rooms. We only access the specific photos you choose.",
     primaryAction: "Allow Photos",
   },

@@ -20,22 +20,17 @@ function toSentenceCase(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
 }
 
-// Placeholder timeline data
-const TIMELINE_EVENTS = [
-  { id: "1", type: "photo", label: "Original photo uploaded", date: "3 days ago" },
-  { id: "2", type: "analysis", label: "Room analyzed", date: "3 days ago" },
-  { id: "3", type: "chat", label: "Started Vi brainstorm", date: "2 days ago" },
-  { id: "4", type: "design", label: "4 designs generated", date: "2 days ago" },
-  { id: "5", type: "favorite", label: "Saved 2 favorites", date: "1 day ago" },
-];
-
-// Placeholder designs - using IsoRoom for placeholders
-const DESIGNS = Array.from({ length: 6 }, (_, i) => ({
-  id: String(i + 1),
-  style: ["modern", "farmhouse", "coastal", "industrial", "luxury", "scandinavian"][i],
-  source: i < 4 ? "photo" : "chat",
-  isFavorite: i === 1 || i === 4,
-}));
+// Relative date label for timeline events (e.g. "Today", "3 days ago")
+function relativeDate(iso?: string | null): string {
+  if (!iso) return "";
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "";
+  const days = Math.floor((Date.now() - then) / 86_400_000);
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 30) return `${days} days ago`;
+  return new Date(iso).toLocaleDateString();
+}
 
 export default function ProjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -77,6 +72,26 @@ export default function ProjectDetailScreen() {
   const selectedStyle = project?.selected_style || "modern";
   const generatedDesigns = project?.generated_image_urls || [];
   
+  // Timeline built only from real project data (no placeholder events)
+  const timelineEvents = [
+    project?.original_image_url
+      ? { id: "photo", label: "Original photo uploaded", date: relativeDate(project?.created_at) }
+      : null,
+    project?.room_analysis
+      ? { id: "analysis", label: "Room analyzed", date: relativeDate(project?.created_at) }
+      : null,
+    generatedDesigns.length > 0
+      ? {
+          id: "designs",
+          label: `${generatedDesigns.length} design${generatedDesigns.length === 1 ? "" : "s"} generated`,
+          date: relativeDate(project?.updated_at),
+        }
+      : null,
+    project?.selected_generation_url
+      ? { id: "favorite", label: "Picked a favorite design", date: relativeDate(project?.updated_at) }
+      : null,
+  ].filter((e): e is { id: string; label: string; date: string } => e !== null);
+
   // Build title from room type
   const projectTitle = project?.title || `${roomType.charAt(0).toUpperCase() + roomType.slice(1)} Renovation`;
 
@@ -196,7 +211,7 @@ export default function ProjectDetailScreen() {
 
         {/* Original photo */}
         <View style={styles.originalSection}>
-          <Text style={styles.sectionTitle}>Original Photo</Text>
+          <Text style={styles.sectionTitle}>Original photo</Text>
           <PrivateImage
             bucket="room-photos"
             path={project?.original_image_url}
@@ -230,7 +245,7 @@ export default function ProjectDetailScreen() {
 
         {/* Tabs */}
         <View style={styles.tabs}>
-          <Pressable
+          <Pressable accessibilityRole="tab"
             style={[styles.tab, activeTab === "designs" && styles.tabActive]}
             onPress={() => setActiveTab("designs")}
           >
@@ -238,7 +253,7 @@ export default function ProjectDetailScreen() {
               Designs ({generatedDesigns.length})
             </Text>
           </Pressable>
-          <Pressable
+          <Pressable accessibilityRole="tab"
             style={[styles.tab, activeTab === "timeline" && styles.tabActive]}
             onPress={() => setActiveTab("timeline")}
           >
@@ -253,7 +268,7 @@ export default function ProjectDetailScreen() {
           <View style={styles.designsGrid}>
             {generatedDesigns.length > 0 ? (
               generatedDesigns.map((designUrl, index) => (
-                <Pressable
+                <Pressable accessibilityRole="button"
                   key={index}
                   style={styles.designCard}
                   onPress={() => router.push(`/result/${id}`)}
@@ -297,11 +312,11 @@ export default function ProjectDetailScreen() {
 
         {activeTab === "timeline" && (
           <View style={styles.timelineContainer}>
-            {TIMELINE_EVENTS.map((event, index) => (
+            {timelineEvents.map((event, index) => (
               <View key={event.id} style={styles.timelineEvent}>
                 <View style={styles.timelineLine}>
                   <View style={styles.timelineDot} />
-                  {index < TIMELINE_EVENTS.length - 1 && (
+                  {index < timelineEvents.length - 1 && (
                     <View style={styles.timelineConnector} />
                   )}
                 </View>
@@ -315,27 +330,24 @@ export default function ProjectDetailScreen() {
         )}
 
 
-        {/* Chat summary */}
+        {/* Vi entry point (chats are not stored, so no fake preview) */}
         <View style={styles.chatSection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Brainstorm with Vi</Text>
-            <Pressable onPress={() => router.push("/assistant-chat")}>
-              <Text style={styles.viewAllLink}>View chat</Text>
-            </Pressable>
           </View>
           <Pressable
             style={styles.chatPreview}
             onPress={() => router.push("/assistant-chat")}
+            accessibilityRole="button"
+            accessibilityLabel="Chat with Vi about this room"
           >
             <View style={styles.viAvatar}>
               <Ionicons name="sparkles" size={16} color={colors.primary} />
             </View>
             <View style={styles.chatPreviewText}>
               <Text style={styles.chatMessage} numberOfLines={2}>
-                "Those warm tones will really brighten up the space. Want to see what it
-                could look like?"
+                Ask Vi for colors, materials and layout ideas for this room.
               </Text>
-              <Text style={styles.chatTimestamp}>2 days ago</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </Pressable>
@@ -349,7 +361,7 @@ export default function ProjectDetailScreen() {
               <Text style={styles.briefText}>
                 {project.lead_info.projectBrief}
               </Text>
-              <Pressable
+              <Pressable accessibilityRole="button"
                 style={styles.briefButton}
                 onPress={() => router.push(`/pros-coming-soon?projectId=${id}`)}
                 testID="project-brief-waitlist"

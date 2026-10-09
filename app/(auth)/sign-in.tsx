@@ -7,11 +7,12 @@ import {
   FlatList,
   ViewToken,
   SafeAreaView,
-  Linking,
   Pressable,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { openLegalPage } from "@/lib/helpers/openLegalPage";
 import { colors, spacing, fonts } from "@/lib/theme";
 import { useAuthStore } from "@/lib/store";
 import { Button } from "@/components";
@@ -21,17 +22,17 @@ const { width } = Dimensions.get("window");
 const PAGES = [
   {
     icon: "camera-outline" as const,
-    title: "Snap Your Space",
+    title: "Snap your space",
     subtitle: "Take a photo of any room in your home. Kitchen, bathroom, bedroom — we handle them all.",
   },
   {
     icon: "color-wand-outline" as const,
-    title: "AI Redesigns It",
+    title: "AI redesigns it",
     subtitle: "Pick a style and our AI generates 4 photorealistic designs — keeping your walls, windows, and layout intact.",
   },
   {
     icon: "people-outline" as const,
-    title: "Build Your Vision",
+    title: "Build your vision",
     subtitle: "Save your favorite designs and track your renovation journey. Local pro connections coming soon.",
   },
 ];
@@ -47,9 +48,6 @@ export default function SignInScreen() {
     if (session) router.replace("/(tabs)");
   }, [session, router]);
 
-  const openLink = (url: string) => {
-    Linking.openURL(url);
-  };
 
   const handleOAuthPress = (provider: "google" | "apple") => {
     if (!ageConfirmed) {
@@ -76,8 +74,14 @@ export default function SignInScreen() {
     <SafeAreaView style={styles.container} testID="sign-in-screen">
       {/* Logo */}
       <View style={styles.logoRow}>
-        <Ionicons name="construct" size={22} color={colors.primary} />
-        <Text style={styles.logoText}>VisionBuild</Text>
+        {/* The real app icon (same asset as the store icon) */}
+        <Image
+          source={require("../../assets/images/icon.png")}
+          style={styles.logoIcon}
+          accessibilityIgnoresInvertColors
+          testID="sign-in-app-icon"
+        />
+        <Text style={styles.logoText} accessibilityRole="header">VisionBuild</Text>
       </View>
 
       {/* Onboarding carousel */}
@@ -163,16 +167,18 @@ export default function SignInScreen() {
         By continuing, you agree to our{" "}
         <Text
           style={styles.legalLink}
-          onPress={() => openLink("https://visionbuild.app/terms")}
+          onPress={() => openLegalPage("terms")}
           accessibilityRole="link"
+          testID="sign-in-terms-link"
         >
           Terms of Service
         </Text>{" "}
         and{" "}
         <Text
           style={styles.legalLink}
-          onPress={() => openLink("https://visionbuild.app/privacy")}
+          onPress={() => openLegalPage("privacy")}
           accessibilityRole="link"
+          testID="sign-in-privacy-link"
         >
           Privacy Policy
         </Text>
@@ -191,6 +197,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingTop: spacing.lg,
   },
+  logoIcon: { width: 32, height: 32, borderRadius: 8 },
   logoText: { fontSize: 20, fontWeight: "700", color: colors.textPrimary },
   page: {
     width,

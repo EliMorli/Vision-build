@@ -29,7 +29,7 @@ test.describe("VisionBuild AI Consent Flow", () => {
     await page.getByRole("button", { name: /analyze room/i }).click();
 
     // Should see consent screen with update notice
-    await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 10000 });
+    await expect(page.getByText("AI-powered designs")).toBeInViewport({ timeout: 10000 });
     
     // Wait for update notice to be visible (should appear immediately with the screen)
     await expect(page.getByText(/We've updated how your photos are handled/i)).toBeVisible({ timeout: 10000 });
@@ -116,7 +116,7 @@ test.describe("VisionBuild AI Consent Flow", () => {
     await page.getByRole("button", { name: /analyze room/i }).click();
 
     // Should see consent screen WITHOUT update notice
-    await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 5000 });
+    await expect(page.getByText("AI-powered designs")).toBeInViewport({ timeout: 5000 });
     await expect(page.getByText(/We've updated how your photos are handled/i)).not.toBeVisible();
     
     // Verify provider disclosure is shown with exact string (alphabetical order)
@@ -138,13 +138,27 @@ test.describe("VisionBuild AI Consent Flow", () => {
     await expect(page.getByRole("button", { name: /continue/i })).toBeInViewport();
     await expect(page.getByRole("button", { name: /not now/i })).toBeInViewport();
     
-    // Test Privacy Policy link navigation
-    await page.getByText("Privacy Policy").click();
-    await expect(page.url()).toContain("/privacy");
-    
-    // Navigate back to consent screen
-    await page.goBack();
-    await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 5000 });
+    // Terms and Privacy links open the hosted pages in the in-app browser
+    // (openBrowserAsync -> window.open on web) before the user agrees.
+    await page.evaluate(() => {
+      const w = window as unknown as { __opened: string[] };
+      w.__opened = [];
+      window.open = ((url?: string | URL) => {
+        w.__opened.push(String(url));
+        return null;
+      }) as typeof window.open;
+    });
+    const legalBase = (process.env.EXPO_PUBLIC_LEGAL_BASE_URL || "https://visionbuild.app/legal").replace(/\/+$/, "");
+    await expect(page.getByTestId("consent-terms-link")).toHaveAttribute("role", "link");
+    await expect(page.getByTestId("consent-privacy-link")).toHaveAttribute("role", "link");
+    await page.getByTestId("consent-terms-link").click();
+    await page.getByTestId("consent-privacy-link").click();
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { __opened: string[] }).__opened))
+      .toEqual([`${legalBase}/terms`, `${legalBase}/privacy`]);
+
+    // Still on the consent screen
+    await expect(page.getByText("AI-powered designs")).toBeInViewport({ timeout: 5000 });
     
     // Assert screen without update notice
     await page.screenshot({ path: "e2e/screens/a7-reconsent-never.png", fullPage: true });
@@ -185,7 +199,7 @@ test.describe("VisionBuild AI Consent Flow", () => {
     await page.getByRole("button", { name: /analyze room/i }).click();
 
     // Wait for consent screen
-    await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 5000 });
+    await expect(page.getByText("AI-powered designs")).toBeInViewport({ timeout: 5000 });
 
     // Click "Not now"
     await page.getByRole("button", { name: /not now/i }).click();
@@ -240,14 +254,14 @@ test.describe("VisionBuild AI Consent Flow", () => {
     await page.getByRole("button", { name: /generate 4 designs/i }).click();
 
     // Should trigger re-consent (outdated) - 403 returned before any generation
-    await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 5000 });
+    await expect(page.getByText("AI-powered designs")).toBeInViewport({ timeout: 5000 });
     await expect(page.getByText(/We've updated how your photos are handled/i)).toBeVisible();
 
     // Click "Not now"
     await page.getByRole("button", { name: /not now/i }).click();
 
     // Should be back on project detail screen with photo visible (not editor)
-    await expect(page.getByText("Original Photo")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("Original photo")).toBeVisible({ timeout: 5000 });
     // Verify the project screen has a testID or unique element - checking for the original image
     await expect(page.locator('img[alt*="Original"]').first()).toBeVisible({ timeout: 5000 });
     
@@ -321,7 +335,7 @@ test.describe("VisionBuild AI Consent Flow", () => {
     await page.getByRole("button", { name: /generate 4 designs/i }).click();
 
     // Should trigger re-consent (outdated)
-    await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 5000 });
+    await expect(page.getByText("AI-powered designs")).toBeInViewport({ timeout: 5000 });
     await expect(page.getByText(/We've updated how your photos are handled/i)).toBeVisible();
 
     // Accept

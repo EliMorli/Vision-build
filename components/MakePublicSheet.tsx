@@ -25,15 +25,25 @@ export function MakePublicSheet({
       animationType="slide"
       onRequestClose={onKeepPrivate}
     >
-      <Pressable style={styles.backdrop} onPress={onKeepPrivate}>
-        <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+      <View style={styles.backdrop}>
+        {/* Tapping outside the sheet keeps the project private */}
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onKeepPrivate}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss and keep private"
+          testID="make-public-backdrop"
+        />
+        <View style={styles.sheet}>
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>Make this project public?</Text>
             <Pressable
               onPress={onKeepPrivate}
               hitSlop={12}
+              accessibilityRole="button"
               accessibilityLabel="Close"
+              testID="make-public-close"
             >
               <Ionicons name="close" size={24} color={colors.textSecondary} />
             </Pressable>
@@ -86,8 +96,8 @@ export function MakePublicSheet({
               <Text style={styles.keepPrivateText}>Keep Private</Text>
             </Pressable>
           </View>
-        </Pressable>
-      </Pressable>
+        </View>
+      </View>
     </Modal>
   );
 }

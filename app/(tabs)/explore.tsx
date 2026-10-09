@@ -15,6 +15,11 @@ import { IsoRoom, Button, ReportModal, ConfirmationSheet, MenuSheet, LoadingSkel
 import { useExploreStore, useReportStore } from "@/lib/store";
 import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
 
+function styleName(style?: string | null): string {
+  const s = style || "modern";
+  return s.charAt(0).toUpperCase() + s.slice(1).replace(/[-_]/g, " ");
+}
+
 export default function ExploreScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
@@ -221,7 +226,7 @@ export default function ExploreScreen() {
       <MenuSheet
         visible={menuSheet.visible}
         onClose={() => setMenuSheet({ visible: false, projectId: "", userId: "" })}
-        title="Report or Block"
+        title="Report or block"
         options={[
           {
             label: "Report this design",
@@ -243,7 +248,7 @@ export default function ExploreScreen() {
       <ConfirmationSheet
         visible={confirmSheet.visible && confirmSheet.type === "report"}
         onClose={() => setConfirmSheet({ visible: false, type: null, projectId: "", userId: "" })}
-        title="Report Design"
+        title="Report design"
         message="Report this design for inappropriate content?"
         confirmLabel="Report"
         confirmVariant="danger"
@@ -254,9 +259,9 @@ export default function ExploreScreen() {
       <ConfirmationSheet
         visible={confirmSheet.visible && confirmSheet.type === "block"}
         onClose={() => setConfirmSheet({ visible: false, type: null, projectId: "", userId: "" })}
-        title="Block User"
+        title="Block user"
         message="Block this user? You won't see their designs in Explore anymore."
-        confirmLabel="Block User"
+        confirmLabel="Block user"
         confirmVariant="danger"
         onConfirm={handleConfirmBlock}
         testID="block-confirm-sheet"
@@ -299,38 +304,40 @@ export default function ExploreScreen() {
         numColumns={2}
         contentContainerStyle={styles.grid}
         columnWrapperStyle={styles.row}
+        testID="explore-grid"
         renderItem={({ item }) => (
-          <Pressable 
+          <Pressable
             style={styles.card}
             accessibilityRole="button"
-            accessibilityLabel={`${item.selected_style || 'Unknown'} design`}
+            accessibilityLabel={`${item.title || "Design"}, ${styleName(item.selected_style)} style`}
             testID="explore-design-card"
           >
             <View style={styles.cardImageWrapper}>
               <IsoRoom
                 palette={item.selected_style || "modern"}
-                size={160}
+                size={150}
                 accessible={false}
                 importantForAccessibility="no-hide-descendants"
               />
+              <Pressable
+                style={styles.moreButton}
+                onPress={() => handleReportMenu(item.id, item.user_id || "")}
+                accessibilityLabel="Report or block"
+                accessibilityRole="button"
+                hitSlop={12}
+                testID="explore-report-button"
+              >
+                <Ionicons name="ellipsis-horizontal" size={20} color="#fff" />
+              </Pressable>
             </View>
-            <Pressable
-              style={styles.moreButton}
-              onPress={() => handleReportMenu(item.id, item.user_id || "")}
-              accessibilityLabel="Report or block"
-              accessibilityRole="button"
-              hitSlop={12}
-              testID="explore-report-button"
-            >
-              <Ionicons name="ellipsis-horizontal" size={20} color="#fff" />
-            </Pressable>
-            <View style={styles.cardOverlay}>
+            {/* White caption strip under the image (matches the loading skeleton) */}
+            <View style={styles.cardCaption} testID="explore-card-caption">
               <Text style={styles.cardTitle} numberOfLines={1}>
                 {item.title}
               </Text>
-              <View style={styles.cardFooter}>
-                <Text style={styles.cardCreator}>{item.selected_style || 'Modern'}</Text>
-              </View>
+              <Text style={styles.cardStyle} numberOfLines={1}>
+                {styleName(item.selected_style)}
+              </Text>
             </View>
           </Pressable>
         )}
@@ -389,57 +396,50 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
     lineHeight: 22,
   },
-  grid: { padding: spacing.sm },
-  row: { gap: spacing.sm },
+  // 2-column grid with the same spacing as LoadingSkeleton variant="grid"
+  grid: { padding: spacing.md },
+  row: { justifyContent: "space-between" },
   card: {
-    flex: 1,
-    aspectRatio: 1,
-    borderRadius: radius.lg,
-    overflow: "hidden",
-    marginBottom: spacing.sm,
-    position: "relative",
+    width: "48%",
+    marginBottom: spacing.md,
+    backgroundColor: "#fff",
   },
   cardImageWrapper: {
     width: "100%",
-    height: "100%",
+    aspectRatio: 1,
+    borderRadius: radius.lg,
+    overflow: "hidden",
     backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
   },
   moreButton: {
     position: "absolute",
-    top: 8,
-    right: 8,
+    top: 6,
+    right: 6,
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "rgba(0,0,0,0.6)",
+    backgroundColor: "rgba(0,0,0,0.55)",
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1,
   },
-  cardOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: spacing.sm,
-    backgroundColor: "rgba(0,0,0,0.5)",
+  cardCaption: {
+    backgroundColor: "#fff",
+    paddingTop: spacing.sm,
+    paddingHorizontal: 2,
   },
   cardTitle: {
-    color: "#fff",
+    fontFamily: "Nunito_700Bold",
     fontSize: 15,
-    fontWeight: "600",
-    marginBottom: 4,
+    color: colors.textPrimary,
   },
-  cardFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  cardCreator: {
-    color: "rgba(255,255,255,0.85)",
-    fontSize: 12,
+  cardStyle: {
+    fontFamily: "Nunito_600SemiBold",
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 2,
   },
   successBanner: {
     flexDirection: "row",

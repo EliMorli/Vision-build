@@ -5,6 +5,7 @@ import { makeRedirectUri } from "expo-auth-session";
 import * as ImageManipulator from "expo-image-manipulator";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "./supabase";
+import { shouldUseNativeAppleSignIn, signInWithAppleNative } from "./auth/apple-native";
 import { Project, Profile, Contractor } from "./types";
 import { getDataLayer } from "./data";
 import { InMemoryDataLayer } from "./data/in-memory";
@@ -123,6 +124,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ loading: true, error: null });
 
     try {
+      // iOS: native Sign in with Apple sheet (guideline 4.8 / HIG), not a web flow
+      if (provider === "apple" && shouldUseNativeAppleSignIn()) {
+        const nativeSession = await signInWithAppleNative();
+        set({ session: nativeSession ?? get().session, loading: false });
+        if (nativeSession) get().fetchProfile();
+        return;
+      }
+
       const redirectUrl = makeRedirectUri({ scheme: "visionbuild", path: "auth/callback" });
 
       const { data, error } = await supabase.auth.signInWithOAuth({

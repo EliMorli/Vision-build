@@ -17,7 +17,10 @@
     "db:test": "bash scripts/db/run-tests.sh",
     "fn:test": "bash scripts/run-function-tests.sh",
     "e2e:web": "playwright test",
-    "test": "jest"
+    "test": "jest",
+    "legal:build": "node scripts/build-legal-site.js",
+    "legal:check-release": "node scripts/check-legal-release.js",
+    "legal:test-gates": "node scripts/test-legal-release-gates.js"
   },
   "dependencies": {
     "@expo-google-fonts/nunito": "^0.4.2",
@@ -46,6 +49,7 @@
     "expo-web-browser": "~14.0.0",
     "query-string": "6.14.1",
     "react": "18.3.1",
+    "react-dom": "18.3.1",
     "react-native": "0.76.9",
     "react-native-gesture-handler": "~2.20.2",
     "react-native-reanimated": "~3.16.0",

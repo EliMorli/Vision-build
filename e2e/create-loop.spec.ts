@@ -42,7 +42,7 @@ test.describe("VisionBuild Create Loop", () => {
       await page.getByRole("button", { name: /analyze room/i }).click();
       
       // Should see consent screen
-      await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 5000 });
+      await expect(page.getByText("AI-powered designs")).toBeInViewport({ timeout: 5000 });
     }
   });
 
@@ -78,9 +78,9 @@ test.describe("VisionBuild Create Loop", () => {
     await chooser.setFiles("e2e/fixtures/test-room.jpg");
 
     // Wait for image to be selected
-    await expect(page.getByText("Analyze Room")).toBeVisible();
+    await expect(page.getByText("Analyze room")).toBeVisible();
 
-    // Click "Analyze Room"
+    // Click "Analyze room"
     await page.getByRole("button", { name: /analyze room/i }).click();
 
     // Assert Style picker, then screenshot
@@ -126,7 +126,7 @@ test.describe("VisionBuild Create Loop", () => {
     await page.getByTestId("results-save").click();
 
     // Assert Project Detail screen, then screenshot
-    await expect(page.getByText("Original Photo")).toBeInViewport({ timeout: 5000 });
+    await expect(page.getByText("Original photo")).toBeInViewport({ timeout: 5000 });
     
     // Wait for design images in the grid to load
     await page.waitForFunction(() => {
@@ -140,7 +140,7 @@ test.describe("VisionBuild Create Loop", () => {
     
     await page.screenshot({ path: "e2e/screens/a5-project-detail.png", fullPage: true });
     
-    // Note: The page shows "Original Photo" section with the uploaded image,
+    // Note: The page shows "Original photo" section with the uploaded image,
     // and below that, a "Designs" grid with the generated designs.
     // We don't need to verify image sources here - the screenshot will show whether they loaded.
 
@@ -218,7 +218,7 @@ test.describe("VisionBuild Create Loop", () => {
     await page.getByRole("button", { name: /analyze room/i }).click();
 
     // Should see consent screen
-    await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 10000 });
+    await expect(page.getByText("AI-powered designs")).toBeInViewport({ timeout: 10000 });
     await page.screenshot({ path: "e2e/screens/a5-consent.png", fullPage: true });
 
     // Click "Not now" (navigates back to camera)
@@ -233,7 +233,7 @@ test.describe("VisionBuild Create Loop", () => {
     await page.getByRole("button", { name: /analyze room/i }).click();
 
     // Should be on consent screen again
-    await expect(page.getByText("AI-Powered Designs")).toBeInViewport({ timeout: 5000 });
+    await expect(page.getByText("AI-powered designs")).toBeInViewport({ timeout: 5000 });
 
     // Click "Not now" again
     await page.getByRole("button", { name: /not now/i }).click();

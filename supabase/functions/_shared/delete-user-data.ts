@@ -198,7 +198,11 @@ export async function deleteUserData(params: DeleteUserDataParams): Promise<Dele
   const APPLE_TEAM_ID = Deno.env.get("APPLE_TEAM_ID");
   const APPLE_KEY_ID = Deno.env.get("APPLE_KEY_ID");
   const APPLE_PRIVATE_KEY = Deno.env.get("APPLE_PRIVATE_KEY");
-  const APPLE_SERVICES_ID = Deno.env.get("APPLE_SERVICES_ID");
+  // Authorization codes are only ever obtained by the native iOS app
+  // (expo-apple-authentication), so Apple issues them to the app's bundle id,
+  // not to the web Services ID. Exchanging/revoking with the Services ID fails
+  // with invalid_client, so use the bundle id as client_id here.
+  const APPLE_CLIENT_ID = Deno.env.get("APPLE_BUNDLE_ID") || "com.visionbuild.app";
 
   const isAppleUser = userAppMetadata?.provider === "apple";
 
@@ -207,10 +211,10 @@ export async function deleteUserData(params: DeleteUserDataParams): Promise<Dele
   } else if (!appleAuthCode) {
     console.log(`Apple revocation skipped for user ${userId}: no authorization code provided (user may have cancelled)`);
     appleRevokeStatus = { status: 'skipped', reason: 'no_auth_code' };
-  } else if (!APPLE_TEAM_ID || !APPLE_KEY_ID || !APPLE_PRIVATE_KEY || !APPLE_SERVICES_ID) {
+  } else if (!APPLE_TEAM_ID || !APPLE_KEY_ID || !APPLE_PRIVATE_KEY) {
     console.warn(
       `Apple revocation skipped for user ${userId}: missing credentials. ` +
-      "Set APPLE_TEAM_ID, APPLE_KEY_ID, APPLE_PRIVATE_KEY, and APPLE_SERVICES_ID to enable."
+      "Set APPLE_TEAM_ID, APPLE_KEY_ID and APPLE_PRIVATE_KEY (and APPLE_BUNDLE_ID if not com.visionbuild.app) to enable."
     );
     appleRevokeStatus = { status: 'skipped', reason: 'missing_credentials' };
   } else {
@@ -238,7 +242,7 @@ export async function deleteUserData(params: DeleteUserDataParams): Promise<Dele
         iat: now,
         exp: now + 3600,
         aud: "https://appleid.apple.com",
-        sub: APPLE_SERVICES_ID,
+        sub: APPLE_CLIENT_ID,
       })
         .setProtectedHeader({ alg: "ES256", kid: APPLE_KEY_ID })
         .sign(privateKey);
@@ -247,7 +251,7 @@ export async function deleteUserData(params: DeleteUserDataParams): Promise<Dele
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
-          client_id: APPLE_SERVICES_ID,
+          client_id: APPLE_CLIENT_ID,
           client_secret: clientSecret,
           code: appleAuthCode,
           grant_type: "authorization_code",
@@ -265,7 +269,7 @@ export async function deleteUserData(params: DeleteUserDataParams): Promise<Dele
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: new URLSearchParams({
-            client_id: APPLE_SERVICES_ID,
+            client_id: APPLE_CLIENT_ID,
             client_secret: clientSecret,
             token: refreshToken,
             token_type_hint: "refresh_token",

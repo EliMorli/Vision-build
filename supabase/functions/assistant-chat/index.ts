@@ -10,6 +10,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { verifyAuth } from "../_shared/auth.ts";
+import { sanitizeConversationHistory, MAX_USER_MESSAGE_CHARS } from "../_shared/validate.ts";
 import { checkRateLimit, recordUsage } from "../_shared/rate-limit.ts";
 import { viChat } from "../_shared/ai.ts";
 import { checkAIConsent, consentRequiredResponse } from "../_shared/consent.ts";
@@ -42,7 +43,7 @@ serve(async (req: Request) => {
 
     const { conversationHistory, userMessage, projectId } = await req.json();
 
-    if (!userMessage || typeof userMessage !== "string") {
+    if (!userMessage || typeof userMessage !== "string" || userMessage.length > MAX_USER_MESSAGE_CHARS) {
       return new Response(
         JSON.stringify({ error: "Missing or invalid userMessage" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -68,7 +69,7 @@ serve(async (req: Request) => {
 
     // Call Vi chat
     const response = await viChat(
-      conversationHistory || [],
+      sanitizeConversationHistory(conversationHistory),
       userMessage
     );
 

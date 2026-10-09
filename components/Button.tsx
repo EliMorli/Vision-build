@@ -3,7 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 
-type Variant = "primary" | "secondary" | "outline" | "ghost" | "danger";
+type Variant = "primary" | "secondary" | "outline" | "ghost" | "danger" | "neutral";
 
 interface ButtonProps {
   label: string;
@@ -37,8 +37,8 @@ export function Button({
   const isDisabled = disabled || loading;
   const bg = VARIANT_STYLES[variant];
   const reduceMotion = useReducedMotion();
-  const finalTextColor = textColor || bg.textColor;
-  const finalIconColor = iconColor || textColor || bg.textColor;
+  const finalTextColor = isDisabled && !loading ? DISABLED_TEXT : textColor || bg.textColor;
+  const finalIconColor = isDisabled && !loading ? DISABLED_TEXT : iconColor || textColor || bg.textColor;
 
   return (
     <Pressable
@@ -48,8 +48,9 @@ export function Button({
         styles.base,
         bg.container,
         fullWidth && styles.fullWidth,
-        isDisabled && styles.disabled,
-        pressed && !isDisabled && !reduceMotion && { borderBottomWidth: 2, marginTop: 3 },
+        isDisabled && (variant === "ghost" ? styles.disabledGhost : styles.disabled),
+        pressed && !isDisabled && !reduceMotion && HAS_3D_EDGE[variant] && { borderBottomWidth: 2, marginTop: 3 },
+        pressed && !isDisabled && variant === "neutral" && styles.neutralPressed,
         style,
       ]}
       testID={testID}
@@ -69,6 +70,10 @@ export function Button({
   );
 }
 
+// Disabled buttons use a flat clay-gray look (not a faded brand color) so it is
+// obvious they cannot be tapped, e.g. "Needs internet" while offline.
+const DISABLED_TEXT = "#5F6368";
+
 const VARIANT_STYLES: Record<Variant, { container: ViewStyle; textColor: string; bottomColor: string }> = {
   primary: { 
     container: { 
@@ -81,21 +86,21 @@ const VARIANT_STYLES: Record<Variant, { container: ViewStyle; textColor: string;
   },
   secondary: { 
     container: { 
-      backgroundColor: colors.secondary,
+      backgroundColor: colors.success,
       borderBottomWidth: 5,
-      borderBottomColor: "#23803D",
+      borderBottomColor: "#0D652D",
     }, 
     textColor: "#fff",
-    bottomColor: "#23803D",
+    bottomColor: "#0D652D",
   },
   danger: { 
     container: { 
       backgroundColor: colors.error,
       borderBottomWidth: 5,
-      borderBottomColor: "#B91C1C",
+      borderBottomColor: "#8C1D18",
     }, 
     textColor: "#fff",
-    bottomColor: "#B91C1C",
+    bottomColor: "#8C1D18",
   },
   outline: { 
     container: { 
@@ -113,6 +118,24 @@ const VARIANT_STYLES: Record<Variant, { container: ViewStyle; textColor: string;
     textColor: colors.primary,
     bottomColor: "transparent",
   },
+  // Plain gray secondary action (e.g. Cancel in confirmation sheets): no
+  // border, so it never competes with the main action. Dark text keeps it
+  // clearly tappable (unlike the disabled look, which has gray text).
+  neutral: {
+    container: { backgroundColor: "#F1F3F4" },
+    textColor: colors.textPrimary,
+    bottomColor: "transparent",
+  },
+};
+
+// Variants drawn with a thick bottom edge that "presses in" when tapped
+const HAS_3D_EDGE: Record<Variant, boolean> = {
+  primary: true,
+  secondary: true,
+  danger: true,
+  outline: true,
+  ghost: false,
+  neutral: false,
 };
 
 const styles = StyleSheet.create({
@@ -127,6 +150,14 @@ const styles = StyleSheet.create({
     minHeight: 56,
   },
   fullWidth: { width: "100%" },
-  disabled: { opacity: 0.4 },
+  neutralPressed: { backgroundColor: "#E2E5E8" },
+  disabled: {
+    backgroundColor: "#E8EAED",
+    borderColor: "#BDC1C6",
+    borderBottomColor: "#BDC1C6",
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  disabledGhost: { opacity: 0.6 },
   label: { fontSize: 17, fontFamily: "Nunito_900Black", letterSpacing: 0.3 },
 });

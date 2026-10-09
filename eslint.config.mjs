@@ -1,6 +1,8 @@
 import { FlatCompat } from "@eslint/eslintrc";
 import path from "path";
 import { fileURLToPath } from "url";
+import vbA11y from "./scripts/eslint-rules/a11y-touchables.js";
+import vbCopy from "./scripts/eslint-rules/sentence-case.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,7 +14,14 @@ const compat = new FlatCompat({
 export default [
   ...compat.extends("expo"),
   {
-    ignores: ["dist/*", "node_modules/*", "supabase/functions/**/*"],
+    ignores: ["dist/*", "node_modules/*", "supabase/functions/**/*", "web-legal/dist/**"],
+  },
+  {
+    // Browser script shipped with the static legal site
+    files: ["web-legal/assets/**/*.js"],
+    languageOptions: {
+      globals: { document: "readonly", window: "readonly" },
+    },
   },
   {
     files: ["scripts/**/*.js"],
@@ -25,6 +34,24 @@ export default [
         require: "readonly",
         module: "readonly",
       },
+    },
+  },
+  {
+    // Accessibility guard: every Pressable/Touchable* needs a role, and icon-only
+    // ones need a label. Runs in CI via `npm run lint`.
+    files: ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}"],
+    plugins: { "vb-a11y": vbA11y },
+    rules: {
+      "vb-a11y/touchable-role-and-label": "error",
+    },
+  },
+  {
+    // Copy guard: UI strings use sentence case ("Delete my account", not
+    // "Delete My Account"). Brand names (VisionBuild, Vi, Pros) are allowed.
+    files: ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}"],
+    plugins: { "vb-copy": vbCopy },
+    rules: {
+      "vb-copy/sentence-case": "error",
     },
   },
   {

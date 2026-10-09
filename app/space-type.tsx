@@ -55,7 +55,7 @@ export default function SpaceTypeScreen() {
       <View style={styles.content}>
         {/* Header */}
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} hitSlop={12}>
             <Ionicons name="close" size={28} color={colors.textPrimary} />
           </Pressable>
         </View>
@@ -71,7 +71,7 @@ export default function SpaceTypeScreen() {
           {SPACE_OPTIONS.map((option) => {
             const isSelected = selectedType === option.id;
             return (
-              <Pressable
+              <Pressable accessibilityRole="button"
                 key={option.id}
                 style={[styles.optionCard, isSelected && styles.optionCardSelected]}
                 onPress={() => setSelectedType(option.id)}

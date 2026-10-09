@@ -10,6 +10,7 @@ import {
   Animated,
   PanResponder,
   Pressable,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -90,7 +91,7 @@ function BeforeAfterSlider() {
       <View style={sliderStyles.iconCircle}>
         <Ionicons name="home-outline" size={44} color={colors.primary} />
       </View>
-      <Text style={sliderStyles.title}>See the Transformation</Text>
+      <Text style={sliderStyles.title}>See the transformation</Text>
       <Text style={sliderStyles.subtitle}>Drag the slider to reveal the power of AI redesign</Text>
 
       <View style={sliderStyles.sliderContainer} {...panHandlers}>
@@ -169,8 +170,14 @@ export default function IntroScreen() {
     <SafeAreaView style={styles.container}>
       {/* Logo */}
       <View style={styles.logoRow}>
-        <Ionicons name="construct" size={22} color={colors.primary} />
-        <Text style={styles.logoText}>VisionBuild</Text>
+        {/* The real app icon (icon B, same asset as the store icon in app.json) */}
+        <Image
+          source={require("../assets/images/icon.png")}
+          style={styles.logoIcon}
+          accessibilityIgnoresInvertColors
+          testID="intro-app-icon"
+        />
+        <Text style={styles.logoText} accessibilityRole="header">VisionBuild</Text>
       </View>
 
       {/* Carousel */}
@@ -211,7 +218,7 @@ export default function IntroScreen() {
       {/* CTA button */}
       <View style={styles.buttons}>
         <Button
-          label="Get Started"
+          label="Get started"
           icon="arrow-forward"
           onPress={handleGetStarted}
           variant="primary"
@@ -230,6 +237,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingTop: spacing.lg,
   },
+  logoIcon: { width: 32, height: 32, borderRadius: 8 },
   logoText: { fontSize: 20, fontFamily: "Nunito_700Bold", color: colors.textPrimary },
   page: {
     width,

@@ -42,8 +42,15 @@ export function MenuSheet({
       onRequestClose={onClose}
     >
       <View style={styles.container} testID={testID}>
-        <Pressable style={styles.overlay} onPress={onClose}>
-          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+        <View style={styles.overlay}>
+          {/* Tapping outside the sheet closes it */}
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss"
+          />
+          <View style={styles.sheet}>
             <View style={styles.header}>
               <Text style={styles.title}>{title}</Text>
               <Pressable
@@ -90,8 +97,8 @@ export function MenuSheet({
                 </Pressable>
               ))}
             </View>
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </View>
     </Modal>
   );

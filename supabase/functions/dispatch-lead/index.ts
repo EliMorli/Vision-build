@@ -149,7 +149,13 @@ serve(async (req: Request) => {
 
     const leadIds: string[] = [];
     const unsubscribeBaseUrl = Deno.env.get("SUPABASE_URL")!.replace("/rest/v1", "") + "/functions/v1/unsubscribe";
-    const UNSUBSCRIBE_SECRET = Deno.env.get("UNSUBSCRIBE_SECRET") || "default-secret-change-me";
+    const UNSUBSCRIBE_SECRET = Deno.env.get("UNSUBSCRIBE_SECRET");
+    if (!UNSUBSCRIBE_SECRET) {
+      return new Response(
+        JSON.stringify({ error: "UNSUBSCRIBE_SECRET is not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     for (const contractor of eligibleContractors) {
       // Generate HMAC token for unsubscribe link

@@ -10,6 +10,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { verifyAuth } from "../_shared/auth.ts";
+import { isOwnRoomPhotoUrl } from "../_shared/validate.ts";
 import { checkRateLimit, recordUsage } from "../_shared/rate-limit.ts";
 import { analyzeRoom } from "../_shared/ai.ts";
 import { checkAIConsent, consentRequiredResponse } from "../_shared/consent.ts";
@@ -45,6 +46,18 @@ serve(async (req: Request) => {
     if (!imageUrl) {
       return new Response(
         JSON.stringify({ error: "Missing imageUrl" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Only the caller's own private room photo may be sent to the AI provider
+    if (!isOwnRoomPhotoUrl(
+        imageUrl,
+        [Deno.env.get("SUPABASE_URL"), Deno.env.get("PUBLIC_SUPABASE_URL")],
+        userId,
+      )) {
+      return new Response(
+        JSON.stringify({ error: "Invalid imageUrl" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

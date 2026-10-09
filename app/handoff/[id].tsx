@@ -68,10 +68,10 @@ function HandoffScreenInner() {
             We need a couple of details to match you with the best local contractors.
           </Text>
 
-          <Text style={styles.label}>Budget Range</Text>
+          <Text style={styles.label}>Budget range</Text>
           <View style={styles.chips}>
             {BUDGET_RANGES.map((range) => (
-              <Pressable
+              <Pressable accessibilityRole="button"
                 key={range}
                 style={[styles.chip, budget === range && styles.chipSelected]}
                 onPress={() => setBudget(range)}
@@ -85,7 +85,7 @@ function HandoffScreenInner() {
             ))}
           </View>
 
-          <Text style={[styles.label, { marginTop: spacing.lg }]}>Zip Code</Text>
+          <Text style={[styles.label, { marginTop: spacing.lg }]}>Zip code</Text>
           <TextInput
             style={styles.input}
             placeholder="Enter your zip code"
@@ -98,7 +98,7 @@ function HandoffScreenInner() {
 
           <View style={styles.btnWrap}>
             <Button
-              label="Generate Project Brief"
+              label="Generate project brief"
               icon="document-text-outline"
               onPress={handleGenerateBrief}
               disabled={!canProceed}
@@ -123,7 +123,7 @@ function HandoffScreenInner() {
           <Banner
             icon="checkmark-circle"
             iconColor={colors.secondary}
-            title="Project Brief Generated"
+            title="Project brief generated"
           />
 
           {/* Email preview card */}
@@ -133,7 +133,7 @@ function HandoffScreenInner() {
             </Text>
             <View style={styles.divider} />
 
-            <Text style={styles.cardHeading}>Scope of Work</Text>
+            <Text style={styles.cardHeading}>Scope of work</Text>
             {emailPreview?.scopeOfWork.map((item, i) => (
               <Text key={i} style={styles.scopeItem}>
                 {"\u2022  "}{item}
@@ -173,7 +173,7 @@ function HandoffScreenInner() {
 
           <View style={styles.btnWrap}>
             <Button
-              label="Connect with Contractors"
+              label="Connect with contractors"
               icon="send"
               onPress={handleDispatch}
               variant="secondary"
@@ -192,11 +192,11 @@ function HandoffScreenInner() {
     <SafeAreaView style={styles.safeArea}>
       <EmptyState
         icon="checkmark-circle"
-        title="Leads Sent!"
+        title="Leads sent!"
         subtitle="Your project brief has been sent to matched contractors. You'll receive responses within 24-48 hours."
       >
         <Button
-          label="Back to Dashboard"
+          label="Back to dashboard"
           onPress={() => {
             clear();
             router.replace("/(tabs)");

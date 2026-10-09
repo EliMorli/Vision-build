@@ -3,7 +3,7 @@
 // POST: Executes actual deletion when user presses button
 
 import { useState, useEffect } from "react";
-import { View, Text, Pressable, StyleSheet, ActivityIndicator, Platform, Linking } from "react-native";
+import { View, Text, Pressable, StyleSheet, ActivityIndicator, Platform, Linking, ScrollView } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { SUPPORT_EMAIL } from "../../lib/config";
@@ -160,12 +160,12 @@ export default function DeleteAccountConfirm() {
 
   if (state === "loading") {
     return (
-      <View style={styles.container}>
+      <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
         <View style={styles.card}>
           <ActivityIndicator size="large" color="#1A73E8" />
           <Text style={styles.loadingText}>Validating confirmation link...</Text>
         </View>
-      </View>
+      </ScrollView>
     );
   }
 
@@ -196,7 +196,7 @@ export default function DeleteAccountConfirm() {
     const canRetry = data.canRetry === true;
     
     return (
-      <View style={styles.container}>
+      <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
         <View style={styles.card}>
           <Text style={styles.title}>
             {data.expired
@@ -213,14 +213,14 @@ export default function DeleteAccountConfirm() {
               <Text style={styles.bodySecondary}>
                 We'll also keep trying automatically, so you don't need to do anything else.
               </Text>
-              <Pressable
+              <Pressable accessibilityRole="button"
                 style={styles.buttonDanger}
                 onPress={executeDelete}
                 testID="delete-retry-button"
               >
                 <Text style={styles.buttonText}>Try again</Text>
               </Pressable>
-              <Pressable onPress={() => {
+              <Pressable accessibilityRole="link" onPress={() => {
                 const supportUrl = `mailto:${SUPPORT_EMAIL || "support@visionbuild.app"}`;
                 Linking.openURL(supportUrl).catch((err) => {
                   console.error("Failed to open support link:", err);
@@ -231,7 +231,7 @@ export default function DeleteAccountConfirm() {
             </>
           )}
           {showRequestNew && !canRetry && (
-            <Pressable
+            <Pressable accessibilityRole="button"
               style={styles.buttonSecondary}
               onPress={() => router.replace("/delete-account")}
             >
@@ -239,30 +239,31 @@ export default function DeleteAccountConfirm() {
             </Pressable>
           )}
         </View>
-      </View>
+      </ScrollView>
     );
   }
 
   if (state === "deleting") {
     return (
-      <View style={styles.container}>
+      <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
         <View style={styles.card}>
-          <ActivityIndicator size="large" color="#EA4335" />
+          <ActivityIndicator size="large" color={colors.error} />
           <Text style={styles.loadingText}>Deleting your account...</Text>
           <Text style={styles.bodySecondary}>This may take a moment.</Text>
         </View>
-      </View>
+      </ScrollView>
     );
   }
 
   // state === "valid" - show confirmation
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
       <View style={styles.card}>
         <Text style={styles.email}>{data.email}</Text>
         <Text style={styles.title}>Delete your account?</Text>
         <Text style={styles.warning}>
-          Your {DELETED_DATA_SUMMARY} will be deleted, including your posts on Explore. Remixes other
+          {/* Summary already starts with "your"; capitalize it instead of repeating "Your your" */}
+          {DELETED_DATA_SUMMARY.charAt(0).toUpperCase() + DELETED_DATA_SUMMARY.slice(1)} will be deleted, including your posts on Explore. Remixes other
           people made stay with them.
         </Text>
         {data.isAppleUser && Platform.OS === "ios" && (
@@ -280,18 +281,22 @@ export default function DeleteAccountConfirm() {
           <Text style={styles.buttonText}>Delete my account</Text>
         </Pressable>
 
-        <Pressable onPress={handleKeepAccount}>
+        <Pressable accessibilityRole="button" onPress={handleKeepAccount}>
           <Text style={styles.linkText}>Keep my account</Text>
         </Pressable>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  // Scrollable so every state stays reachable at large text sizes
+  screen: {
     flex: 1,
     backgroundColor: colors.surface,
+  },
+  container: {
+    flexGrow: 1,
     alignItems: "center",
     justifyContent: "center",
     padding: 20,

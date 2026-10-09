@@ -3,6 +3,7 @@ export { ProgressBar } from "./ProgressBar";
 export { Banner } from "./Banner";
 export { EmptyState, FullScreenLoader } from "./EmptyState";
 export { OfflineBanner } from "./OfflineBanner";
+export { NeedsInternetNotice } from "./NeedsInternetNotice";
 export { ErrorState } from "./ErrorState";
 export { LoadingSkeleton } from "./LoadingSkeleton";
 export { ReportModal } from "./ReportModal";
