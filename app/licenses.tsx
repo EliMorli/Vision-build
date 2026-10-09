@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import {
   SafeAreaView,
+  FlatList,
   ScrollView,
   StyleSheet,
   Text,
@@ -34,11 +35,12 @@ export default function LicensesScreen() {
       return `License: ${license.license}\n\nFull license text not available.`;
     }
     
-    let text = '';
-    if (license.copyright) {
-      text = license.copyright + '\n\n';
+    const text = LICENSE_TEXTS[license.textId] || '';
+    
+    // Only prepend copyright if it's not already in the text
+    if (license.copyright && !text.includes(license.copyright)) {
+      return license.copyright + '\n\n' + text;
     }
-    text += LICENSE_TEXTS[license.textId] || '';
     
     return text;
   };
@@ -71,22 +73,28 @@ export default function LicensesScreen() {
         )}
       </View>
 
-      <ScrollView
+      <FlatList
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
         testID="licenses-list"
-      >
-        <Text style={styles.intro}>
-          VisionBuild is built with open-source software. Thank you to the following
-          projects and their maintainers:
-        </Text>
-
-        {filteredLicenses.map((license) => (
+        data={filteredLicenses}
+        keyExtractor={(item) => `${item.name}@${item.version}`}
+        ListHeaderComponent={
+          <Text style={styles.intro}>
+            VisionBuild is built with open-source software. Thank you to the following
+            projects and their maintainers:
+          </Text>
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>No packages found</Text>
+          </View>
+        }
+        renderItem={({ item: license }) => (
           <Pressable
-            key={`${license.name}@${license.version}`}
             style={styles.licenseItem}
             onPress={() => setSelectedLicense(license)}
-            testID={`license-item-${license.name}`}
+            testID={`license-item-${license.name}@${license.version}`}
           >
             <View style={styles.licenseInfo}>
               <Text style={styles.licenseName}>{license.name}</Text>
@@ -102,14 +110,8 @@ export default function LicensesScreen() {
               color={colors.textSecondary}
             />
           </Pressable>
-        ))}
-
-        {filteredLicenses.length === 0 && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No packages found</Text>
-          </View>
         )}
-      </ScrollView>
+      />
 
       <Modal
         visible={selectedLicense !== null}

@@ -1,27 +1,21 @@
 #!/usr/bin/env node
-/**
- * Generate open-source licenses file from production dependencies
- * 
- * Usage: node scripts/generate-licenses.js
- * 
- * Output: lib/generated/licenses.ts
- */
-
-const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
 console.log('🔍 Scanning production dependencies...\n');
 
-// Get production dependencies with full metadata
-const depsJson = execSync('npm ls --omit=dev --all --json --long', { 
-  encoding: 'utf-8', 
-  maxBuffer: 20 * 1024 * 1024 
-});
-const depsTree = JSON.parse(depsJson);
+const lockPath = path.join(__dirname, '..', 'package-lock.json');
+const lockContent = JSON.parse(fs.readFileSync(lockPath, 'utf-8'));
 
-// SPDX license templates
+const APACHE_2 = fs.readFileSync(path.join(__dirname, 'spdx-templates', 'Apache-2.0.txt'), 'utf-8');
+const BLUEOAK = fs.readFileSync(path.join(__dirname, 'spdx-templates', 'BlueOak-1.0.0.txt'), 'utf-8');
+const CC0 = fs.readFileSync(path.join(__dirname, 'spdx-templates', 'CC0-1.0.txt'), 'utf-8');
+const PYTHON2 = fs.readFileSync(path.join(__dirname, 'spdx-templates', 'Python-2.0.txt'), 'utf-8');
+const UNLICENSE = fs.readFileSync(path.join(__dirname, 'spdx-templates', 'Unlicense.txt'), 'utf-8');
+const LGPL3 = fs.readFileSync(path.join(__dirname, 'spdx-templates', 'LGPL-3.0.txt'), 'utf-8');
+const GPL3 = fs.readFileSync(path.join(__dirname, 'spdx-templates', 'GPL-3.0.txt'), 'utf-8');
+
 const SPDX_TEMPLATES = {
   'MIT': `Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -51,31 +45,18 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.`,
   
-  'Apache-2.0': `Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.`,
-  
   '0BSD': `Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted.
 
 THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.`,
   
-  'BlueOak-1.0.0': `This software is licensed under the Blue Oak Model License 1.0.0. The license text can be found at https://blueoakcouncil.org/license/1.0.0`,
-  
-  'CC0-1.0': `The person who associated a work with this deed has dedicated the work to the public domain by waiving all of his or her rights to the work worldwide under copyright law, including all related and neighboring rights, to the extent allowed by law.
-
-You can copy, modify, distribute and perform the work, even for commercial purposes, all without asking permission.`,
-  
-  'Python-2.0': `This LICENSE AGREEMENT is between the Python Software Foundation ("PSF"), and the Individual or Organization ("Licensee") accessing and otherwise using this software ("Python") in source or binary form and its associated documentation.`,
-  
-  'Unlicense': `This is free and unencumbered software released into the public domain.
-
-Anyone is free to copy, modify, publish, use, compile, sell, or distribute this software, either in source code form or as a compiled binary, for any purpose, commercial or non-commercial, and by any means.`,
+  'Apache-2.0': APACHE_2,
+  'BlueOak-1.0.0': BLUEOAK,
+  'CC0-1.0': CC0,
+  'Python-2.0': PYTHON2,
+  'Unlicense': UNLICENSE,
+  'LGPL-3.0-or-later': LGPL3,
+  'GPL-3.0': GPL3,
 };
-
-// Collect unique packages
-const packages = new Map();
 
 function findLicenseFile(pkgDir) {
   try {
@@ -102,86 +83,99 @@ function extractCopyright(licenseText) {
   return null;
 }
 
-function collectPackages(node, parentPath = '') {
-  if (!node.dependencies) return;
-  
-  for (const [name, info] of Object.entries(node.dependencies)) {
-    // Skip packages that aren't installed
-    if (info.extraneous || info.missing || !info.version || info.version === '0.0.0') {
-      continue;
+function getCopyrightFromPackageJson(pkg, pkgName) {
+  if (pkg.author) {
+    if (typeof pkg.author === 'string') {
+      return `Copyright (c) ${pkg.author}`;
+    } else if (pkg.author.name) {
+      return `Copyright (c) ${pkg.author.name}`;
     }
-    
-    const key = `${name}@${info.version}`;
-    if (packages.has(key)) {
-      continue;
-    }
-    
-    // Use the 'path' field from npm ls if available
-    let pkgDir = null;
-    if (info.path) {
-      pkgDir = info.path;
-    } else {
-      // Fallback: try to resolve via require.resolve
-      try {
-        const pkgJsonPath = require.resolve(`${name}/package.json`, {
-          paths: [parentPath || process.cwd()]
-        });
-        pkgDir = path.dirname(pkgJsonPath);
-      } catch (_e) {
-        // Can't resolve, skip this package
-        continue;
-      }
-    }
-    
-    let pkgInfo = {
-      name,
-      version: info.version,
-      license: 'Unknown',
-      copyright: null,
-      licenseText: null,
-      isStandardTemplate: false,
-    };
-    
-    // Read package.json
-    const pkgJsonPath = path.join(pkgDir, 'package.json');
-    if (fs.existsSync(pkgJsonPath)) {
-      try {
-        const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8'));
-        
-        // Get license from package.json (license or legacy licenses field)
-        if (pkg.license) {
-          pkgInfo.license = typeof pkg.license === 'string' ? pkg.license : pkg.license.type || 'Unknown';
-        } else if (pkg.licenses && Array.isArray(pkg.licenses) && pkg.licenses.length > 0) {
-          pkgInfo.license = pkg.licenses[0].type || 'Unknown';
-        }
-        
-        // Find license file
-        const licensePath = findLicenseFile(pkgDir);
-        if (licensePath) {
-          pkgInfo.licenseText = fs.readFileSync(licensePath, 'utf-8');
-          pkgInfo.copyright = extractCopyright(pkgInfo.licenseText);
-        } else if (SPDX_TEMPLATES[pkgInfo.license]) {
-          // Use standard SPDX template
-          pkgInfo.licenseText = SPDX_TEMPLATES[pkgInfo.license];
-          pkgInfo.isStandardTemplate = true;
-        }
-      } catch (_e) {
-        // Could not read package.json
-      }
-    }
-    
-    packages.set(key, pkgInfo);
-    
-    // Recurse into dependencies
-    collectPackages(info, pkgDir);
   }
+  if (pkg.contributors && pkg.contributors.length > 0) {
+    const first = pkg.contributors[0];
+    const name = typeof first === 'string' ? first : first.name;
+    if (name) return `Copyright (c) ${name}`;
+  }
+  return `Copyright (c) the ${pkgName} authors`;
 }
 
-collectPackages(depsTree);
+const packages = new Map();
+const workspaceRoot = path.join(__dirname, '..');
+
+if (!lockContent.packages) {
+  console.error('❌ No packages found in package-lock.json');
+  process.exit(1);
+}
+
+for (const [pkgPath, entry] of Object.entries(lockContent.packages)) {
+  if (!pkgPath || pkgPath === '') continue;
+  if (entry.dev || entry.devOptional) continue;
+  if (entry.optional && !entry.resolved) continue;
+  
+  if (!entry.version || entry.version === '0.0.0') continue;
+  
+  // Parse package name from path: node_modules/foo or node_modules/@scope/name
+  let pkgName = '';
+  const pathParts = pkgPath.split('/');
+  const nodeModulesIdx = pathParts.lastIndexOf('node_modules');
+  if (nodeModulesIdx >= 0 && nodeModulesIdx < pathParts.length - 1) {
+    if (pathParts[nodeModulesIdx + 1].startsWith('@')) {
+      // Scoped package
+      pkgName = pathParts.slice(nodeModulesIdx + 1, nodeModulesIdx + 3).join('/');
+    } else {
+      // Regular package
+      pkgName = pathParts[nodeModulesIdx + 1];
+    }
+  }
+  if (!pkgName) continue;
+  
+  const key = `${pkgName}@${entry.version}`;
+  if (packages.has(key)) continue;
+  
+  const pkgDir = path.join(workspaceRoot, pkgPath);
+  if (!fs.existsSync(pkgDir)) continue;
+  
+  let pkgInfo = {
+    name: pkgName,
+    version: entry.version,
+    license: 'Unknown',
+    copyright: null,
+    licenseText: null,
+    isStandardTemplate: false,
+  };
+  
+  const pkgJsonPath = path.join(pkgDir, 'package.json');
+  if (fs.existsSync(pkgJsonPath)) {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8'));
+      
+      if (pkg.license) {
+        pkgInfo.license = typeof pkg.license === 'string' ? pkg.license : pkg.license.type || 'Unknown';
+      } else if (pkg.licenses && Array.isArray(pkg.licenses) && pkg.licenses.length > 0) {
+        pkgInfo.license = pkg.licenses[0].type || 'Unknown';
+      }
+      
+      const licensePath = findLicenseFile(pkgDir);
+      if (licensePath) {
+        pkgInfo.licenseText = fs.readFileSync(licensePath, 'utf-8');
+        pkgInfo.copyright = extractCopyright(pkgInfo.licenseText);
+      } else if (SPDX_TEMPLATES[pkgInfo.license]) {
+        pkgInfo.licenseText = SPDX_TEMPLATES[pkgInfo.license];
+        pkgInfo.isStandardTemplate = true;
+        if (['MIT', 'ISC', 'BSD-2-Clause', 'BSD-3-Clause', '0BSD'].includes(pkgInfo.license)) {
+          pkgInfo.copyright = getCopyrightFromPackageJson(pkg, pkgName);
+        }
+      }
+    } catch (_e) {
+      // Could not read package.json
+    }
+  }
+  
+  packages.set(key, pkgInfo);
+}
 
 console.log(`Found ${packages.size} unique production dependencies\n`);
 
-// Deduplicate license texts
 const licenseTextsMap = new Map();
 const textToId = new Map();
 
@@ -192,7 +186,6 @@ function getTextId(text) {
     return textToId.get(text);
   }
   
-  // Normalize text for hashing (remove trailing whitespace, normalize line endings)
   const normalized = text.trim().replace(/\r\n/g, '\n');
   const hash = crypto.createHash('sha1').update(normalized).digest('hex').substring(0, 8);
   
@@ -202,12 +195,10 @@ function getTextId(text) {
   return hash;
 }
 
-// Process packages and build output
 const licenseEntries = [];
 let withRealText = 0;
 let withFallbackText = 0;
 let withNoText = 0;
-const unknownPackages = [];
 
 for (const [, pkg] of packages) {
   const textId = pkg.licenseText ? getTextId(pkg.licenseText) : null;
@@ -229,19 +220,13 @@ for (const [, pkg] of packages) {
   } else {
     withNoText++;
   }
-  
-  if (pkg.license === 'Unknown') {
-    unknownPackages.push(pkg);
-  }
 }
 
-// Sort deterministically
 licenseEntries.sort((a, b) => {
   const nameCompare = a.name.localeCompare(b.name);
   return nameCompare !== 0 ? nameCompare : a.version.localeCompare(b.version);
 });
 
-// Generate TypeScript file
 const tsContent = `/**
  * Generated open-source licenses
  * 
@@ -262,7 +247,6 @@ export const LICENSE_TEXTS: Record<string, string> = ${JSON.stringify(Object.fro
 export const licenses: LicenseEntry[] = ${JSON.stringify(licenseEntries, null, 2)};
 `;
 
-// Ensure output directory exists
 const outputDir = path.join(__dirname, '..', 'lib', 'generated');
 if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true });
@@ -282,13 +266,4 @@ console.log(`   ${fileSizeKB} KB\n`);
 console.log('📊 Coverage:');
 console.log(`   ${withRealText} with real license text`);
 console.log(`   ${withFallbackText} with standard SPDX template`);
-console.log(`   ${withNoText} with no text`);
-
-if (unknownPackages.length > 0) {
-  console.log(`\n⚠️  ${unknownPackages.length} packages with Unknown license:`);
-  unknownPackages.forEach(pkg => {
-    console.log(`   - ${pkg.name}@${pkg.version}`);
-  });
-}
-
-console.log('');
+console.log(`   ${withNoText} with no text\n`);
