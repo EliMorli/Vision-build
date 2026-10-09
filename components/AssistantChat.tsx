@@ -11,15 +11,16 @@ import {
   Platform,
   SafeAreaView,
 } from "react-native";
-import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { mockAssistantProvider } from "@/lib/providers/MockAssistantProvider";
 import { realAssistantProvider } from "@/lib/providers/RealAssistantProvider";
 import { AssistantMessage } from "@/lib/providers/AssistantProvider";
-import { Button, ReportModal } from "@/components";
+import { Button } from "./Button";
+import { ReportModal } from "./ReportModal";
 import Constants from "expo-constants";
 import { useViConsentGate } from "@/lib/hooks/useViConsentGate";
+import { useTabNavigation } from "@/lib/navigation/useTabNavigation";
 
 const WELCOME_MESSAGE: AssistantMessage = {
   id: "welcome",
@@ -33,13 +34,8 @@ const WELCOME_MESSAGE: AssistantMessage = {
 const useMockMode = __DEV__ && Constants.expoConfig?.extra?.EXPO_PUBLIC_DEV_MOCK_SESSION === "true";
 const assistantProvider = useMockMode ? mockAssistantProvider : realAssistantProvider;
 
-/** Stack route (opened from Create or a project). The Vi tab renders <AssistantChat asTab />. */
-export default function AssistantChatScreen() {
-  return <AssistantChat />;
-}
-
 export function AssistantChat({ asTab = false }: { asTab?: boolean }) {
-  const router = useRouter();
+  const tabNav = useTabNavigation();
   // The server refuses chat without AI consent: show the consent screen first
   const { state: consentState, openConsent } = useViConsentGate();
   const [messages, setMessages] = useState<AssistantMessage[]>([WELCOME_MESSAGE]);
@@ -168,7 +164,7 @@ export function AssistantChat({ asTab = false }: { asTab?: boolean }) {
       <SafeAreaView style={styles.container} testID="vi-consent-gate">
         {!asTab && (
           <View style={styles.header}>
-            <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Go back">
+            <Pressable onPress={() => tabNav.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Go back">
               <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
             </Pressable>
             <View style={styles.headerCenter}>
@@ -212,7 +208,7 @@ export function AssistantChat({ asTab = false }: { asTab?: boolean }) {
             <View style={{ width: 24 }} />
           ) : (
             <Pressable
-              onPress={() => router.back()}
+              onPress={() => tabNav.back()}
               hitSlop={12}
               accessibilityRole="button"
               accessibilityLabel="Go back"
@@ -267,9 +263,9 @@ export function AssistantChat({ asTab = false }: { asTab?: boolean }) {
                 const projects = require("@/lib/store").useProjectStore.getState().projects;
                 const latestProject = projects[0];
                 if (latestProject) {
-                  router.push(`/pros-coming-soon?projectId=${latestProject.id}` as any);
+                  tabNav.push(`/pros-coming-soon?projectId=${latestProject.id}`);
                 } else {
-                  router.push("/pros-coming-soon" as any);
+                  tabNav.push("/pros-coming-soon");
                 }
               }}
               variant="secondary"

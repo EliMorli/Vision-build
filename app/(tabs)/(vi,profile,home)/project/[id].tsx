@@ -13,6 +13,7 @@ import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore, useAuthStore } from "@/lib/store";
 import { AiGeneratedBadge, IsoRoom, MakePublicSheet, PrivateImage, LoadingSkeleton, ErrorState, OfflineBanner } from "@/components";
 import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
+import { useTabNavigation } from "@/lib/navigation/useTabNavigation";
 
 // Helper to format text to sentence case
 function toSentenceCase(text: string): string {
@@ -35,6 +36,8 @@ function relativeDate(iso?: string | null): string {
 export default function ProjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  // Results, Vi and pros open inside the current tab (tab bar stays visible)
+  const tabNav = useTabNavigation();
   const [activeTab, setActiveTab] = useState<"designs" | "timeline">("designs");
   
   const projects = useProjectStore((s) => s.projects);
@@ -151,7 +154,7 @@ export default function ProjectDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="project-screen">
       {isOffline && <OfflineBanner testID="offline-banner" />}
       {/* Make Public Confirmation Sheet */}
       <MakePublicSheet
@@ -165,7 +168,7 @@ export default function ProjectDetailScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable 
-          onPress={() => router.back()} 
+          onPress={() => tabNav.back()}
           hitSlop={12}
           accessibilityRole="button"
           accessibilityLabel="Go back"
@@ -228,7 +231,7 @@ export default function ProjectDetailScreen() {
                 <Text style={styles.chipText}>{sqFt} sq ft</Text>
               </View>
             )}
-            {currentStyle && (
+            {!!currentStyle && (
               <View style={styles.chip}>
                 <Ionicons name="home-outline" size={14} color={colors.textSecondary} />
                 <Text style={styles.chipText}>{toSentenceCase(currentStyle)}</Text>
@@ -271,7 +274,7 @@ export default function ProjectDetailScreen() {
                 <Pressable accessibilityRole="button"
                   key={index}
                   style={styles.designCard}
-                  onPress={() => router.push(`/result/${id}`)}
+                  onPress={() => tabNav.push(`/result/${id}`)}
                   testID="design-card"
                 >
                   <PrivateImage
@@ -338,7 +341,7 @@ export default function ProjectDetailScreen() {
           </View>
           <Pressable
             style={styles.chatPreview}
-            onPress={() => router.push("/assistant-chat")}
+            onPress={() => tabNav.push("/assistant-chat")}
             accessibilityRole="button"
             accessibilityLabel="Chat with Vi about this room"
           >
@@ -364,7 +367,7 @@ export default function ProjectDetailScreen() {
               </Text>
               <Pressable accessibilityRole="button"
                 style={styles.briefButton}
-                onPress={() => router.push(`/pros-coming-soon?projectId=${id}`)}
+                onPress={() => tabNav.push(`/pros-coming-soon?projectId=${id}`)}
                 testID="project-brief-waitlist"
               >
                 <Text style={styles.briefButtonText}>Join the pros waitlist</Text>

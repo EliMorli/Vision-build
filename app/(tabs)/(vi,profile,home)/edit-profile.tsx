@@ -8,16 +8,16 @@ import {
   SafeAreaView,
   TextInput,
 } from "react-native";
-import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useAuthStore } from "@/lib/store";
 import { Button } from "@/components";
 import { supabase } from "@/lib/supabase";
+import { useTabNavigation } from "@/lib/navigation/useTabNavigation";
 
 export default function EditProfileScreen() {
-  const router = useRouter();
+  const tabNav = useTabNavigation();
   const profile = useAuthStore((s) => s.profile);
   const fetchProfile = useAuthStore((s) => s.fetchProfile);
 
@@ -102,7 +102,7 @@ export default function EditProfileScreen() {
         setSuccessMessage("Profile updated!");
         setTimeout(() => {
           setSuccessMessage("");
-          router.back();
+          tabNav.back();
         }, 1500);
         return;
       }
@@ -121,7 +121,7 @@ export default function EditProfileScreen() {
       setSuccessMessage("Profile updated!");
       setTimeout(() => {
         setSuccessMessage("");
-        router.back();
+        tabNav.back();
       }, 1500);
     } catch (error: any) {
       console.error("Error updating profile:", error);
@@ -135,11 +135,11 @@ export default function EditProfileScreen() {
   const currentPhotoUrl = photoUri || profile?.photo_url;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="edit-profile-screen">
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()} hitSlop={12}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => tabNav.back()} hitSlop={12}>
             <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
           </Pressable>
           <Text style={styles.headerTitle}>Edit Profile</Text>

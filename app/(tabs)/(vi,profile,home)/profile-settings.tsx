@@ -10,7 +10,7 @@ import {
   Switch,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useAuthStore, usePrivacyStore, useSettingsStore } from "@/lib/store";
@@ -23,6 +23,7 @@ import { wipeOfflineCache } from "@/lib/offline-cache";
 import Constants from "expo-constants";
 import { openLegalPage } from "@/lib/helpers/openLegalPage";
 import type { LegalPage } from "@/lib/config/legal";
+import { useTabNavigation } from "@/lib/navigation/useTabNavigation";
 
 const APP_VERSION = Constants.expoConfig?.version ?? "1.0.0";
 
@@ -34,6 +35,7 @@ const ABOUT_ROWS: { page: LegalPage; label: string }[] = [
 
 export default function ProfileSettingsScreen() {
   const router = useRouter();
+  const tabNav = useTabNavigation();
   const signOut = useAuthStore((s) => s.signOut);
   const { privacyOptOut, loadPrivacySettings, setPrivacyOptOut } = usePrivacyStore();
   const {
@@ -163,6 +165,15 @@ export default function ProfileSettingsScreen() {
     await setPrivacyOptOut(optOut);
   };
 
+  // The delete confirmation belongs to this screen. If the screen loses focus
+  // while it's open (a tab tap, a system back), close it: nothing is deleted
+  // unless "Delete my account" is pressed here.
+  useFocusEffect(
+    useCallback(() => {
+      return () => setDeleteConfirmVisible(false);
+    }, [])
+  );
+
   const handleDeleteAccount = () => {
     setDeleteConfirmVisible(true);
   };
@@ -244,7 +255,7 @@ export default function ProfileSettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="settings-screen">
       <ConfirmationSheet
         visible={deleteConfirmVisible}
         onClose={() => setDeleteConfirmVisible(false)}
@@ -258,7 +269,7 @@ export default function ProfileSettingsScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()} hitSlop={12}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => tabNav.back()} hitSlop={12}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </Pressable>
         <Text style={styles.headerTitle}>Settings</Text>

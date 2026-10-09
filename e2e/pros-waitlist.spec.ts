@@ -150,7 +150,9 @@ test.describe("Pros waitlist", () => {
     // Now save design
     await page.getByRole("button", { name: /save/i }).click();
 
-    // Should be on project detail page
+    // Saved: View opens the project detail page
+    await page.getByTestId("results-saved-view").click();
+    await expect(page.getByTestId("project-screen")).toBeVisible({ timeout: 10000 });
     await page.waitForLoadState("networkidle");
 
     // Assert "Quotes" tab does not appear
@@ -180,7 +182,8 @@ test.describe("Pros waitlist", () => {
     await page.waitForLoadState("networkidle");
 
     // Verify toggle is visible and take screenshot
-    await expect(page.getByText("Pros waitlist")).toBeVisible();
+    // Scoped: Home (under Settings in the tab's stack) has its own waitlist card
+    await expect(page.getByTestId("settings-screen").getByText("Pros waitlist", { exact: true })).toBeVisible();
     await expect(page.getByTestId("settings-pros-waitlist-toggle")).toBeVisible();
     await page.screenshot({ path: "e2e/screens/hf-settings-waitlist.png", fullPage: false });
   });

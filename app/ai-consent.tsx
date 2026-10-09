@@ -13,6 +13,7 @@ import { PRIVACY_POLICY_VERSION } from "@/lib/config/legal";
 import { openLegalPage } from "@/lib/helpers/openLegalPage";
 import { getProviderDisclosureText } from "@/lib/ai-models";
 import { markViConsentDeclined } from "@/lib/hooks/useViConsentGate";
+import { tabHref } from "@/lib/navigation/tabs";
 
 const AI_CONSENT_KEY = "@visionbuild:ai_consent";
 const AI_CONSENT_VERSION_KEY = "@visionbuild:ai_consent_version";
@@ -142,17 +143,18 @@ export default function AIConsentScreen() {
       } else if (type === "generate" && projectId) {
         // For generate flow, dismiss back to project detail (not editor/style picker)
         // Use dismissTo to remove consent screen from stack
-        router.dismissTo(`/project/${projectId}`);
+        // (the project page lives in the tab the user started from)
+        router.dismissTo(tabHref(`/project/${projectId}`) as any);
       } else if (projectId) {
         // For other flows with project, go to project detail
-        router.dismissTo(`/project/${projectId}`);
+        router.dismissTo(tabHref(`/project/${projectId}`) as any);
       } else {
         // No project, go to camera/home
-        router.dismissTo("/(tabs)/camera");
+        router.dismissTo("/camera");
       }
     } else {
       // No resume data, go to camera
-      router.dismissTo("/(tabs)/camera");
+      router.dismissTo("/camera");
     }
   };
 

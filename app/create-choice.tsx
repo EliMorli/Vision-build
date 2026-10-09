@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, Pressable, SafeAreaView } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
+import { viHref } from "@/lib/navigation/tabs";
 
 export default function CreateChoiceScreen() {
   const router = useRouter();
@@ -27,7 +28,10 @@ export default function CreateChoiceScreen() {
           {/* Brainstorm with Vi */}
           <Pressable accessibilityRole="button"
             style={styles.choiceCard}
-            onPress={() => router.push("/assistant-chat")}
+            // Close this sheet and open Vi inside the tabs (the Vi tab, or Vi in
+            // the current tab when Inbox has the slot); Vi asks for AI consent first
+            onPress={() => router.dismissTo(viHref() as any)}
+            testID="create-choice-vi"
           >
             <View style={[styles.choiceIcon, { backgroundColor: colors.primary + "15" }]}>
               <Ionicons name="chatbubble-ellipses" size={48} color={colors.primary} />

@@ -25,7 +25,7 @@ export default function ResultErrorScreen() {
 
   const handleRetry = () => {
     if (type === "rate-limit") {
-      router.push("/(tabs)/");
+      router.dismissTo("/(tabs)/(home)" as any);
     } else {
       router.back();
     }

@@ -79,6 +79,8 @@ test.describe("No raw text outside <Text>", () => {
 
     await page.getByText("Option 1").click();
     await page.getByTestId("results-save").click();
+    await expect(page.getByText("Saved to your project")).toBeVisible();
+    await page.getByTestId("results-saved-view").click();
     await expect(page.getByText("Original photo")).toBeVisible({ timeout: 10000 });
     await settle(page);
 

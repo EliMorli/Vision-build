@@ -16,6 +16,9 @@ import { supabase } from "@/lib/supabase";
 import { useAuthStore, useSettingsStore } from "@/lib/store";
 import { MOCK_USER_ID } from "@/lib/constants/mock";
 
+// In-tab page that signed-out users may still open (as when it was a root route)
+const PUBLIC_IN_TAB_PAGES: string[] = ["help-contact"];
+
 // Root error boundary: friendly fallback instead of a crash screen
 export { AppErrorBoundary as ErrorBoundary } from "@/components/AppErrorBoundary";
 
@@ -112,8 +115,12 @@ export default function RootLayout() {
       if (!session && segments.length > 0) {
         const firstSegment = segments[0];
         
-        // Protected routes: (tabs) and profile-settings
-        const isProtectedRoute = firstSegment === '(tabs)' || segments.join('/').includes('profile-settings');
+        // Protected routes: (tabs) and profile-settings. Help & contact now lives
+        // inside the tabs (so the tab bar shows) but stays public, as before.
+        const lastSegment = segments[segments.length - 1];
+        const isPublicPage = PUBLIC_IN_TAB_PAGES.includes(lastSegment);
+        const isProtectedRoute =
+          (firstSegment === '(tabs)' && !isPublicPage) || segments.join('/').includes('profile-settings');
         
         if (isProtectedRoute) {
           // In mock mode, check if this is an intentional sign-out
@@ -161,13 +168,21 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="create-choice" options={{ headerShown: false }} />
         <Stack.Screen name="space-type" options={{ headerShown: false }} />
-        <Stack.Screen name="assistant-chat" options={{ headerShown: false }} />
         <Stack.Screen name="permission-primer" options={{ headerShown: false }} />
+        {/* Create flow, above the tabs (no tab bar). Same header as when camera was a tab. */}
+        <Stack.Screen
+          name="camera"
+          options={{
+            title: "New design",
+            headerBackTitle: "Back",
+            headerStyle: { backgroundColor: "#fff" },
+            headerShadowVisible: false,
+            headerTitleStyle: { fontFamily: "Nunito_800ExtraBold", fontWeight: "800" },
+          }}
+        />
         <Stack.Screen name="ai-consent" options={{ headerShown: false }} />
         <Stack.Screen name="handoff-location" options={{ headerShown: false }} />
         <Stack.Screen name="handoff-confirm" options={{ headerShown: false }} />
-        <Stack.Screen name="profile-settings" options={{ headerShown: false }} />
-        <Stack.Screen name="help-contact" options={{ headerShown: false }} />
         <Stack.Screen name="result-error" options={{ headerShown: false }} />
         <Stack.Screen 
           name="deleted-account" 
@@ -177,14 +192,11 @@ export default function RootLayout() {
           }} 
         />
         <Stack.Screen name="dev/deleted-preview" options={{ headerShown: false }} />
-        <Stack.Screen name="project/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="editor/[id]" options={{ title: "Choose a style" }} />
         <Stack.Screen name="generating/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="result/[id]" options={{ title: "Your designs" }} />
         <Stack.Screen name="handoff/[id]" options={{ title: "Get estimates" }} />
         <Stack.Screen name="delete-account/index" options={{ title: "Delete account" }} />
         <Stack.Screen name="delete-account/confirm" options={{ headerShown: false }} />
-        <Stack.Screen name="pros-coming-soon" options={{ headerShown: false }} />
         <Stack.Screen name="terms" options={{ title: "Terms of Service" }} />
         <Stack.Screen name="privacy" options={{ title: "Privacy Policy" }} />
       </Stack>

@@ -1,11 +1,17 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { View, StyleSheet, Text } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useSegments } from "expo-router";
+import { useEffect } from "react";
+import { setLastTabGroup, tabGroupFromSegments } from "@/lib/navigation/tabs";
 import { colors } from "@/lib/theme";
 import { useInboxStore } from "@/lib/store";
 import { isOutreachEnabled } from "@/lib/config/features";
 import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
+
+// Home is the first tab: cold links to shared screens (e.g. /project/123) open
+// in Home's stack, and Home is the initial tab under them.
+export const unstable_settings = { initialRouteName: "(home)" };
 
 export default function TabsLayout() {
   const router = useRouter();
@@ -15,6 +21,13 @@ export default function TabsLayout() {
   // (Vi then moves to a button on Home). Bar: Home · Explore · + · Vi/Inbox · Profile.
   const showInbox = isOutreachEnabled();
   const isOffline = !useNetworkStatus().isConnected;
+  // Remember the tab the user is in: root-stack flows (camera → style →
+  // generating) hand their result back to this tab's stack.
+  const segments = useSegments();
+  const activeGroup = tabGroupFromSegments(segments);
+  useEffect(() => {
+    if (activeGroup) setLastTabGroup(activeGroup);
+  }, [activeGroup]);
 
   return (
     <Tabs
@@ -35,7 +48,7 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="(home)"
         options={{
           headerShown: false,
           tabBarLabel: "Home",
@@ -46,8 +59,9 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="(explore)"
         options={{
+          headerShown: false,
           title: "Explore",
           tabBarLabel: "Explore",
           tabBarButtonTestID: "tab-explore",
@@ -91,7 +105,7 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="vi"
+        name="(vi)"
         options={{
           href: showInbox ? null : undefined,
           headerShown: false,
@@ -127,21 +141,15 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="(profile)"
         options={{
+          headerShown: false,
           title: "Profile",
           tabBarLabel: "Profile",
           tabBarButtonTestID: "tab-profile",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-outline" size={size} color={color} />
           ),
-        }}
-      />
-      <Tabs.Screen
-        name="camera"
-        options={{
-          title: "New design",
-          href: null,
         }}
       />
     </Tabs>

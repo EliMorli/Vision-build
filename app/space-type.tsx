@@ -47,7 +47,7 @@ export default function SpaceTypeScreen() {
 
   const handleContinue = () => {
     // Navigate to the camera screen to capture the space
-    router.push("/(tabs)/camera");
+    router.push("/camera");
   };
 
   return (

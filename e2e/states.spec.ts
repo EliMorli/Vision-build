@@ -209,7 +209,8 @@ test.describe("Loading, Empty, and Error States", () => {
     await page.waitForLoadState("networkidle");
 
     await expect(page.getByTestId("project-error")).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText("Something went wrong")).toBeVisible();
+    // Scoped: Home sits under this page in the tab's stack
+    await expect(page.getByTestId("project-error").getByText("Something went wrong")).toBeVisible();
 
     const content = await page.content();
     expect(content).not.toContain("RAW_SECRET_ERROR");
@@ -235,7 +236,8 @@ test.describe("Loading, Empty, and Error States", () => {
     await page.waitForLoadState("networkidle");
 
     await expect(page.getByTestId("results-error")).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText("Something went wrong")).toBeVisible();
+    // Scoped: Home sits under this page in the tab's stack
+    await expect(page.getByTestId("results-error").getByText("Something went wrong")).toBeVisible();
 
     const content = await page.content();
     expect(content).not.toContain("RAW_SECRET_ERROR");

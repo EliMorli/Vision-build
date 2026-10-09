@@ -8,16 +8,17 @@ import {
   ScrollView,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useAuthStore, useProjectStore } from "@/lib/store";
 import { AiGeneratedBadge, Button, PrivateImage } from "@/components";
 import { IsoRoom } from "@/components/IsoRoom";
 import { supabase } from "@/lib/supabase";
+import { useTabNavigation } from "@/lib/navigation/useTabNavigation";
 
 export default function ProsComingSoonScreen() {
-  const router = useRouter();
+  const tabNav = useTabNavigation();
   const params = useLocalSearchParams<{ projectId: string }>();
   const projectId = params.projectId;
 
@@ -118,13 +119,13 @@ export default function ProsComingSoonScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="pros-screen">
       {/* Header row: back arrow on the left, title centered (same as other screens) */}
       <View style={styles.header} testID="pros-header">
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Go back"
-          onPress={() => router.back()}
+          onPress={() => tabNav.back()}
           hitSlop={12}
           testID="pros-back"
         >

@@ -6,7 +6,6 @@ import {
   Pressable,
   SafeAreaView,
 } from "react-native";
-import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useAuthStore, useProjectStore } from "@/lib/store";
@@ -14,6 +13,8 @@ import { Button, OfflineBanner, LoadingSkeleton, ErrorState } from "@/components
 import { getDisplayName, getDisplayInitial } from "@/lib/helpers/user";
 import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
 import { useState, useEffect } from "react";
+import { useTabNavigation } from "@/lib/navigation/useTabNavigation";
+import type { Project } from "@/lib/types";
 
 interface Badge {
   id: string;
@@ -25,12 +26,15 @@ interface Badge {
 }
 
 export default function ProfileScreen() {
-  const router = useRouter();
   const profile = useAuthStore((s) => s.profile);
   const session = useAuthStore((s) => s.session);
   const fetchProfile = useAuthStore((s) => s.fetchProfile);
   const signOut = useAuthStore((s) => s.signOut);
   const projects = useProjectStore((s) => s.projects);
+  const fetchProjects = useProjectStore((s) => s.fetchProjects);
+  // Projects, settings and help open inside the Profile tab (tab bar stays,
+  // Profile stays highlighted, back returns here)
+  const tabNav = useTabNavigation();
   const authLoading = useAuthStore((s) => s.loading);
   const authError = useAuthStore((s) => s.error);
   const networkStatus = useNetworkStatus();
@@ -105,6 +109,20 @@ export default function ProfileScreen() {
   ];
   
   const earnedBadges = ALL_BADGES.filter((b) => b.earned);
+
+  // Opened straight to Profile (Home not visited yet): load the project list
+  useEffect(() => {
+    if (useProjectStore.getState().projects.length === 0) {
+      fetchProjects().catch(() => {
+        // fetchProjects records its own error; Profile still renders
+      });
+    }
+  }, [fetchProjects]);
+
+  const openProject = (project: Project) => {
+    useProjectStore.getState().setCurrentProject(project);
+    tabNav.push(`/project/${project.id}`);
+  };
 
   const menuItems = [
     { icon: "person-outline" as const, label: "Edit Profile", badge: null, route: "/edit-profile" },
@@ -182,6 +200,41 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {/* Your projects: every creation, one tap away */}
+        <View style={styles.projectsSection} testID="profile-projects-section">
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle} accessibilityRole="header">Your projects</Text>
+            <Text style={styles.badgeCount}>{projects.length}</Text>
+          </View>
+          {projects.length === 0 ? (
+            <Text style={styles.projectsEmpty} testID="profile-projects-empty">
+              Projects you create show up here.
+            </Text>
+          ) : (
+            projects.map((project: Project) => (
+              <Pressable
+                key={project.id}
+                style={styles.projectRow}
+                onPress={() => openProject(project)}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${project.title} project`}
+                testID="profile-project-row"
+              >
+                <View style={styles.projectIcon}>
+                  <Ionicons name="home-outline" size={20} color={colors.primary} />
+                </View>
+                <View style={styles.projectText}>
+                  <Text style={styles.projectTitle} numberOfLines={1}>{project.title}</Text>
+                  <Text style={styles.projectSub} numberOfLines={1}>
+                    {designCountLabel(project.generated_image_urls?.length ?? 0)}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+              </Pressable>
+            ))
+          )}
+        </View>
+
         {/* Badges Section */}
         <View style={styles.badgesSection} testID="profile-badges-section">
           <View style={styles.sectionHeader}>
@@ -230,7 +283,7 @@ export default function ProfileScreen() {
                 styles.menuItem,
                 index === menuItems.length - 1 && styles.lastMenuItem,
               ]}
-              onPress={() => item.route && router.push(item.route as any)}
+              onPress={() => item.route && tabNav.push(item.route)}
               testID={item.route === "/profile-settings" ? "profile-settings-button" : undefined}
             >
               <View style={styles.menuItemLeft}>
@@ -266,8 +319,41 @@ export default function ProfileScreen() {
   );
 }
 
+function designCountLabel(count: number): string {
+  if (count === 0) return "No designs yet";
+  return count === 1 ? "1 design" : `${count} designs`;
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
+  projectsSection: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+  },
+  projectsEmpty: {
+    ...fonts.regular,
+    paddingVertical: spacing.sm,
+  },
+  projectRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    minHeight: 56,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  projectIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    backgroundColor: "#E8F0FE",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  projectText: { flex: 1 },
+  projectTitle: { ...fonts.label, fontSize: 16 },
+  projectSub: { ...fonts.regular, fontSize: 13 },
   content: { paddingBottom: spacing.xl },
   header: {
     alignItems: "center",
