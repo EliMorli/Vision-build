@@ -139,7 +139,9 @@ export default function ExploreScreen() {
             />
           </View>
         </View>
-        <LoadingSkeleton variant="grid" count={6} testID="explore-loading" />
+        <View style={styles.grid}>
+          <LoadingSkeleton variant="grid" count={6} testID="explore-loading" />
+        </View>
       </SafeAreaView>
     );
   }

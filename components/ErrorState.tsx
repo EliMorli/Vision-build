@@ -3,6 +3,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { Button } from "./Button";
 import { businessConfig } from "@/lib/config/business";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useState } from "react";
+
+const __DEV__ = process.env.NODE_ENV !== "production";
 
 interface ErrorStateProps {
   title?: string;
@@ -21,7 +25,16 @@ export function ErrorState({
   retryLabel = "Try again",
   testID,
 }: ErrorStateProps) {
-  const supportEmail = businessConfig.supportEmail || "support@visionbuild.app";
+  const [supportEmail, setSupportEmail] = useState(businessConfig.supportEmail || "support@visionbuild.app");
+  
+  useEffect(() => {
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      AsyncStorage.getItem("@visionbuild:mock_support_email").then(email => {
+        if (email) setSupportEmail(email);
+      }).catch(() => {});
+    }
+  }, []);
+  
   const isPlaceholder = supportEmail.startsWith("[") || supportEmail === "TBD" || supportEmail.includes("TBD");
   
   const handleContactSupport = () => {

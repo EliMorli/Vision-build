@@ -49,13 +49,16 @@ test.describe("Offline Mode", () => {
     // Wait for content to load while online
     await expect(page.getByText(/Kitchen Design|ready to redesign/i)).toBeVisible({ timeout: 10000 });
     
-    // Go offline
+    // Go offline - do NOT reload after
     await context.setOffline(true);
-    await page.reload();
+    
+    // Navigate to trigger offline state change
+    await page.locator('[href="/explore"]').first().click();
     await page.waitForLoadState("networkidle");
     
     // Check offline banner text is exactly as specified
-    await expect(page.getByText("You're offline. Showing what's saved on this phone.")).toBeVisible({ timeout: 10000 });
+    const offlineBanner = page.getByText("You're offline. Showing what's saved on this phone.").first();
+    await expect(offlineBanner).toBeVisible({ timeout: 10000 });
     
     // Screenshot
     await page.screenshot({ path: "e2e/screens/ui-offline-home.png", fullPage: false });
@@ -65,17 +68,16 @@ test.describe("Offline Mode", () => {
     await page.goto(BASE_URL);
     await page.waitForLoadState("networkidle");
     
-    // Go offline
+    // Go offline - do NOT reload after
     await context.setOffline(true);
-    await page.reload();
+    
+    // Navigate to trigger offline state
+    await page.locator('[href="/explore"]').first().click();
     await page.waitForLoadState("networkidle");
     
-    // Get all offline banners (mounted tabs can each have one)
-    const banners = page.getByTestId("offline-banner");
-    const visibleBanners = await banners.filter({ has: page.locator(":visible") }).all();
-    
-    // Exactly one should be visible
-    expect(visibleBanners.length).toBe(1);
+    // Exactly one visible banner
+    const banners = page.getByTestId("offline-banner").locator(":visible");
+    await expect(banners).toHaveCount(1);
   });
 
   test("seeded projects are still visible when offline", async ({ page, context }: { page: Page, context: any }) => {
@@ -85,9 +87,12 @@ test.describe("Offline Mode", () => {
     // Verify projects are visible online
     await expect(page.getByText("Kitchen Design")).toBeVisible({ timeout: 10000 });
     
-    // Go offline
+    // Go offline - do NOT reload after
     await context.setOffline(true);
-    await page.reload();
+    
+    // Navigate to trigger state change
+    await page.locator('[href="/explore"]').first().click();
+    await page.locator('[href="/(tabs)"]').first().click();
     await page.waitForLoadState("networkidle");
     
     // Projects should still be visible from seed
@@ -99,10 +104,8 @@ test.describe("Offline Mode", () => {
     await page.goto(BASE_URL);
     await page.waitForLoadState("networkidle");
     
-    // Go offline
+    // Go offline - do NOT reload after
     await context.setOffline(true);
-    await page.reload();
-    await page.waitForLoadState("networkidle");
     
     // Click the create tab
     await page.locator('[href="/create-choice"]').first().click();
@@ -117,17 +120,21 @@ test.describe("Offline Mode", () => {
     await page.goto(BASE_URL);
     await page.waitForLoadState("networkidle");
     
-    // Go offline
+    // Go offline - do NOT reload after
     await context.setOffline(true);
-    await page.reload();
+    
+    // Navigate to trigger state
+    await page.locator('[href="/explore"]').first().click();
     await page.waitForLoadState("networkidle");
     
     // Banner should be visible
-    await expect(page.getByTestId("offline-banner")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId("offline-banner").first()).toBeVisible({ timeout: 10000 });
     
     // Go back online
     await context.setOffline(false);
-    await page.reload();
+    
+    // Navigate to trigger state change
+    await page.locator('[href="/(tabs)"]').first().click();
     await page.waitForLoadState("networkidle");
     
     // Banner should be hidden

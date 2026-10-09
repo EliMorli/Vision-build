@@ -112,23 +112,27 @@ export function LoadingSkeleton({ variant = "card", count = 3, testID }: Loading
         ));
 
       case "grid":
-        return Array.from({ length: count }).map((_, i) => (
-          <View key={i} style={styles.gridItem}>
-            <Animated.View
-              style={[
-                styles.gridImage,
-                reduceMotion ? {} : { opacity: shimmerOpacity },
-              ]}
-            />
-            <Animated.View
-              style={[
-                styles.skeletonText,
-                { marginTop: spacing.xs },
-                reduceMotion ? {} : { opacity: shimmerOpacity },
-              ]}
-            />
+        return (
+          <View style={styles.gridContainer}>
+            {Array.from({ length: count }).map((_, i) => (
+              <View key={i} style={styles.gridItem}>
+                <Animated.View
+                  style={[
+                    styles.gridImage,
+                    reduceMotion ? {} : { opacity: shimmerOpacity },
+                  ]}
+                />
+                <Animated.View
+                  style={[
+                    styles.skeletonText,
+                    { marginTop: spacing.xs },
+                    reduceMotion ? {} : { opacity: shimmerOpacity },
+                  ]}
+                />
+              </View>
+            ))}
           </View>
-        ));
+        );
     }
   };
 
@@ -190,6 +194,11 @@ const styles = StyleSheet.create({
   },
   listContent: {
     flex: 1,
+  },
+  gridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
   gridItem: {
     width: "48%",

@@ -19,33 +19,30 @@ test.describe("Licenses Screen", () => {
   });
 
   test("Help links to Licenses, list renders, tapping entry shows full license text", async ({ page }: { page: Page }) => {
-    // Navigate to profile
-    await page.goto(BASE_URL);
+    // Navigate to help-contact
+    await page.goto(`${BASE_URL}/help-contact`);
     await page.waitForLoadState("networkidle");
     
-    await page.locator('[href="/(tabs)/profile"]').first().click();
-    await page.waitForLoadState("networkidle");
-    
-    // Click Help & Contact
-    await page.getByText("Help & Contact").click();
-    await page.waitForLoadState("networkidle");
-    
-    // Click Licenses
+    // Click Licenses row
     await page.getByText(/open.*source.*licenses|licenses/i).click();
     await page.waitForLoadState("networkidle");
     
-    // List should render
-    await expect(page.getByText(/@/)).toBeVisible({ timeout: 10000 }); // Package names with @ or version
+    // Assert licenses-list is visible
+    await expect(page.getByTestId("licenses-list")).toBeVisible({ timeout: 10000 });
     
     // Screenshot
     await page.screenshot({ path: "e2e/screens/ui-licenses.png", fullPage: false });
     
-    // Tap a license entry
-    const firstEntry = page.locator('button, [role="button"], [role="listitem"]').filter({ hasText: /@|react|MIT|License/i }).first();
-    await firstEntry.click();
+    // Click a license entry (format: license-item-${name}@${version})
+    // Find react package version first
+    const reactEntry = page.getByTestId(/license-item-react@/).first();
+    await expect(reactEntry).toBeVisible({ timeout: 10000 });
+    await reactEntry.click();
     await page.waitForLoadState("networkidle");
     
-    // Full license text should show
-    await expect(page.getByText(/permission.*hereby.*granted|copyright|license/i)).toBeVisible({ timeout: 10000 });
+    // Assert license-text is visible and contains expected text
+    const licenseText = page.getByTestId("license-text");
+    await expect(licenseText).toBeVisible({ timeout: 10000 });
+    await expect(licenseText).toContainText("Permission is hereby granted");
   });
 });

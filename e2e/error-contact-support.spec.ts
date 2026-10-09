@@ -18,6 +18,22 @@ test.describe("Error Contact Support", () => {
     });
   });
 
+  test("positive control: with real support email, link is visible", async ({ page }: { page: Page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("@visionbuild:mock_state_override", JSON.stringify({ home: "error" }));
+      localStorage.setItem("@visionbuild:mock_support_email", "support@example.com");
+    });
+    
+    await page.goto(BASE_URL);
+    await page.waitForLoadState("networkidle");
+    
+    // Error state should show
+    await expect(page.getByTestId("home-error")).toBeVisible({ timeout: 10000 });
+    
+    // Contact support link should be visible with real email
+    await expect(page.getByTestId("error-contact-support")).toBeVisible({ timeout: 10000 });
+  });
+
   test("with placeholder email, contact support link is hidden", async ({ page }: { page: Page }) => {
     // Trigger an error state
     await page.addInitScript(() => {

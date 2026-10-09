@@ -69,14 +69,13 @@ test.describe("Loading, Empty, and Error States", () => {
     });
 
     await page.getByRole("button", { name: /try again/i }).click();
-    await page.waitForTimeout(500);
+    await page.waitForLoadState("networkidle");
 
     // Should show content after recovery
     await expect(page.getByText(/ready to redesign/i)).toBeVisible({ timeout: 10000 });
   });
 
-  test("inbox: loading and error states work", async ({ page }: { page: Page }) => {
-    // Test loading
+  test("inbox: loading state works", async ({ page }: { page: Page }) => {
     await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:mock_state_override", JSON.stringify({ inbox: "loading" }));
     });
@@ -85,12 +84,14 @@ test.describe("Loading, Empty, and Error States", () => {
     await page.waitForLoadState("networkidle");
 
     await expect(page.getByTestId("inbox-loading")).toBeVisible({ timeout: 10000 });
+  });
 
-    // Test error
-    await page.evaluate(() => {
+  test("inbox: error state works", async ({ page }: { page: Page }) => {
+    await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:mock_state_override", JSON.stringify({ inbox: "error" }));
     });
-    await page.reload();
+
+    await page.goto(`${BASE_URL}/(tabs)/inbox`);
     await page.waitForLoadState("networkidle");
 
     await expect(page.getByTestId("inbox-error")).toBeVisible({ timeout: 10000 });
@@ -101,8 +102,7 @@ test.describe("Loading, Empty, and Error States", () => {
     expect(content).not.toContain("RAW_SECRET_ERROR");
   });
 
-  test("profile: loading and error states work", async ({ page }: { page: Page }) => {
-    // Test loading
+  test("profile: loading state works", async ({ page }: { page: Page }) => {
     await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:mock_state_override", JSON.stringify({ profile: "loading" }));
     });
@@ -111,12 +111,14 @@ test.describe("Loading, Empty, and Error States", () => {
     await page.waitForLoadState("networkidle");
 
     await expect(page.getByTestId("profile-loading")).toBeVisible({ timeout: 10000 });
+  });
 
-    // Test error
-    await page.evaluate(() => {
+  test("profile: error state works", async ({ page }: { page: Page }) => {
+    await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:mock_state_override", JSON.stringify({ profile: "error" }));
     });
-    await page.reload();
+
+    await page.goto(`${BASE_URL}/(tabs)/profile`);
     await page.waitForLoadState("networkidle");
 
     await expect(page.getByTestId("profile-error")).toBeVisible({ timeout: 10000 });
@@ -126,8 +128,7 @@ test.describe("Loading, Empty, and Error States", () => {
     expect(content).not.toContain("RAW_SECRET_ERROR");
   });
 
-  test("project: loading and error states work", async ({ page }: { page: Page }) => {
-    // Test loading
+  test("project: loading state works", async ({ page }: { page: Page }) => {
     await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:mock_state_override", JSON.stringify({ project: "loading" }));
     });
@@ -136,12 +137,14 @@ test.describe("Loading, Empty, and Error States", () => {
     await page.waitForLoadState("networkidle");
 
     await expect(page.getByTestId("project-loading")).toBeVisible({ timeout: 10000 });
+  });
 
-    // Test error
-    await page.evaluate(() => {
+  test("project: error state works", async ({ page }: { page: Page }) => {
+    await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:mock_state_override", JSON.stringify({ project: "error" }));
     });
-    await page.reload();
+
+    await page.goto(`${BASE_URL}/project/mock-project-id`);
     await page.waitForLoadState("networkidle");
 
     await expect(page.getByTestId("project-error")).toBeVisible({ timeout: 10000 });
@@ -151,8 +154,7 @@ test.describe("Loading, Empty, and Error States", () => {
     expect(content).not.toContain("RAW_SECRET_ERROR");
   });
 
-  test("results: loading and error states work", async ({ page }: { page: Page }) => {
-    // Test loading
+  test("results: loading state works", async ({ page }: { page: Page }) => {
     await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:mock_state_override", JSON.stringify({ results: "loading" }));
     });
@@ -161,12 +163,14 @@ test.describe("Loading, Empty, and Error States", () => {
     await page.waitForLoadState("networkidle");
 
     await expect(page.getByTestId("results-loading")).toBeVisible({ timeout: 10000 });
+  });
 
-    // Test error
-    await page.evaluate(() => {
+  test("results: error state works", async ({ page }: { page: Page }) => {
+    await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:mock_state_override", JSON.stringify({ results: "error" }));
     });
-    await page.reload();
+
+    await page.goto(`${BASE_URL}/result/mock-project-id`);
     await page.waitForLoadState("networkidle");
 
     await expect(page.getByTestId("results-error")).toBeVisible({ timeout: 10000 });
@@ -176,8 +180,7 @@ test.describe("Loading, Empty, and Error States", () => {
     expect(content).not.toContain("RAW_SECRET_ERROR");
   });
 
-  test("editor: loading and error states work", async ({ page }: { page: Page }) => {
-    // Test loading
+  test("editor: loading state works", async ({ page }: { page: Page }) => {
     await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:mock_state_override", JSON.stringify({ editor: "loading" }));
     });
@@ -186,12 +189,14 @@ test.describe("Loading, Empty, and Error States", () => {
     await page.waitForLoadState("networkidle");
 
     await expect(page.getByTestId("editor-loading")).toBeVisible({ timeout: 10000 });
+  });
 
-    // Test error
-    await page.evaluate(() => {
+  test("editor: error state works", async ({ page }: { page: Page }) => {
+    await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:mock_state_override", JSON.stringify({ editor: "error" }));
     });
-    await page.reload();
+
+    await page.goto(`${BASE_URL}/editor/mock-project-id`);
     await page.waitForLoadState("networkidle");
 
     await expect(page.getByTestId("editor-error")).toBeVisible({ timeout: 10000 });

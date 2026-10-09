@@ -30,8 +30,8 @@ test.describe("AI Opt-Out", () => {
       }];
       localStorage.setItem("@visionbuild:mock_seed_projects", JSON.stringify(projects));
       
-      // Reset AI call counter
-      (window as any).__VB_MOCK_AI_CALLS__ = 0;
+      // Initialize AI call counter as array
+      (window as any).__VB_MOCK_AI_CALLS__ = [];
     });
   });
 
@@ -42,13 +42,12 @@ test.describe("AI Opt-Out", () => {
     // Click a style to generate
     const styleButtons = page.locator('button, [role="button"]').filter({ hasText: /modern|coastal|industrial/i });
     const firstStyle = styleButtons.first();
-    if (await firstStyle.isVisible()) {
-      await firstStyle.click();
-      await page.waitForLoadState("networkidle");
-    }
+    await expect(firstStyle).toBeVisible();
+    await firstStyle.click();
+    await page.waitForLoadState("networkidle");
     
-    // Check AI was called
-    const callCount = await page.evaluate(() => (window as any).__VB_MOCK_AI_CALLS__ || 0);
+    // Check AI was called (array length)
+    const callCount = await page.evaluate(() => ((window as any).__VB_MOCK_AI_CALLS__ || []).length);
     expect(callCount).toBeGreaterThan(0);
   });
 
@@ -59,6 +58,7 @@ test.describe("AI Opt-Out", () => {
     
     // Find and toggle AI opt-out
     const optOutToggle = page.locator('[aria-label*="Opt out"]').or(page.getByText(/opt out.*AI/i).locator('..').locator('..'));
+    await expect(optOutToggle).toBeVisible();
     await optOutToggle.click();
     await page.waitForLoadState("networkidle");
     
@@ -68,19 +68,18 @@ test.describe("AI Opt-Out", () => {
     
     // Reset counter
     await page.evaluate(() => {
-      (window as any).__VB_MOCK_AI_CALLS__ = 0;
+      (window as any).__VB_MOCK_AI_CALLS__ = [];
     });
     
     // Click a style
     const styleButtons = page.locator('button, [role="button"]').filter({ hasText: /modern|coastal|industrial/i });
     const firstStyle = styleButtons.first();
-    if (await firstStyle.isVisible()) {
-      await firstStyle.click();
-      await page.waitForLoadState("networkidle");
-    }
+    await expect(firstStyle).toBeVisible();
+    await firstStyle.click();
+    await page.waitForLoadState("networkidle");
     
     // Counter should be unchanged (0)
-    const callCount = await page.evaluate(() => (window as any).__VB_MOCK_AI_CALLS__ || 0);
+    const callCount = await page.evaluate(() => ((window as any).__VB_MOCK_AI_CALLS__ || []).length);
     expect(callCount).toBe(0);
     
     // UI should explain why

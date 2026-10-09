@@ -273,29 +273,36 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   fetchProjects: async () => {
     const userId = useAuthStore.getState().session?.user?.id;
     
+    // Set loading at start
+    set({ loading: true, error: null });
+    
     // Dev mode: Check for seeded mock projects first (for E2E testing)
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
       // Check for state override - home, project, results, editor all use fetchProjects
-      const overrideJson = await AsyncStorage.getItem("@visionbuild:mock_state_override");
-      if (overrideJson) {
-        const overrides = JSON.parse(overrideJson);
-        // Check any of the screens that use fetchProjects
-        for (const screen of ["home", "project", "results", "editor"]) {
-          if (overrides[screen] === "loading") {
-            set({ loading: true, error: null });
-            return; // Hang until override is cleared
-          }
-          if (overrides[screen] === "error") {
-            set({ loading: false, error: `RAW_SECRET_ERROR_${screen}_fetch` });
-            return;
+      try {
+        const overrideJson = await AsyncStorage.getItem("@visionbuild:mock_state_override");
+        if (overrideJson) {
+          const overrides = JSON.parse(overrideJson);
+          // Check any of the screens that use fetchProjects
+          for (const screen of ["home", "project", "results", "editor"]) {
+            if (overrides[screen] === "loading") {
+              set({ loading: true, error: null });
+              return; // Hang until override is cleared
+            }
+            if (overrides[screen] === "error") {
+              set({ loading: false, error: `RAW_SECRET_ERROR_${screen}_fetch` });
+              return;
+            }
           }
         }
+      } catch (e) {
+        // Invalid JSON, ignore
       }
       try {
         const seedJson = await AsyncStorage.getItem("@visionbuild:mock_seed_projects");
         if (seedJson) {
           const seedProjects = JSON.parse(seedJson);
-          set({ projects: seedProjects });
+          set({ projects: seedProjects, loading: false, error: null });
           return;
         }
       } catch (e) {
@@ -382,11 +389,14 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           updated_at: new Date(Date.now() - 5 * 86400000).toISOString(),
         },
       ];
-      set({ projects: mockProjects });
+      set({ projects: mockProjects, loading: false, error: null });
       return;
     }
     
-    if (!userId) return;
+    if (!userId) {
+      set({ loading: false, error: null });
+      return;
+    }
 
     const { data } = await supabase
       .from("projects")
@@ -395,7 +405,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       .order("updated_at", { ascending: false });
 
     if (data) {
-      set({ projects: data });
+      set({ projects: data, loading: false, error: null });
       
       // Cache projects for offline use in background
       setOfflineCacheData(userId, "projects", data).catch(() => {

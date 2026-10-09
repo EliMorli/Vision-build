@@ -63,6 +63,7 @@ jobs:
       
       - name: Test legal validation with fixtures (always)
         run: |
+          set -o pipefail
           # Test 1: Dirty fixture should fail and name the specific blank
           echo "Testing dirty fixture..."
           if ! LEGAL_DIR=scripts/__fixtures__/legal/dirty node scripts/strip-legal-drafts.js 2>&1 | tee /tmp/dirty-output.txt; then

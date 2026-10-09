@@ -68,17 +68,9 @@ export default function TabsLayout() {
         options={{
           title: "Inbox",
           tabBarLabel: "Inbox",
+          tabBarBadge: unreadCount > 0 ? (unreadCount > 9 ? '9+' : unreadCount.toString()) : undefined,
           tabBarIcon: ({ color, size }) => (
-            <View>
-              <Ionicons name="chatbubbles-outline" size={size} color={color} />
-              {unreadCount > 0 && (
-                <View style={styles.badge} testID="inbox-badge">
-                  <Text style={styles.badgeText}>
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </Text>
-                </View>
-              )}
-            </View>
+            <Ionicons name="chatbubbles-outline" size={size} color={color} />
           ),
         }}
         listeners={{

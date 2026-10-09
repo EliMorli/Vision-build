@@ -2,19 +2,23 @@
 
 BEGIN;
 
--- Create test user
+-- Create test users
 INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, created_at, updated_at)
-VALUES ('00000000-0000-0000-0000-000000000099'::uuid, 'retention-test@example.com', crypt('password', gen_salt('bf')), NOW(), NOW(), NOW())
+VALUES
+  ('00000000-0000-0000-0000-000000000099'::uuid, 'retention-test@example.com', crypt('password', gen_salt('bf')), NOW(), NOW(), NOW()),
+  ('00000000-0000-0000-0000-000000000098'::uuid, 'retention-test-2@example.com', crypt('password', gen_salt('bf')), NOW(), NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- Profile is created by trigger, use ON CONFLICT
 INSERT INTO public.profiles (id, email)
-VALUES ('00000000-0000-0000-0000-000000000099'::uuid, 'retention-test@example.com')
+VALUES
+  ('00000000-0000-0000-0000-000000000099'::uuid, 'retention-test@example.com'),
+  ('00000000-0000-0000-0000-000000000098'::uuid, 'retention-test-2@example.com')
 ON CONFLICT (id) DO NOTHING;
 
 -- Create test project for waitlist foreign key
 INSERT INTO public.projects (id, user_id, original_image_url, status, created_at)
-VALUES ('00000000-0000-0000-0000-000000000098'::uuid, '00000000-0000-0000-0000-000000000099'::uuid, 'https://example.com/test.jpg', 'draft', NOW())
+VALUES ('00000000-0000-0000-0000-000000000097'::uuid, '00000000-0000-0000-0000-000000000099'::uuid, 'https://example.com/test.jpg', 'draft', NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- Test 1: Verify cron jobs exist
@@ -151,8 +155,8 @@ BEGIN
   -- Insert test waitlist entries (only for this test user)
   INSERT INTO public.pro_waitlist (user_id, email, project_id, launch_email_sent_at, created_at)
   VALUES
-    ('00000000-0000-0000-0000-000000000099'::uuid, 'retention-test-1@example.com', '00000000-0000-0000-0000-000000000098'::uuid, NOW() - INTERVAL '50 days', NOW() - INTERVAL '50 days'),  -- Should be deleted
-    ('00000000-0000-0000-0000-000000000099'::uuid, 'retention-test-2@example.com', NULL, NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days'),    -- Should be kept
+    ('00000000-0000-0000-0000-000000000099'::uuid, 'retention-test-1@example.com', '00000000-0000-0000-0000-000000000097'::uuid, NOW() - INTERVAL '50 days', NOW() - INTERVAL '50 days'),  -- Should be deleted
+    ('00000000-0000-0000-0000-000000000098'::uuid, 'retention-test-2@example.com', NULL, NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days'),    -- Should be kept (different user)
     ('00000000-0000-0000-0000-000000000099'::uuid, 'retention-test-3@example.com', NULL, NULL, NOW() - INTERVAL '50 days');                        -- Should be kept (no email sent)
   
   SELECT COUNT(*) INTO v_old_count FROM public.pro_waitlist WHERE user_id = '00000000-0000-0000-0000-000000000099'::uuid;
@@ -171,9 +175,12 @@ BEGIN
 END $$;
 
 -- Cleanup
-DELETE FROM public.usage_events WHERE user_id = '00000000-0000-0000-0000-000000000099'::uuid;
+DELETE FROM public.usage_events WHERE user_id IN ('00000000-0000-0000-0000-000000000099'::uuid, '00000000-0000-0000-0000-000000000098'::uuid);
 DELETE FROM public.account_deletion_requests WHERE user_id = '00000000-0000-0000-0000-000000000099'::uuid;
-DELETE FROM public.pro_waitlist WHERE user_id = '00000000-0000-0000-0000-000000000099'::uuid;
-DELETE FROM public.projects WHERE id = '00000000-0000-0000-0000-000000000098'::uuid;
+DELETE FROM public.pro_waitlist WHERE user_id IN ('00000000-0000-0000-0000-000000000099'::uuid, '00000000-0000-0000-0000-000000000098'::uuid);
+DELETE FROM public.projects WHERE id = '00000000-0000-0000-0000-000000000097'::uuid;
+
+-- Restore original data_retention_config values
+UPDATE public.data_retention_config SET retention_days = 30 WHERE id = 'usage_events';
 
 ROLLBACK;

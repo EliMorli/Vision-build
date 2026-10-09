@@ -26,7 +26,11 @@ test.describe("Inbox Badge", () => {
     await page.goto(BASE_URL);
     await page.waitForLoadState("networkidle");
     
-    await expect(page.getByTestId("inbox-badge")).toBeHidden();
+    // tabBarBadge doesn't have a testID, so check the inbox tab area for badge text
+    const inboxTab = page.locator('[href="/inbox"]').first();
+    await expect(inboxTab).toBeVisible();
+    // No badge text should be present
+    await expect(inboxTab.locator('text=/^[0-9]+\\+?$/')).toBeHidden();
   });
 
   test("3 unread shows '3'", async ({ page }: { page: Page }) => {
@@ -42,8 +46,9 @@ test.describe("Inbox Badge", () => {
     await page.goto(BASE_URL);
     await page.waitForLoadState("networkidle");
     
-    await expect(page.getByTestId("inbox-badge")).toBeVisible();
-    await expect(page.getByTestId("inbox-badge")).toHaveText("3");
+    // tabBarBadge text should be visible on the inbox tab
+    const inboxTab = page.locator('[href="/inbox"]').first();
+    await expect(inboxTab.getByText("3")).toBeVisible();
     
     await page.screenshot({ path: "e2e/screens/ui-inbox-badge.png", fullPage: false });
   });
@@ -57,7 +62,7 @@ test.describe("Inbox Badge", () => {
     await page.goto(BASE_URL);
     await page.waitForLoadState("networkidle");
     
-    await expect(page.getByTestId("inbox-badge")).toBeVisible();
-    await expect(page.getByTestId("inbox-badge")).toHaveText("9+");
+    const inboxTab = page.locator('[href="/inbox"]').first();
+    await expect(inboxTab.getByText("9+")).toBeVisible();
   });
 });

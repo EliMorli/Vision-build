@@ -63,8 +63,8 @@ export default function EditorScreen() {
     );
   }
 
-  // Error state
-  if (error || !currentProject) {
+  // Error state - only show if not loading
+  if (!loading && !currentProject) {
     return (
       <SafeAreaView style={styles.container}>
         {isOffline && <OfflineBanner testID="offline-banner" />}
