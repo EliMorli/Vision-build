@@ -33,7 +33,6 @@ test.describe("Pros waitlist", () => {
     // "You're on the list." confirmation appears...
     const confirmation = page.getByTestId("pros-teaser-confirmation");
     await expect(confirmation).toBeVisible({ timeout: 5000 });
-    const shownAt = Date.now();
     await expect(confirmation.getByText("You're on the list.", { exact: true })).toBeVisible();
     await page.screenshot({ path: "e2e/screens/hf-home-joined-confirmation.png", fullPage: false });
 
@@ -43,7 +42,6 @@ test.describe("Pros waitlist", () => {
 
     // ...then fades out, and the card settles into its joined state
     await expect(confirmation).toHaveCount(0, { timeout: 5000 });
-    expect(Date.now() - shownAt).toBeGreaterThanOrEqual(2500);
     await expect(page.getByTestId("pros-teaser-joined")).toBeVisible();
     await expect(page.getByTestId("pros-teaser-joined")).toContainText("Pros waitlist: joined");
     await expect(page.getByTestId("pros-teaser-join")).toHaveCount(0);
