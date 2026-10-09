@@ -1,0 +1,490 @@
+import { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TextInput,
+  Pressable,
+  SafeAreaView,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { colors, spacing, radius, fonts } from "@/lib/theme";
+import { AiGeneratedBadge, IsoRoom, Button, ReportModal, ConfirmationSheet, MenuSheet, LoadingSkeleton, ErrorState, OfflineBanner } from "@/components";
+import { useExploreStore, useReportStore } from "@/lib/store";
+import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
+
+function styleName(style?: string | null): string {
+  const s = style || "modern";
+  return s.charAt(0).toUpperCase() + s.slice(1).replace(/[-_]/g, " ");
+}
+
+export default function ExploreScreen() {
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState("");
+  const { publicDesigns, fetchPublicDesigns, loading } = useExploreStore();
+  const blockUser = useReportStore((s) => s.blockUser);
+  const [error, setError] = useState<string | null>(null);
+  const networkStatus = useNetworkStatus();
+  const isOffline = !networkStatus.isConnected;
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportingProjectId, setReportingProjectId] = useState<string>("");
+  const [menuSheet, setMenuSheet] = useState<{
+    visible: boolean;
+    projectId: string;
+    userId: string;
+  }>({ visible: false, projectId: "", userId: "" });
+  const [confirmSheet, setConfirmSheet] = useState<{
+    visible: boolean;
+    type: "report" | "block" | null;
+    projectId: string;
+    userId: string;
+  }>({ visible: false, type: null, projectId: "", userId: "" });
+  const [successMessage, setSuccessMessage] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  
+  // Fetch public designs on mount
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setError(null);
+        await fetchPublicDesigns();
+      } catch (e: any) {
+        setError("Failed to load public designs");
+      }
+    };
+    load();
+  }, [fetchPublicDesigns]);
+  
+  // Filter by search query  
+  const filteredDesigns = publicDesigns.filter(p =>
+    p.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.selected_style?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleRetry = async () => {
+    try {
+      setError(null);
+      await fetchPublicDesigns();
+    } catch (e: any) {
+      setError("Failed to load public designs");
+    }
+  };
+
+  const handleReportMenu = (projectId: string, userId: string) => {
+    setMenuSheet({ visible: true, projectId, userId });
+  };
+
+  const handleReportOption = () => {
+    setConfirmSheet({
+      visible: true,
+      type: "report",
+      projectId: menuSheet.projectId,
+      userId: menuSheet.userId,
+    });
+  };
+
+  const handleBlockOption = () => {
+    setConfirmSheet({
+      visible: true,
+      type: "block",
+      projectId: menuSheet.projectId,
+      userId: menuSheet.userId,
+    });
+  };
+
+  const handleConfirmReport = () => {
+    const { projectId } = confirmSheet;
+    setReportingProjectId(projectId);
+    setReportModalVisible(true);
+    setConfirmSheet({ visible: false, type: null, projectId: "", userId: "" });
+  };
+
+  const handleConfirmBlock = async () => {
+    const { userId } = confirmSheet;
+    
+    if (!userId) {
+      setConfirmSheet({ visible: false, type: null, projectId: "", userId: "" });
+      setErrorMessage("Cannot block: user not found");
+      setTimeout(() => setErrorMessage(""), 3000);
+      return;
+    }
+    
+    // Close sheet first
+    setConfirmSheet({ visible: false, type: null, projectId: "", userId: "" });
+    
+    try {
+      await blockUser(userId);
+      // Reload public designs to reflect the block
+      await fetchPublicDesigns();
+      setSuccessMessage("User blocked. Their designs won't appear in Explore anymore.");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (error: any) {
+      setErrorMessage("Failed to block user");
+      setTimeout(() => setErrorMessage(""), 3000);
+    }
+  };
+
+  // Loading state
+  if (loading && publicDesigns.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {isOffline && <OfflineBanner testID="offline-banner" />}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBar}>
+            <Ionicons name="search" size={20} color={colors.textSecondary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search styles, rooms..."
+              placeholderTextColor={colors.textSecondary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              editable={false}
+            />
+          </View>
+        </View>
+        <View style={styles.grid}>
+          <LoadingSkeleton variant="grid" count={6} testID="explore-loading" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Error state - only show full error screen when no content
+  if (error && publicDesigns.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {isOffline && <OfflineBanner testID="offline-banner" />}
+        <ErrorState
+          message="Failed to load public designs"
+          onRetry={handleRetry}
+          testID="explore-error"
+        />
+      </SafeAreaView>
+    );
+  }
+
+  // Empty state when no public designs
+  if (filteredDesigns.length === 0) {
+    return (
+      <SafeAreaView style={styles.container} testID="explore-empty">
+        {isOffline && <OfflineBanner testID="offline-banner" />}
+        {/* Search bar */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBar}>
+            <Ionicons name="search" size={20} color={colors.textSecondary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search styles, rooms..."
+              placeholderTextColor={colors.textSecondary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+        </View>
+        
+        <View style={styles.emptyState}>
+          <View style={styles.emptyIllustration}>
+            <IsoRoom palette="modern" size={180} spark />
+          </View>
+          <Text style={styles.emptyTitle}>No shared designs yet</Text>
+          <Text style={styles.emptySubtitle}>
+            Make a project public to show it here
+          </Text>
+          <Button
+            label="Start a new room"
+            icon="add-circle-outline"
+            onPress={() => router.push("/camera")}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {isOffline && <OfflineBanner testID="offline-banner" />}
+      <ReportModal
+        visible={reportModalVisible}
+        onClose={() => {
+          setReportModalVisible(false);
+          setReportingProjectId("");
+        }}
+        onSuccess={() => {
+          setSuccessMessage("Thank you for reporting. We'll review this design.");
+          setTimeout(() => setSuccessMessage(""), 3000);
+        }}
+        onError={(error) => {
+          setErrorMessage(error);
+          setTimeout(() => setErrorMessage(""), 3000);
+        }}
+        type="design"
+        itemId={reportingProjectId}
+      />
+
+      <MenuSheet
+        visible={menuSheet.visible}
+        onClose={() => setMenuSheet({ visible: false, projectId: "", userId: "" })}
+        title="Report or block"
+        options={[
+          {
+            label: "Report this design",
+            icon: "flag-outline",
+            onPress: handleReportOption,
+            testID: "menu-report-option",
+          },
+          {
+            label: "Block this user",
+            icon: "ban-outline",
+            variant: "destructive",
+            onPress: handleBlockOption,
+            testID: "menu-block-option",
+          },
+        ]}
+        testID="report-block-menu"
+      />
+
+      <ConfirmationSheet
+        visible={confirmSheet.visible && confirmSheet.type === "report"}
+        onClose={() => setConfirmSheet({ visible: false, type: null, projectId: "", userId: "" })}
+        title="Report design"
+        message="Report this design for inappropriate content?"
+        confirmLabel="Report"
+        confirmVariant="danger"
+        onConfirm={handleConfirmReport}
+        testID="report-confirm-sheet"
+      />
+
+      <ConfirmationSheet
+        visible={confirmSheet.visible && confirmSheet.type === "block"}
+        onClose={() => setConfirmSheet({ visible: false, type: null, projectId: "", userId: "" })}
+        title="Block user"
+        message="Block this user? You won't see their designs in Explore anymore."
+        confirmLabel="Block user"
+        confirmVariant="danger"
+        onConfirm={handleConfirmBlock}
+        testID="block-confirm-sheet"
+      />
+
+      {/* Success message */}
+      {successMessage ? (
+        <View style={styles.successBanner} testID="success-message">
+          <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+          <Text style={styles.successText}>{successMessage}</Text>
+        </View>
+      ) : null}
+
+      {/* Error message */}
+      {errorMessage ? (
+        <View style={styles.errorBanner} testID="error-message">
+          <Ionicons name="alert-circle" size={20} color={colors.error} />
+          <Text style={styles.errorText}>{errorMessage}</Text>
+        </View>
+      ) : null}
+
+      {/* Search bar */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={20} color={colors.textSecondary} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search styles, rooms..."
+            placeholderTextColor={colors.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+      </View>
+
+      {/* Grid of designs */}
+      <FlatList
+        data={publicDesigns}
+        keyExtractor={(item) => item.id}
+        numColumns={2}
+        contentContainerStyle={styles.grid}
+        columnWrapperStyle={styles.row}
+        testID="explore-grid"
+        renderItem={({ item }) => (
+          // The card opens the design; the ••• menu is a sibling (not nested
+          // inside the card's button) so each is its own control.
+          <View style={styles.card} testID="explore-design-card">
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${item.title || "Design"}, ${styleName(item.selected_style)} style`}
+              accessibilityHint="Opens the design"
+              onPress={() => router.push(`/explore/${item.id}`)}
+              testID="explore-design-open"
+            >
+              <View style={styles.cardImageWrapper}>
+                <IsoRoom
+                  palette={item.selected_style || "modern"}
+                  size={150}
+                  accessible={false}
+                  importantForAccessibility="no-hide-descendants"
+                />
+                <AiGeneratedBadge compact style={{ top: 8, left: 8 }} testID="explore-ai-badge" />
+              </View>
+              {/* White caption strip under the image (matches the loading skeleton) */}
+              <View style={styles.cardCaption} testID="explore-card-caption">
+                <Text style={styles.cardTitle} numberOfLines={1}>
+                  {item.title}
+                </Text>
+                <Text style={styles.cardStyle} numberOfLines={1}>
+                  {styleName(item.selected_style)}
+                </Text>
+              </View>
+            </Pressable>
+            <Pressable
+              style={styles.moreButton}
+              onPress={() => handleReportMenu(item.id, item.user_id || "")}
+              accessibilityLabel="Report or block"
+              accessibilityRole="button"
+              hitSlop={12}
+              testID="explore-report-button"
+            >
+              <Ionicons name="ellipsis-horizontal" size={20} color="#fff" />
+            </Pressable>
+          </View>
+        )}
+      />
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#fff" },
+  searchContainer: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
+    gap: spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    ...fonts.body,
+    color: colors.textPrimary,
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xxl,
+  },
+  emptyIllustration: {
+    marginBottom: spacing.lg,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  emptyTitle: {
+    ...fonts.heading,
+    fontSize: 24,
+    marginBottom: spacing.xs,
+    textAlign: "center",
+  },
+  emptySubtitle: {
+    ...fonts.regular,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginBottom: spacing.xl,
+    lineHeight: 22,
+  },
+  // 2-column grid with the same spacing as LoadingSkeleton variant="grid"
+  grid: { padding: spacing.md },
+  row: { justifyContent: "space-between" },
+  card: {
+    width: "48%",
+    marginBottom: spacing.md,
+    backgroundColor: "#fff",
+  },
+  cardImageWrapper: {
+    width: "100%",
+    aspectRatio: 1,
+    borderRadius: radius.lg,
+    overflow: "hidden",
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  moreButton: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1,
+  },
+  cardCaption: {
+    backgroundColor: "#fff",
+    paddingTop: spacing.sm,
+    paddingHorizontal: 2,
+  },
+  cardTitle: {
+    fontFamily: "Nunito_700Bold",
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+  cardStyle: {
+    fontFamily: "Nunito_600SemiBold",
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  successBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+    borderRadius: radius.md,
+    gap: spacing.sm,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  successText: {
+    ...fonts.body,
+    color: colors.textPrimary,
+    flex: 1,
+  },
+  errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.error + "12",
+    padding: spacing.md,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+    borderRadius: radius.md,
+    gap: spacing.sm,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  errorText: {
+    ...fonts.body,
+    color: colors.error,
+    flex: 1,
+  },
+});

@@ -1,0 +1,594 @@
+# Handoff Document: VisionBuild Client Flow
+
+> **Before submission:** everything Elimar has to provide (keys, accounts, domain, legal-site URL `EXPO_PUBLIC_LEGAL_BASE_URL`, effective dates, demo account) is listed in **[docs/FILL_IN.md](FILL_IN.md)**.
+
+**Date**: October 8, 2026  
+**Branch**: `cursor/visionbuild-client-flow-740f`  
+**PR**: [#2](https://github.com/EliMorli/Vision-build/pull/2)
+
+---
+
+## ✅ COMPLETED
+
+### Security Fixes (Priority)
+All 6 security issues from review of commit d93632a have been fixed:
+
+1. **Blocked anon INSERT attack** - Migration 00008 removes all anon/authenticated access to `account_deletion_requests`
+2. **Separated GET/POST deletion** - GET validates only, POST executes. Email scanners won't trigger deletion.
+3. **Fixed user lookup pagination** - Migration 00009 adds `public.get_user_id_by_email` SECURITY DEFINER function. NOTE: Edited in place (no remote project exists yet) to fix search_path security (empty search_path, fully qualified auth.users)
+4. **Fixed production logging** - Token only logged in dev/staging, never in production
+5. **Fixed set-project-visibility** - Never copies main_image or 'original' files; keeps full storage paths; fails loudly
+6. **Repo hygiene** - Removed 39MB supabase-go binary, added to .gitignore
+
+**Tests added**:
+- `scripts/sql-tests/test-deletion-security.sql` - RLS tests
+- `scripts/sql-tests/test-visibility-privacy.sql` - Privacy filter tests  
+- `scripts/test-deletion-flow.ts` - Integration tests
+
+**Web routes added**:
+- `/delete-account` - Request form
+- `/delete-account/confirm?token=...` - Confirmation page (GET validates, POST deletes)
+- UI per spec: masked email, red button, error states
+
+### Documentation
+- ✅ `docs/BUTTONS.md` - Status tracking for all 42 buttons (7 working, 4 deferred, 30 broken)
+- ✅ `docs/HANDOFF.md` - This file
+
+### Environment Variables / Fill-ins Required
+
+**AI (one key only)** - set via `npx supabase secrets set`:
+- `AI_API_KEY` - your **OpenRouter** API key. This is the only AI key the app needs.
+  In your OpenRouter account settings, turn on **zero data retention (ZDR)**.
+  Production only allows OpenRouter; the code refuses Replicate and direct OpenAI there.
+  The Privacy Policy and AI consent screen name only Google and Anthropic models via OpenRouter.
+- There is **no Replicate token** and **no direct OpenAI key** to fill in.
+
+**Email**: `RESEND_API_KEY` - Resend handles all outgoing email.
+
+**Database**: Supabase handles the database, auth and storage
+(`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`).
+
+**Account Deletion Ops Alerts** (for `retry-account-deletions` edge function):
+- `OPS_ALERT_EMAIL` - Email address to receive ops alerts when deletions fail repeatedly
+- `ALERT_FROM_EMAIL` - From email address for ops alerts (e.g., `alerts@yourdomain.com`)
+- `CRON_SECRET` - Secret for authenticating cron job calls to retry-account-deletions
+
+**Apple Sign-In Revocation** (if using Apple authentication):
+- `APPLE_TEAM_ID` - Apple Developer Team ID
+- `APPLE_KEY_ID` - Apple Sign In Key ID
+- `APPLE_PRIVATE_KEY` - Apple Sign In private key (PEM format)
+
+**Client Configuration**:
+- `EXPO_PUBLIC_SUPPORT_EMAIL` - Support email address shown in app (used in Contact support links)
+- `EXPO_PUBLIC_LEGAL_BASE_URL` - **FILL-IN (Elimar)**: where the legal website (`web-legal/dist`) is hosted, e.g. `https://visionbuild.app/legal`. The app opens `<base>/terms`, `<base>/privacy` and `<base>/licenses` from Settings → About, sign-in and the AI consent screen. Until it is set the app uses the placeholder `https://visionbuild.app/legal`, and the release check fails. Also set it as a GitHub Actions **repository variable** with the same name so the release gate can check the live site.
+- `EXPO_PUBLIC_CONTRACTOR_OUTREACH_ENABLED` - leave unset at launch. While off, the Inbox tab is hidden. Set to `true` when pros go live.
+
+Note: If OPS_ALERT_EMAIL or ALERT_FROM_EMAIL are unset, the retry function will log a warning and skip sending alerts.
+
+**Supabase Vault Secrets** (required for cron job):
+- `project_url` - Your Supabase project URL (e.g., `https://xxxxx.supabase.co`)
+- `service_role_key` - Your Supabase service role key
+
+These secrets must be created in Supabase Vault for the hourly retry cron job to function. The migration reads them at runtime and calls the retry-account-deletions function.
+
+**Deletion Cron Setup Checklist**:
+1. Verify pg_cron and pg_net extensions are installed
+2. Create Vault secrets: `project_url` and `service_role_key`
+3. Run migrations to schedule the cron job
+4. Verify readiness by running: `npm run doctor` or calling `deletion_cron_ready()` via SQL
+5. Check cron job logs in `cron.job_run_details` table
+
+The `deletion_cron_ready()` function returns boolean status for all requirements (service_role only).
+
+### Legal pages (hosted website, PR #11)
+The app no longer renders legal or license text. Terms, Privacy, Open-source licenses and Delete account live on a small static website built from this repo and open in an in-app browser sheet (`expo-web-browser`, page sheet on iOS).
+
+- **Source:** `web-legal/` (content, styles, `versions.json`, `archive/`). Terms and Privacy text comes from the markdown in `app/terms.tsx` and `app/privacy.tsx` (the same text `strip-legal-drafts.js` checks). Licenses come from `lib/generated/licenses.ts` (`node scripts/generate-licenses.js`).
+- **Build:** `npm run legal:build` → `web-legal/dist/` (gitignored). `npm run legal:build -- --release` additionally fails on DRAFT banners, `[NOTE]`s, `[CONFIRM]`s and placeholders. CI builds it on every run.
+- **Pages:** `/` index, `/terms`, `/privacy`, `/licenses` (grouped by package, versions merged, collapsible texts, search box), `/delete-account` (in-app, web and email deletion; what is deleted and kept, with the retention table from Privacy section 6). Every policy page shows its version and effective date and has `<meta name="policy-version">`. Old versions stay online at `/privacy/v1`, `/terms/v1`, …; the latest is at `/privacy` and `/privacy/vN`.
+- **Current versions:** Terms **v2** and Privacy **v2** (both from `legal/v2`). Privacy v2: profile photos added; the 13+ checkbox and Vi chats are not stored; likes/saves/remixes claims removed. Terms v2: remix rules and the like/save/remix permissions removed (other users can only view Public designs); commercial use of your own designs is still an attorney question; a "Copyright complaints (DMCA)" section was added with the `{{DMCA_AGENT_EMAIL}}` blank (see `docs/FILL_IN.md`; release builds and gate 3 fail until it is set). v1 of each stays online at `/privacy/v1` and `/terms/v1`. **FILL-IN (Elimar):** the v2 effective date in `web-legal/versions.json` (the release build fails until it's filled).
+- **Deploy (manual, not done in this PR):** upload the contents of `web-legal/dist/` to any static host so that `<EXPO_PUBLIC_LEGAL_BASE_URL>/privacy/` serves `privacy/index.html`. Options: Vercel or Netlify (drag-and-drop the folder, or point the project at `web-legal/dist` with build command `npm ci && npm run legal:build`), or a public Supabase Storage bucket behind your domain. All links are relative, so any base path works. Then set `EXPO_PUBLIC_LEGAL_BASE_URL` (app env and GitHub repo variable).
+- **Publishing a new policy version:** copy the current text to `web-legal/archive/<doc>/v<N>.md` and point its `versions.json` entry at it; edit `app/<doc>.tsx`; add the new version (with its effective date) and bump `current` in `web-legal/versions.json`; bump `PRIVACY_POLICY_VERSION` / `TERMS_VERSION` in `lib/config/legal.ts` (jest fails if they disagree); build and deploy; then release.
+- **Release gates** (main/tags, in "Validate legal pages for release"): `strip-legal-drafts.js`, the release build, then `scripts/check-legal-release.js`: (1) fails if `EXPO_PUBLIC_LEGAL_BASE_URL` is unset, http, or the placeholder; (2) fetches the live `<base>/privacy` and fails unless `<meta name="policy-version">` equals `PRIVACY_POLICY_VERSION`, the version the consent screen records (consents row `kind = "privacy_policy"`); (3) fails while the DMCA agent email (`EXPO_PUBLIC_DMCA_AGENT_EMAIL` or `dmcaAgentEmail`) is unset or the placeholder. `npm run legal:test-gates` proves all three gates fail and pass correctly using fixtures and a local server; it runs on every CI build.
+- The in-app `/terms` and `/privacy` routes remain only as the markdown sources; nothing links to them.
+
+### Files Created/Modified
+```
+supabase/migrations/00008_lock_down_deletion_requests.sql
+supabase/migrations/00009_auth_user_lookup_by_email.sql
+supabase/functions/_shared/delete-user-data.ts
+supabase/functions/delete-account/index.ts (refactored to use shared module)
+supabase/functions/confirm-account-deletion/index.ts (complete rewrite: GET/POST separation)
+supabase/functions/request-account-deletion/index.ts (fixed logging)
+supabase/functions/set-project-visibility/index.ts (privacy fixes)
+app/delete-account/index.tsx
+app/delete-account/confirm.tsx
+app/terms.tsx
+app/privacy.tsx
+app/_layout.tsx (registered new routes)
+docs/BUTTONS.md
+docs/HANDOFF.md
+.gitignore (added supabase binaries)
+scripts/sql-tests/test-deletion-security.sql
+scripts/sql-tests/test-visibility-privacy.sql
+scripts/test-deletion-flow.ts
+```
+
+---
+
+## 🚧 NOT DONE (Original Task)
+
+The original task had multiple steps. Only security fixes and documentation are complete.
+
+### STEP 0: Local Backend
+**Status**: ❌ Not attempted  
+**Why**: Docker daemon failed to start (permission issues). PostgreSQL 16 installed but Supabase CLI setup not completed.  
+**What's needed**:
+- Either: Fix Docker permissions and run `supabase start`
+- Or: Create minimal auth/storage shims for PostgreSQL 16, apply migrations, create SQL tests in `scripts/sql-tests/`
+- Add `npm run dev:local` script
+- Document in `docs/LOCAL_DEV.md`
+
+### STEP 1: Core Create Loop
+**Status**: ❌ Not started  
+**Existing code**:
+- ✅ `app/(tabs)/camera.tsx` exists and looks complete
+- ✅ `expo-image-picker` already imported
+- ✅ `uploadAndAnalyze()` function exists in `lib/store.ts` (lines 349-421)
+- ✅ `generateDesigns()` function exists in `lib/store.ts` (lines 423-470)
+- ✅ Edge functions exist: `analyze-room`, `generate-design`
+
+**What's needed**:
+1. Wire camera button in home screen to `/(tabs)/camera`
+2. Test upload flow (storage bucket `room-photos` must exist)
+3. Add AI mock mode:
+   - Check `APP_ENV=development && AI_MOCK=true` in `supabase/functions/_shared/ai.ts`
+   - Return fake analysis for analyze-room
+   - Return fake image URLs for generate-design
+   - Mock mode allows local testing without OpenRouter keys
+4. Wire style picker to call `generateDesigns()`
+5. Wire results screen to save selected design
+6. Test full loop end-to-end
+
+### STEP 2: Pass A Broken Buttons
+**Status**: ❌ Not started  
+**List** (from BUTTONS.md):
+- ❌ AI consent saved to DB with AI_CONSENT_VERSION (currently AsyncStorage only)
+- ❌ Settings toggles persist to DB (currently local state only)
+- ❌ Delete Account button in Settings (function exists, UI missing)
+- ❌ Sign Out in mock mode (doesn't clear session)
+- ❌ Edit Profile screen (route: null)
+- ❌ Vi chat saves chat_messages (sendMessage() is stub)
+- ❌ Vi Generate Design starts loop (no handler)
+- ❌ Visibility switch calls set-project-visibility (currently Alert)
+- ❌ Explore Report uses ReportModal (currently Alert with empty callbacks)
+
+### STEP 3: set-project-visibility Bug
+**Status**: ✅ DONE (included in security fixes)
+
+### STEP 4: Async UX
+**Status**: ❌ Not started  
+**What's needed**:
+- Pressed state on all buttons
+- Disabled + spinner while pending
+- Double-tap prevention
+- Readable error messages
+- Empty states for: Home, Explore, Inbox, Profile
+- Offline states with Retry buttons
+
+### VERIFY Before Reporting Done
+**Status**: ❌ Not started  
+**Checklist**:
+- [ ] `npm run lint` passes
+- [ ] `npx tsc --noEmit` passes  
+- [ ] `npx expo install --check` passes
+- [ ] `npm run check:models` passes
+- [ ] `deno check` on all functions passes
+- [ ] Update `docs/BUTTONS.md` with real counts
+- [ ] Add `npm run e2e:web` Playwright test for create loop in mock mode
+- [ ] Take screenshots in `e2e/screens/a2-*.png` with assertions
+
+---
+
+## 📊 Current Status
+
+### Commits
+1. `00df28b` - security: fix account deletion vulnerabilities (priority)
+2. `f69dd7c` - feat: add web routes and tests for account deletion
+3. `96b8dcd` - docs: add BUTTONS.md tracking sheet
+4. `15f0e26` - feat: add /terms and /privacy routes
+
+### Button Counts (from BUTTONS.md)
+- **Total**: 42 buttons
+- **Pass A** (working): 7 (17%)
+- **Pass B** (deferred): 4 (10%) - contractor threads, quotes, blocks, Explore detail
+- **Broken**: 30 (71%)
+
+### Local Backend Path
+Attempted Docker but failed. PostgreSQL 16 installed. Migrations not applied.
+
+---
+
+## 🔧 How to Continue
+
+### Immediate Next Steps
+1. **Fix camera flow**:
+   - Update home screen "Start Your First Project" button to route to `/(tabs)/camera`
+   - Test camera.tsx with mock Supabase or local backend
+   
+2. **Add AI mock mode**:
+   - In `supabase/functions/_shared/ai.ts`, check for `APP_ENV=development && AI_MOCK=true`
+   - Return mock data from `analyze-room` and `generate-design`
+   - This allows testing without OpenRouter keys
+
+3. **Wire existing functions**:
+   - Most code already exists, just needs connections
+   - Example: Vi chat form has UI but sendMessage() is empty
+   - Example: Project detail has visibility toggle but calls Alert instead of function
+
+### Testing Without Keys
+The owner will plug in real keys later. Focus on:
+- Code correctness (functions called with right parameters)
+- Mock mode support (works locally without keys)
+- Error handling (fails gracefully when keys missing)
+
+### Before Final Push
+1. Run all lints and type checks
+2. Update BUTTONS.md counts
+3. Add e2e test for create loop
+4. Take and verify screenshots
+5. Update PR description with final status
+
+---
+
+## 🐛 Known Issues
+
+1. **Docker**: Can't start daemon (permission denied)
+2. **Supabase Local**: Not set up
+3. **Mock Mode**: Not implemented for AI functions
+4. **Storage Buckets**: May not exist in local or remote instance
+
+---
+
+## ✅ TEST INFRASTRUCTURE COMPLETE (October 8, 2026)
+
+### Database Tests
+**Status**: ✅ COMPLETE and PASSING  
+- Created `scripts/db/shim.sql` - Minimal auth/storage schema for plain PostgreSQL
+- Created `scripts/db/run-tests.sh` - Full database test runner
+- Created `scripts/db/post-migration-grants.sql` - Service role permissions
+- Added `npm run db:test` command
+- **Results**: 2/2 tests passing
+  - `test-deletion-security.sql` - ✅ All 6 tests pass
+  - `test-visibility-privacy.sql` - ✅ All 3 tests pass
+
+### Function Tests
+**Status**: ✅ COMPLETE and PASSING  
+- Created `supabase/functions/deno.json` - Deno configuration
+- Created `scripts/run-function-tests.sh` - Function test runner
+- Added `supabase/functions/confirm-account-deletion/index_test.ts` - Email masking tests
+- Added `npm run fn:test` command
+- **Results**: All functions typecheck, 3/3 unit tests passing
+
+### CI/CD Pipeline
+**Status**: ✅ COMPLETE and GREEN  
+- Created `.github/workflows/ci.yml` - Full CI pipeline
+- Runs on all PRs and pushes to main/develop/cursor/** branches
+- Tests run in parallel with PostgreSQL service container
+- **All checks passing**:
+  - ✅ Lint (0 errors, 47 warnings)
+  - ✅ TypeScript check
+  - ✅ Zod/Database models validation
+  - ✅ Database tests (2/2 passing)
+  - ✅ Function tests (3/3 passing)
+
+### Bugs Fixed
+
+1. **Schema Mismatch in set-project-visibility**
+   - Function used `main_image`/`design_image` but schema has `original_image_url`/`selected_generation_url`
+   - Fixed in commit `b5863a8`
+   - Privacy filter now correctly skips original images
+
+2. **Type Narrowing in Functions**
+   - `verifyAuth()` and `verifyProjectOwnership()` return `T | Response`
+   - TypeScript couldn't narrow types without explicit checks
+   - Fixed in commit `a3022ca`
+
+3. **Rate Limit Function Call**
+   - `assistant-chat` called `checkRateLimit()` with 4 args but only takes 3
+   - Fixed in commit `a3022ca`
+
+4. **TypeScript Errors**
+   - `profile.tsx`: Changed `design_image` → `selected_generation_url`
+   - `confirm.tsx`: Fixed variable shadowing and null type issues
+   - `privacy.tsx`, `terms.tsx`: Fixed color.text → color.textPrimary
+   - `final-retake.js`: Fixed document reference in eval
+   - Fixed in commits `56720c5`
+
+5. **React Hooks Lint Error**
+   - `delete-account/confirm.tsx` called setState synchronously in useEffect
+   - Restructured to async validation inside effect with cancellation
+   - Fixed in commit `2935257`
+
+### Commits in This Pass
+1. `b5863a8` - fix: correct column names in set-project-visibility and tests
+2. `a3022ca` - fix: resolve TypeScript errors in functions and add tests
+3. `56720c5` - feat: add CI workflow and fix TypeScript errors
+4. `2935257` - fix: resolve lint error in confirm page
+5. `d82a6f3` - fix: use deno from PATH in CI
+6. `c18b228` - fix: remove incompatible Deno lockfile
+7. `75da611` - fix: remove deno.lock from git tracking
+
+### Test Summary
+```
+Database Tests: 2 passed, 2 total
+Function Tests: 3 passed, 3 total (all functions typecheck)
+CI Pipeline: ✅ GREEN on PR #2
+```
+
+### Command Summary
+All these commands now work and pass:
+```bash
+npm run lint          # 0 errors, 47 warnings
+npx tsc --noEmit      # 0 errors
+npm run check:models  # All models valid
+npm run db:test       # 2/2 passing
+npm run fn:test       # 3/3 passing
+```
+
+---
+
+## 🔐 Image URLs and Privacy (Updated October 8, 2026)
+
+### Storage Architecture
+
+**Private Storage (room-photos bucket):**
+- All user-uploaded images and AI-generated designs live here
+- Only accessible by the owning user
+- Paths follow format: `<userId>/<projectId>/<filename>`
+
+**Public Storage (public-designs bucket):**
+- Only generated designs are copied here when a project is set to public
+- Original room photos are NEVER copied to public storage
+- Same path structure as private storage
+
+### Database Columns
+
+The `projects` table stores **storage paths**, never signed URLs:
+
+- `original_image_url`: Path to original room photo (e.g., `user-123/proj-456/original.jpg`)
+- `generated_image_urls`: Array of paths to generated designs (e.g., `["user-123/proj-456/design-0.png", ...]`)
+- `selected_generation_url`: Path to the user's selected design
+
+**Migration `00010_fix_signed_urls_to_paths.sql`** converts any existing signed URLs to paths.
+
+### Edge Functions
+
+**`get-project-images`** (NEW)
+- **Purpose**: Generate short-lived signed URLs for a user's own project images
+- **Auth**: Requires valid JWT and verifies project ownership
+- **Request**: `POST /get-project-images` with `{ "projectId": "..." }`
+- **Response**: 
+  ```json
+  {
+    "success": true,
+    "projectId": "proj-456",
+    "images": {
+      "original_image_url": "https://...?token=...&expires=3600",
+      "generated_image_urls": ["https://...?token=...&expires=3600", ...],
+      "selected_generation_url": "https://...?token=...&expires=3600"
+    },
+    "expiresIn": 3600
+  }
+  ```
+- **Expiry**: Signed URLs are valid for exactly **1 hour** (3600 seconds)
+- **Ownership**: Non-owners receive `403 Forbidden`
+
+**`generate-design`**
+- Now stores paths in the database, not signed URLs
+- Paths follow format: `<userId>/<projectId>/design-<n>.png`
+- Render provider defaults to OpenRouter (the only provider allowed in production); mock mode for local testing
+
+**`set-project-visibility`**
+- Copies only generated designs to `public-designs`, never originals
+- Skips any path containing "original"
+- Normalizes signed URLs to paths before storage operations
+- Returns 500 on download/upload failures (fails loudly)
+
+### App Integration
+
+**For private projects:**
+1. Call `get-project-images` to get short-lived signed URLs
+2. Display images in the app
+3. Refresh URLs after 1 hour if needed
+
+**For public projects (Explore feed):**
+1. Read directly from `public-designs` bucket (public URLs)
+2. No authentication needed
+3. Original room photos never exposed
+
+### Privacy Guarantees
+
+✅ Signed URLs expire in 1 hour (not 1 year)  
+✅ Database never stores tokens or full URLs  
+✅ Original room photos never copied to public storage  
+✅ Ownership verified before generating signed URLs  
+✅ set-project-visibility filters out paths containing "original"  
+
+---
+
+## 📝 Notes
+
+- All code changes follow existing patterns in the codebase
+- TypeScript types are clean
+- RLS policies are correct (tested with SQL)
+- Security fixes are production-ready
+- Legal routes are ready (DRAFT disclaimer included)
+- Camera route exists and looks complete
+- uploadAndAnalyze() function is well-structured
+- **Tests are now running in CI and all passing**
+- **Image privacy bug fixed with comprehensive tests**
+
+The main gap is **wiring** - connecting existing pieces together and adding mock mode for local testing.
+
+---
+
+## 🔐 AI Consent Enforcement (Updated October 8, 2026)
+
+### Server-Side Enforcement
+
+All AI operations (`analyze-room`, `generate-design`, `assistant-chat`) enforce consent on the server before processing.
+
+**Version Constant:**
+- Shared constant: `supabase/functions/_shared/consent.ts` → `CURRENT_AI_CONSENT_VERSION`
+- Client mirrors: `lib/config.ts` → `AI_CONSENT_VERSION` (must match server)
+
+**403 Response Contract:**
+```json
+{
+  "error": "consent_required",
+  "reason": "never" | "outdated",
+  "current_version": "2026-10-07b"
+}
+```
+
+- `reason: "never"` = no consent row in database
+- `reason: "outdated"` = consent row exists for older version
+- Check runs BEFORE any storage read or AI/OpenRouter call
+
+**RLS Policy:**
+- Users can only insert/read their own consent rows
+- Tested in `scripts/sql-tests/test-consent-security.sql`
+
+### Client-Side Handling
+
+**Data Layer:**
+- `lib/data/supabase.ts` parses 403 consent errors and throws `ConsentError` with `isConsentError`, `reason`, `currentVersion`
+- `lib/data/in-memory.ts` simulates consent checks using `@visionbuild:mock_consent_version` in localStorage
+
+**Store Behavior (Zustand):**
+- `pendingConsent` state holds `{ reason: "never"|"outdated", resume: { type, projectId, imageUri, stylePrompt, roomAnalysis } }`
+- Client-side check (camera.tsx): Sets `pendingConsent` with `reason: "never"` for first-time users before photo upload
+- `uploadAndAnalyze` and `generateDesigns` catch `ConsentError` from server and set `pendingConsent` with `reason: "outdated"`
+- Navigate to `/ai-consent` (no URL params needed - data is in store)
+
+**Consent Screen (`app/ai-consent.tsx`):**
+- Reads `pendingConsent` from store (not URL params)
+- `reason=outdated`: Shows update notice "We've updated how your photos are handled. Please review before your next design."
+- `reason=never`: Normal consent screen, no update notice
+- "Continue" button: Writes consent to DB, then directly calls uploadAndAnalyze/generateDesigns with saved context (same project, photo, style), clears pending consent
+- "Not now" button: Always visible (both first-time and re-consent), clears pending consent, returns to project/camera with photo preserved, no AI call made
+
+**Mock Mode:**
+- Set `@visionbuild:mock_consent_version` to simulate consent states:
+  - Missing = never
+  - Old version (e.g., "2026-10-01") = outdated
+  - Current version = allowed
+
+### Tests
+
+**Function Tests (Deno):**
+- `supabase/functions/analyze-room/index_test.ts`
+- `supabase/functions/generate-design/index_test.ts`
+- `supabase/functions/assistant-chat/index_test.ts`
+- All test: no consent → 403 never, outdated → 403 outdated, current → success
+
+**SQL Tests:**
+- `scripts/sql-tests/test-consent-security.sql`
+- Tests: user inserts own consent ✅, cannot insert for other user ✅, can read own ✅, cannot read others ✅
+
+**E2E Tests (Playwright):**
+- `e2e/consent-flow.spec.ts`
+- Tests:
+  1. Outdated consent → re-consent screen with update notice → accept → resumes with same photo/style, lands on Results
+  2. Never consent → normal consent screen (no update notice) → accept → resumes to style picker
+  3. Consent decline sends nothing → "Not now" → back to camera with photo, zero AI requests
+  4. Re-consent decline → generate triggers 403 → "Not now" → back to editor with style, zero new AI requests
+  5. Generate-design triggers re-consent → consent becomes outdated mid-flow → accept → resumes and completes
+
+**Screenshots:**
+- `e2e/screens/a7-reconsent-outdated.png` - Consent screen with blue info banner showing update notice
+- `e2e/screens/a7-reconsent-never.png` - Clean consent screen without update notice, standard privacy icons
+- `e2e/screens/a7-reconsent-declined-project.png` - Camera screen with test photo preserved after "Not now"
+
+### Commits (Agent A7 - Server Enforcement)
+1. `33892ab` - feat: enforce AI consent on server
+2. `5d31cb5` - feat: handle consent_required errors in app
+
+### Commits (Agent A8 - Store-Based Flow & "Not now" Button)
+1. `68b030d` - fix: use Zustand store for consent state instead of URL params
+2. `a464bfa` - fix: make PrivateImage retry test robust with explicit waits
+3. `1470b0f` - fix: remove fixed sleep from consent flow test
+4. `2a2f007` - fix: properly resume AI operations after consent acceptance
+5. `4357e22` - docs: update HANDOFF.md with store-based consent flow
+6. `f039bf9` - fix: distinguish between never and outdated in client consent check
+7. `16ff65a` - fix: resolve strict mode violation in generate-design test
+8. `938a8ab` - fix: use router.push instead of replace for generate resume flow
+9. `2889170` - test: skip generate-design re-consent test temporarily (REVERTED)
+10. `799edba` - feat: add 'Not now' button to consent screen for both cases
+11. `883f0bd` - fix: update create-loop test to use 'Not now' button
+12. `9c08d84` - fix: unskip and fix generate-design re-consent test, add re-consent decline test
+13. `9b9323b` - test: add e2e screenshots for AI consent flows
+
+
+## 🚨 DELETION RETRY SYSTEM
+
+**Migration 00011**: Added retry tracking for failed deletions (California CCPA requires completion within 45 days)
+
+### Core Changes
+
+1. **delete-user-data.ts** now returns typed failures:
+   - Storage errors abort BEFORE auth/DB deletion
+   - Returns `{success: false, stage: 'storage'|'database'|'auth', error, bucket?}`
+   - No email in logs (only user ID + reason codes)
+   - Fixed pagination: cap 100 attempts to prevent infinite loops
+
+2. **account_deletion_requests** table extended:
+   - `status`: 'pending', 'confirmed', 'failed_pending_retry', 'completed', 'expired', 'used'
+   - `retry_attempts`, `next_retry_at`, `last_error_code` (no PII), `first_failed_at`, `completed_at`
+
+3. **retry-account-deletions** edge function:
+   - Exponential backoff: 15min, 1h, 6h, 24h, then daily
+   - Ops alert via Resend when attempts >= 5 OR first_failed_at > 7 days
+   - Alert contains only: user ID, attempts, error code
+   - Configure `OPS_ALERT_EMAIL` and `RESEND_API_KEY` (no defaults)
+
+4. **Client retry UX** (`app/delete-account/confirm.tsx`):
+   - Failure screen shows: "We couldn't finish deleting your account. Some of your data may already be removed. Please try again."
+   - "Try again" button + "Contact support" link
+   - Token stays valid for retry within 24h window
+
+### Scheduling Setup (REQUIRED)
+
+**Option A: pg_cron (recommended)**
+```sql
+-- Run hourly
+SELECT cron.schedule(
+  'retry-failed-deletions',
+  '0 * * * *',
+  $$
+  SELECT net.http_post(
+    url:='<SUPABASE_URL>/functions/v1/retry-account-deletions',
+    headers:=jsonb_build_object('Authorization', 'Bearer <SERVICE_ROLE_KEY>')
+  );
+  $$
+);
+```
+
+**Option B: Supabase Dashboard Cron**
+- Go to Database → Cron Jobs
+- Create job: `retry-failed-deletions`, schedule `0 * * * *`
+- SQL: Call `retry-account-deletions` via `net.http_post` with service role key
+
+**Fill-ins**:
+- Replace `<SUPABASE_URL>` with your project URL
+- Replace `<SERVICE_ROLE_KEY>` with vault-stored or env var reference
+- Test with: `curl -X POST <SUPABASE_URL>/functions/v1/retry-account-deletions -H "Authorization: Bearer <SERVICE_ROLE_KEY>"`
+
+### Testing TODO
+
+- [ ] Add Deno test: console capture, assert email never logged
+- [ ] Extend storage integration test: seed all user-data tables, verify all empty after deletion
+- [ ] Add E2E test: mock storage failure, verify retry flow + screenshots (del-failed.png, del-retry-success.png)
+- [ ] Test actual retry with failed storage + successful retry after fault clears
+

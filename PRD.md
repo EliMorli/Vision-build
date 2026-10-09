@@ -790,7 +790,7 @@ Vision-build/
 - `width: 1024`, `height: 1024`
 - `num_outputs: 1` (per call)
 
-**Performance:** ~30-45 seconds per image, ~2-3 minutes total for 4 images.
+**Performance:** ~3-5 seconds per image with google/gemini-3.1-flash-image (Nano Banana 2) on OpenRouter ZDR endpoint.
 
 ### 10.3 `dispatch-lead`
 **Runtime:** Deno (Supabase Edge Function)
@@ -924,7 +924,7 @@ app/index.tsx (redirect)
 2. Scrolls through 8 style cards in 2-column grid
 3. Taps "Modern" → card gets blue border + checkmark badge
 4. Taps "Generate 4 Designs" → progress bar shows generation
-5. ~2-3 minutes → auto-navigates to result
+5. ~10-20 seconds → auto-navigates to result
 
 ### Step 4: Browse Designs
 1. Sees 4 generated designs in swipeable carousel

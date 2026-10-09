@@ -1,0 +1,267 @@
+import { useState, useEffect, useRef } from "react";
+import {
+  Image,
+  View,
+  StyleSheet,
+  ActivityIndicator,
+  ImageStyle,
+  StyleProp,
+  ViewStyle,
+} from "react-native";
+import { useSignedUrl, clearSignedUrlCache } from "@/lib/hooks/useSignedUrl";
+import { colors } from "@/lib/theme";
+import { IsoRoom } from "./IsoRoom";
+import { cacheImageFile, getCachedImageFile } from "@/lib/offline-cache";
+import { useAuthStore } from "@/lib/store";
+
+interface PrivateImageProps {
+  /**
+   * Storage bucket name (e.g., "room-photos")
+   */
+  bucket: string;
+
+  /**
+   * Storage path (e.g., "userId/projectId/original.jpg")
+   * Can also be a full URL for backwards compatibility
+   */
+  path: string | null | undefined;
+
+  /**
+   * Style palette for the fallback IsoRoom placeholder
+   * Defaults to "modern"
+   */
+  palette?: string;
+
+  /**
+   * Size for the IsoRoom placeholder
+   * Should match the image container size
+   */
+  placeholderSize?: number;
+
+  /**
+   * Image style
+   */
+  style?: StyleProp<ImageStyle>;
+
+  /**
+   * Container style (applied when showing placeholder)
+   */
+  containerStyle?: StyleProp<ViewStyle>;
+
+  /**
+   * Accessibility label
+   */
+  accessibilityLabel?: string;
+
+  /**
+   * Whether to show a loading spinner while fetching signed URL
+   * Default: false
+   */
+  showLoadingSpinner?: boolean;
+
+  /**
+   * Test ID for testing
+   */
+  testID?: string;
+}
+
+const MAX_RETRIES = 2;
+const RETRY_DELAYS_MS = [500, 1500]; // Exponential backoff
+
+/**
+ * PrivateImage component
+ * 
+ * Displays images stored in private Supabase storage buckets.
+ * 
+ * Features:
+ * - Automatically fetches signed URLs for storage paths
+ * - Caches signed URLs until shortly before expiry
+ * - Retries with fresh signed URLs on 403/400 errors (expired links)
+ * - Shows IsoRoom placeholder on failure instead of broken image icon
+ * - Supports both storage paths and legacy full URLs
+ */
+export function PrivateImage({
+  bucket,
+  path,
+  palette = "modern",
+  placeholderSize = 200,
+  style,
+  containerStyle,
+  accessibilityLabel,
+  showLoadingSpinner = false,
+  testID,
+}: PrivateImageProps) {
+  const [retryTrigger, setRetryTrigger] = useState(0);
+  const signedUrl = useSignedUrl(bucket, path, 3600 + retryTrigger); // Add retry trigger to force re-fetch
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [showPlaceholder, setShowPlaceholder] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [imageLoaded, setImageLoaded] = useState(false); // Track if image successfully loaded
+  const retryCountRef = useRef(0);
+  const isMountedRef = useRef(true);
+  const userId = useAuthStore((s) => s.session?.user?.id);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  // Update imageUrl when signedUrl changes, with offline cache support
+  useEffect(() => {
+    const loadImage = async () => {
+      if (!signedUrl || !path || !userId) return;
+
+      // Try to get cached version first
+      const cachedUri = await getCachedImageFile(userId, path);
+      if (cachedUri && isMountedRef.current) {
+        setImageUrl(cachedUri);
+        setShowPlaceholder(false);
+        setImageLoaded(false);
+        retryCountRef.current = 0;
+        return;
+      }
+
+      // Use signed URL and cache it in the background
+      if (isMountedRef.current) {
+        setImageUrl(signedUrl);
+        setShowPlaceholder(false);
+        setImageLoaded(false);
+        retryCountRef.current = 0;
+      }
+
+      // Cache in the background (fire and forget)
+      cacheImageFile(userId, path, signedUrl).catch(() => {
+        // Silently ignore cache errors
+      });
+    };
+
+    loadImage();
+  }, [signedUrl, path, userId]);
+
+  const handleImageError = async () => {
+    if (!path || !isMountedRef.current) return;
+
+    // If we've exhausted retries, show placeholder
+    if (retryCountRef.current >= MAX_RETRIES) {
+      setShowPlaceholder(true);
+      setIsLoading(false);
+      return;
+    }
+
+    // Clear the cache and retry with exponential backoff
+    const retryDelay = RETRY_DELAYS_MS[retryCountRef.current] || 2000;
+    retryCountRef.current++;
+
+    console.log(
+      `Image failed to load (retry ${retryCountRef.current}/${MAX_RETRIES}), retrying in ${retryDelay}ms...`
+    );
+
+    // Immediately set retrying state to show placeholder
+    setIsLoading(true);
+    setImageUrl(null);
+
+    // Clear the cache to force a fresh signed URL
+    clearSignedUrlCache(bucket, path);
+
+    // Wait before retrying
+    await new Promise((resolve) => setTimeout(resolve, retryDelay));
+
+    if (!isMountedRef.current) return;
+
+    // Trigger a re-fetch by incrementing retryTrigger (changes hook dependency)
+    setRetryTrigger(prev => prev + 1);
+  };
+
+  const handleImageLoad = () => {
+    setIsLoading(false);
+    setShowPlaceholder(false);
+    setImageLoaded(true);
+  };
+
+  // Show placeholder if no path provided
+  if (!path) {
+    return (
+      <View style={[styles.placeholderContainer, containerStyle]} testID={testID}>
+        <View testID="private-image-placeholder">
+          <IsoRoom
+            palette={palette as any}
+            size={placeholderSize}
+            accessible={true}
+            accessibilityLabel={accessibilityLabel || "Room placeholder"}
+          />
+        </View>
+      </View>
+    );
+  }
+
+  // Show loading spinner while waiting for signed URL
+  if (!imageUrl && showLoadingSpinner) {
+    return (
+      <View style={[styles.placeholderContainer, containerStyle]} testID={testID}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  // Show placeholder until image successfully loads
+  // This ensures we NEVER show a blank card
+  const shouldShowPlaceholder = showPlaceholder || !imageUrl || !imageLoaded;
+
+  return (
+    <View style={containerStyle} testID={testID}>
+      {shouldShowPlaceholder ? (
+        <View
+          style={[styles.placeholderContainer, containerStyle]}
+          accessible={true}
+          accessibilityLabel={accessibilityLabel || "Room placeholder"}
+        >
+          <IsoRoom
+            testID="private-image-placeholder"
+            palette={palette as any}
+            size={placeholderSize}
+            accessible={false}
+            importantForAccessibility="no-hide-descendants"
+          />
+        </View>
+      ) : (
+        <Image
+          testID="private-image-loaded"
+          source={{ uri: imageUrl }}
+          style={style}
+          onError={handleImageError}
+          onLoad={handleImageLoad}
+          accessibilityLabel={accessibilityLabel}
+        />
+      )}
+      {!!imageUrl && !imageLoaded && (
+        <Image
+          source={{ uri: imageUrl }}
+          style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }}
+          onError={handleImageError}
+          onLoad={handleImageLoad}
+        />
+      )}
+      {isLoading && showLoadingSpinner && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="small" color={colors.primary} />
+        </View>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  placeholderContainer: {
+    backgroundColor: colors.surface,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.surface,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});

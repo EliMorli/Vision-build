@@ -1,0 +1,40 @@
+<svg width="800" height="640" viewBox="0 -14 200 160" xmlns="http://www.w3.org/2000/svg">
+  <!-- Neutral/before room - unstyled plain palette -->
+  <!-- Left wall -->
+  <polygon points="0,136 0,74 100,52 100,114" fill="#E5E5E5"/>
+  <!-- Right wall -->
+  <polygon points="100,52 184,74 184,136 100,114" fill="#F0F0F0"/>
+  <!-- Window on right wall -->
+  <polygon points="130,34 160,34 160,4 130,4" fill="#D0E8F0" stroke="#fff" stroke-width="3"/>
+  <!-- Art on left wall -->
+  <polygon points="26,26 50,26 50,6 26,6" fill="#CCCCCC" stroke="#fff" stroke-width="2.5"/>
+  <!-- Floor -->
+  <polygon points="100,52 184,74 184,136 100,158 16,136 16,74" fill="#D0D0D0"/>
+  <!-- Floor thickness -->
+  <polygon points="16,136 84,158 84,165 16,143" fill="#AAAAAA"/>
+  <polygon points="84,158 184,136 184,143 84,165" fill="#B8B8B8"/>
+  <!-- Rug -->
+  <polygon points="122,76 166,76 166,116 122,116" fill="#E8E8E8"/>
+  <!-- Sofa (box helper) -->
+  <polygon points="54,28 100,28 100,38 54,38" fill="#999999"/>
+  <polygon points="100,28 100,38 92,42 92,32" fill="#7A7A7A"/>
+  <polygon points="54,28 92,32 92,42 54,38" fill="#666666"/>
+  <polygon points="54,28 100,28 92,32 54,32" fill="#AAAAAA"/>
+  <!-- Coffee table -->
+  <polygon points="130,88 150,88 150,97 130,97" fill="#BBBBBB"/>
+  <polygon points="150,88 150,97 143,101 143,92" fill="#999999"/>
+  <polygon points="130,88 143,92 143,101 130,97" fill="#888888"/>
+  <polygon points="130,79 150,79 143,83 130,83" fill="#D0D0D0"/>
+  <!-- Plant pot -->
+  <polygon points="164,20 174,20 174,32 164,32" fill="#E0D5C5"/>
+  <polygon points="174,20 174,32 169,34 169,22" fill="#C9BFB0"/>
+  <polygon points="164,20 169,22 169,34 164,32" fill="#B8AFA0"/>
+  <polygon points="164,8 174,8 169,10 164,10" fill="#EDE7DC"/>
+  <circle cx="169" cy="10" r="11" fill="#B0B0B0"/>
+  <circle cx="163" cy="13" r="7" fill="#9A9A9A"/>
+  <!-- Lamp -->
+  <rect x="4.5" y="62" width="3" height="40" fill="#555"/>
+  <path d="M-4,64 13,64 9,52 0,52Z" fill="#E0E0E0"/>
+  <!-- Small AI-generated tag -->
+  <text x="100" y="155" font-family="Arial, sans-serif" font-size="6" fill="#888" text-anchor="middle">BEFORE</text>
+</svg>

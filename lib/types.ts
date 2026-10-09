@@ -36,11 +36,14 @@ export interface Profile {
   photo_url: string | null;
   created_at: string;
   last_login_at: string;
+  xp: number;
+  level: number;
 }
 
 export type ProjectStatus =
   | "draft"
   | "analyzed"
+  | "rendering"
   | "generated"
   | "connected"
   | "completed";
@@ -72,6 +75,7 @@ export interface Project {
   selected_generation_url: string | null;
   status: ProjectStatus;
   lead_info: LeadInfo | null;
+  is_public: boolean;
   created_at: string;
   updated_at: string;
 }

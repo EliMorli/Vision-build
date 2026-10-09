@@ -1,0 +1,10 @@
+{
+  "tasks": {
+    "check": "deno check **/*.ts",
+    "test": "deno test --allow-env --allow-net --allow-read"
+  },
+  "compilerOptions": {
+    "lib": ["deno.window"],
+    "strict": true
+  }
+}

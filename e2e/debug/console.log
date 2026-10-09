@@ -1,0 +1,9 @@
+Error: Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:19006/
+Call log:
+  - navigating to "http://localhost:19006/", waiting until "networkidle"
+
+
+=== CONSOLE LOGS ===
+[REQUEST FAILED] http://localhost:19006/ - net::ERR_CONNECTION_REFUSED
+
+=== ERRORS ===
