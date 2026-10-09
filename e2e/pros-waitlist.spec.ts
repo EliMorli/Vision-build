@@ -30,9 +30,23 @@ test.describe("Pros waitlist", () => {
     // Click "Join the waitlist"
     await page.getByTestId("pros-teaser-join").click();
 
-    // Wait for the card to collapse to slim mode
-    await expect(page.getByTestId("pros-teaser-joined")).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText("You're on the list.", { exact: true })).toBeVisible();
+    // "You're on the list." confirmation appears...
+    const confirmation = page.getByTestId("pros-teaser-confirmation");
+    await expect(confirmation).toBeVisible({ timeout: 5000 });
+    const shownAt = Date.now();
+    await expect(confirmation.getByText("You're on the list.", { exact: true })).toBeVisible();
+    await page.screenshot({ path: "e2e/screens/hf-home-joined-confirmation.png", fullPage: false });
+
+    // ...stays for about 3 seconds (not a flash)...
+    await page.waitForTimeout(1500);
+    await expect(confirmation).toBeVisible();
+
+    // ...then fades out, and the card settles into its joined state
+    await expect(confirmation).toHaveCount(0, { timeout: 5000 });
+    expect(Date.now() - shownAt).toBeGreaterThanOrEqual(2500);
+    await expect(page.getByTestId("pros-teaser-joined")).toBeVisible();
+    await expect(page.getByTestId("pros-teaser-joined")).toContainText("Pros waitlist: joined");
+    await expect(page.getByTestId("pros-teaser-join")).toHaveCount(0);
 
     // Screenshot after joining
     await page.screenshot({ path: "e2e/screens/hf-home-joined.png", fullPage: false });
@@ -41,8 +55,9 @@ test.describe("Pros waitlist", () => {
     await page.reload();
     await page.waitForLoadState("networkidle");
 
-    // Assert the collapsed state persists
+    // Assert the joined state persists, without replaying the confirmation
     await expect(page.getByTestId("pros-teaser-joined")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId("pros-teaser-confirmation")).toHaveCount(0);
   });
 
   test("join from Results above Save button", async ({ page }: { page: Page }) => {

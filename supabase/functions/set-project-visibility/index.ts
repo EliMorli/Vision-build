@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { verifyAuth, verifyProjectOwnership, getServiceRoleClient } from "../_shared/auth.ts";
+import { MIME_TYPES, tagAsAiGenerated } from "../_shared/ai-provenance.ts";
 
 interface SetVisibilityPayload {
   projectId: string;
@@ -113,11 +114,25 @@ export async function handleSetVisibility(
           );
         }
 
+        // Label the public copy as AI-generated (IPTC DigitalSourceType
+        // trainedAlgorithmicMedia in embedded XMP). Metadata only: pixel data is
+        // copied byte for byte, so invisible watermarks (Gemini SynthID) survive.
+        const source = new Uint8Array(await fileData.arrayBuffer());
+        const tag = tagAsAiGenerated(source);
+        let publicCopy: Blob = fileData;
+        let contentType: string = fileData.type;
+        if (tag.tagged && tag.format !== "unknown") {
+          contentType = MIME_TYPES[tag.format];
+          publicCopy = new Blob([tag.bytes as BlobPart], { type: contentType });
+        } else {
+          deps.logger.warn(`Copying ${path} without the AI metadata tag (${tag.reason ?? "not tagged"})`);
+        }
+
         // Upload to public-designs (same path)
         const { error: uploadError } = await deps.supabase.storage
           .from("public-designs")
-          .upload(path, fileData, {
-            contentType: fileData.type,
+          .upload(path, publicCopy, {
+            contentType,
             upsert: true,
           });
 

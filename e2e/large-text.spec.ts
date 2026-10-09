@@ -131,13 +131,50 @@ test.describe("Largest text size", () => {
     await page.screenshot({ path: "e2e/screens/ui-large-text-home.png", fullPage: false });
   });
 
-  test("Results at the largest text size: nothing cut off", async ({ page }: { page: Page }) => {
+  test("Results at the largest text size: nothing cut off, design keeps its size", async ({ page }: { page: Page }) => {
+    // 1. Normal text size: measure the design card and confirm the long-press hint shows
     await page.goto(`${BASE_URL}/result/large-text-1`);
+    await expect(page.getByText(/your designs/i)).toBeVisible({ timeout: 15000 });
+    const card = page.getByTestId("result-design-card").first();
+    await expect(card).toBeVisible();
+    await expect(page.getByTestId("results-longpress-hint")).toBeVisible();
+    const normalHeight = (await card.boundingBox())!.height;
+    expect(normalHeight).toBeGreaterThan(200);
+
+    // 2. Largest text size: the app reads the system font scale at mount (simulated
+    //    on web through the dev-only mock key), then every text node is zoomed
+    await page.evaluate((scale) => localStorage.setItem("@visionbuild:mock_font_scale", String(scale)), FONT_SCALE);
+    await page.reload();
     await expect(page.getByText(/your designs/i)).toBeVisible({ timeout: 15000 });
     await applyLargestText(page);
     await expect(page.getByTestId("results-save")).toBeVisible();
     expect(await findCutOffText(page)).toEqual([]);
+
+    // The optional long-press hint is hidden at the largest size
+    await expect(page.getByTestId("results-longpress-hint")).toHaveCount(0);
+
+    // The design keeps at least 60% of its normal height...
+    await expect(card).toBeVisible();
+    const largeBox = (await card.boundingBox())!;
+    expect(largeBox.height / normalHeight).toBeGreaterThanOrEqual(0.6);
+
+    // ...at least 60% of it shows on arrival, above the pinned Save area...
+    const scroller = page.getByTestId("results-scroll");
+    const scrollBox = (await scroller.boundingBox())!;
+    const visibleOnArrival = Math.min(largeBox.y + largeBox.height, scrollBox.y + scrollBox.height) - Math.max(largeBox.y, scrollBox.y);
+    expect(visibleOnArrival / normalHeight).toBeGreaterThanOrEqual(0.6);
+
+    // ...and the screen scrolls, so the whole design can be brought into view
+    const scrolls = await scroller.evaluate((el) => el.scrollHeight > el.clientHeight + 1);
+    expect(scrolls).toBe(true);
+    expect(largeBox.height).toBeLessThanOrEqual(scrollBox.height);
+
     await page.screenshot({ path: "e2e/screens/ui-large-text-results.png", fullPage: false });
+    await card.scrollIntoViewIfNeeded();
+    const scrolledBox = (await card.boundingBox())!;
+    expect(scrolledBox.y).toBeGreaterThanOrEqual(scrollBox.y - 1);
+    expect(scrolledBox.y + scrolledBox.height).toBeLessThanOrEqual(scrollBox.y + scrollBox.height + 1);
+    await page.screenshot({ path: "e2e/screens/ui-large-text-results-scrolled.png", fullPage: false });
   });
 
   test("Delete account at the largest text size: nothing cut off", async ({ page }: { page: Page }) => {

@@ -91,7 +91,7 @@ function HandoffLocationScreenInner() {
               accessibilityLabel="ZIP code input"
               accessibilityHint="Enter your 5-digit ZIP code"
             />
-            {error && (
+            {!!error && (
               <View style={styles.errorRow}>
                 <Ionicons name="alert-circle" size={16} color={colors.error} />
                 <Text style={styles.errorText}>{error}</Text>

@@ -54,7 +54,7 @@ export default function HelpContactScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Contact Support */}
-        {SUPPORT_EMAIL && (
+        {!!SUPPORT_EMAIL && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Get help</Text>
             <Pressable accessibilityRole="button" style={styles.contactCard} onPress={sendEmail}>

@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Animated,
   ScrollView,
+  useWindowDimensions,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -21,6 +22,7 @@ import { AiGeneratedBadge, Button, IsoRoom, PrivateImage, LoadingSkeleton, Error
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
 import { useProjectById } from "@/lib/hooks/useProjectById";
+import { useIsLargestText } from "@/lib/hooks/useFontScale";
 import { supabase } from "@/lib/supabase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -46,6 +48,13 @@ export default function ResultScreen() {
   const [xpBannerScale] = useState(new Animated.Value(reduceMotion ? 1 : 0.9));
   const [isOnWaitlist, setIsOnWaitlist] = useState(false);
   const [waitlistLoading, setWaitlistLoading] = useState(false);
+  // At the largest text sizes the text above the carousel grows, so the screen
+  // scrolls and the design keeps (about) its normal height instead of being squeezed.
+  const largestText = useIsLargestText();
+  const { height: windowHeight } = useWindowDimensions();
+  const carouselMinHeight = largestText
+    ? Math.max(CARD_WIDTH, Math.round(windowHeight * 0.45))
+    : CARD_WIDTH;
 
   const images = currentProject?.generated_image_urls ?? [];
   const totalSlots = 4;
@@ -239,15 +248,19 @@ export default function ResultScreen() {
         </Text>
       </View>
 
-      {/* Hint pill */}
-      <View style={styles.hint}>
-        <Ionicons name="swap-horizontal" size={14} color={colors.textSecondary} />
-        <Text style={styles.hintText}>Long-press any image to compare with original</Text>
-      </View>
+      {/* Hint pill (optional; dropped at the largest text sizes to give the design room) */}
+      {!largestText && (
+        <View style={styles.hint} testID="results-longpress-hint">
+          <Ionicons name="swap-horizontal" size={14} color={colors.textSecondary} />
+          <Text style={styles.hintText}>Long-press any image to compare with original</Text>
+        </View>
+      )}
+      {largestText && <View style={styles.hintSpacer} />}
 
       {/* Carousel */}
       <FlatList
-        style={styles.carousel}
+        style={[styles.carousel, { minHeight: carouselMinHeight }]}
+        testID="results-carousel"
         data={allSlots}
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -498,6 +511,7 @@ const styles = StyleSheet.create({
     marginVertical: spacing.sm,
   },
   hintText: { fontSize: 12, color: colors.textSecondary },
+  hintSpacer: { height: spacing.sm },
   card: {
     width: CARD_WIDTH,
     marginRight: spacing.md,

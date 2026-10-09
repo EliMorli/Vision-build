@@ -17,6 +17,7 @@ import { Project, ProjectStatus } from "@/lib/types";
 import { AiGeneratedBadge, Button, IsoRoom, PrivateImage, ProsTeaserCard, LoadingSkeleton, ErrorState, OfflineBanner, NeedsInternetNotice } from "@/components";
 import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
 import { getDisplayName, getFirstName } from "@/lib/helpers/user";
+import { isOutreachEnabled } from "@/lib/config/features";
 
 // Long-running threshold for showing "Rendering..." card in Home
 const LONG_RUNNING_THRESHOLD_MS = 45000; // 45 seconds
@@ -116,6 +117,19 @@ export default function DashboardScreen() {
               <Text style={styles.xpText}>{xp} XP</Text>
             </View>
           </Pressable>
+          {/* With outreach on, Inbox takes Vi's tab slot and Vi lives here */}
+          {isOutreachEnabled() && (
+            <Pressable
+              onPress={() => router.push("/assistant-chat")}
+              hitSlop={8}
+              style={styles.viButton}
+              accessibilityRole="button"
+              accessibilityLabel="Chat with Vi, design assistant"
+              testID="home-vi-button"
+            >
+              <Ionicons name="sparkles-outline" size={20} color={colors.primary} />
+            </Pressable>
+          )}
           {SHOW_DEV_BUTTON && (
             <Pressable
               onPress={() => router.push("/profile-settings")}
@@ -342,6 +356,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: "Nunito_900Black",
     color: colors.textPrimary,
+  },
+  viButton: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary + "15",
+    justifyContent: "center",
+    alignItems: "center",
   },
   devButton: {
     width: 44,

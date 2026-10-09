@@ -1,5 +1,6 @@
 import { assertEquals } from "https://deno.land/std@0.177.0/testing/asserts.ts";
 import { handleSetVisibility, SetVisibilityDeps } from "./index.ts";
+import { DIGITAL_SOURCE_TYPE_AI, readDigitalSourceType, readPngChunks } from "../_shared/ai-provenance.ts";
 
 // Helper to create fake deps
 function createFakeDeps(overrides: Partial<SetVisibilityDeps> = {}): SetVisibilityDeps {
@@ -361,4 +362,95 @@ Deno.test("set-visibility: private removes all copies including original", async
   
   // Storage should be empty
   assertEquals(Object.keys(storage["public-designs"]).length, 0);
+});
+
+// ---- AI provenance tag on public copies ----
+
+function storageDeps(storage: Record<string, Record<string, Blob>>, uploads: { path: string; contentType: string }[], warnings: string[]) {
+  return createFakeDeps({
+    supabase: {
+      from: () => ({ update: () => ({ eq: () => ({ error: null }) }) }),
+      storage: {
+        from: (bucket: string) => ({
+          download: async (path: string) =>
+            storage[bucket]?.[path]
+              ? { data: storage[bucket][path], error: null }
+              : { data: null, error: { message: `File not found: ${path}` } },
+          upload: async (path: string, data: Blob, options: { contentType: string }) => {
+            storage[bucket][path] = data;
+            uploads.push({ path, contentType: options.contentType });
+            return { error: null };
+          },
+          remove: async () => ({ error: null }),
+        }),
+      },
+    },
+    logger: { log: () => {}, error: () => {}, warn: (m: string) => warnings.push(m) },
+  });
+}
+
+Deno.test("set-visibility: public PNG copy carries the AI DigitalSourceType tag, pixels untouched", async () => {
+  const png = await Deno.readFile(new URL("../_shared/__fixtures__/images/design.png", import.meta.url));
+  const storage: Record<string, Record<string, Blob>> = {
+    "room-photos": { "user-123/proj-456/design-0.png": new Blob([png], { type: "image/png" }) },
+    "public-designs": {},
+  };
+  const uploads: { path: string; contentType: string }[] = [];
+  const warnings: string[] = [];
+  const response = await handleSetVisibility(
+    "user-123",
+    { projectId: "proj-456", isPublic: true },
+    { original_image_url: null, generated_image_urls: ["user-123/proj-456/design-0.png"], selected_generation_url: null },
+    storageDeps(storage, uploads, warnings),
+  );
+  assertEquals(response.status, 200);
+  const copy = new Uint8Array(await storage["public-designs"]["user-123/proj-456/design-0.png"].arrayBuffer());
+  assertEquals(readDigitalSourceType(copy), DIGITAL_SOURCE_TYPE_AI);
+  const idat = (b: Uint8Array) => readPngChunks(b).filter((c) => c.type === "IDAT").map((c) => Array.from(c.data)).flat();
+  assertEquals(idat(copy), idat(png));
+  assertEquals(uploads, [{ path: "user-123/proj-456/design-0.png", contentType: "image/png" }]);
+  assertEquals(warnings, []);
+  // The private original in room-photos is not modified
+  assertEquals(new Uint8Array(await storage["room-photos"]["user-123/proj-456/design-0.png"].arrayBuffer()), png);
+});
+
+Deno.test("set-visibility: JPEG bytes saved under a .png name get tagged and the right content type", async () => {
+  const jpg = await Deno.readFile(new URL("../_shared/__fixtures__/images/design.jpg", import.meta.url));
+  const storage: Record<string, Record<string, Blob>> = {
+    "room-photos": { "user-123/proj-456/design-1.png": new Blob([jpg], { type: "image/png" }) },
+    "public-designs": {},
+  };
+  const uploads: { path: string; contentType: string }[] = [];
+  const response = await handleSetVisibility(
+    "user-123",
+    { projectId: "proj-456", isPublic: true },
+    { original_image_url: null, generated_image_urls: ["user-123/proj-456/design-1.png"], selected_generation_url: null },
+    storageDeps(storage, uploads, []),
+  );
+  assertEquals(response.status, 200);
+  const copy = new Uint8Array(await storage["public-designs"]["user-123/proj-456/design-1.png"].arrayBuffer());
+  assertEquals(readDigitalSourceType(copy), DIGITAL_SOURCE_TYPE_AI);
+  assertEquals(uploads[0].contentType, "image/jpeg");
+});
+
+Deno.test("set-visibility: unknown format is copied unchanged and logged", async () => {
+  const bytes = new TextEncoder().encode("GIF89a-not-a-supported-format");
+  const storage: Record<string, Record<string, Blob>> = {
+    "room-photos": { "user-123/proj-456/design-2.gif": new Blob([bytes], { type: "image/gif" }) },
+    "public-designs": {},
+  };
+  const uploads: { path: string; contentType: string }[] = [];
+  const warnings: string[] = [];
+  const response = await handleSetVisibility(
+    "user-123",
+    { projectId: "proj-456", isPublic: true },
+    { original_image_url: null, generated_image_urls: ["user-123/proj-456/design-2.gif"], selected_generation_url: null },
+    storageDeps(storage, uploads, warnings),
+  );
+  assertEquals(response.status, 200);
+  const copy = new Uint8Array(await storage["public-designs"]["user-123/proj-456/design-2.gif"].arrayBuffer());
+  assertEquals(copy, bytes);
+  assertEquals(uploads[0].contentType, "image/gif");
+  assertEquals(warnings.length, 1);
+  assertEquals(warnings[0].includes("without the AI metadata tag"), true);
 });

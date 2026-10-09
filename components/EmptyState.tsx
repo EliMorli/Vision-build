@@ -26,7 +26,7 @@ export function FullScreenLoader({ message }: { message?: string }) {
   return (
     <View style={styles.container}>
       <ActivityIndicator size="large" color={colors.primary} />
-      {message && <Text style={[styles.subtitle, { marginTop: spacing.md }]}>{message}</Text>}
+      {!!message && <Text style={[styles.subtitle, { marginTop: spacing.md }]}>{message}</Text>}
     </View>
   );
 }

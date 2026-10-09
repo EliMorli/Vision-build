@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, Animated } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -7,6 +7,11 @@ import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { IsoRoom } from "./IsoRoom";
 import { useAuthStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
+import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
+
+/** How long "You're on the list." stays before fading into the joined state */
+export const WAITLIST_CONFIRMATION_MS = 3000;
+const FADE_MS = 300;
 
 export function ProsTeaserCard() {
   const router = useRouter();
@@ -14,6 +19,27 @@ export function ProsTeaserCard() {
   const [isOnWaitlist, setIsOnWaitlist] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
+  // Shown once, right after joining; then the card settles into its joined state
+  const [justJoined, setJustJoined] = useState(false);
+  const [confirmationOpacity] = useState(() => new Animated.Value(1));
+  const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (!justJoined) return;
+    confirmationOpacity.setValue(1);
+    const timer = setTimeout(() => {
+      if (reduceMotion) {
+        setJustJoined(false);
+        return;
+      }
+      Animated.timing(confirmationOpacity, {
+        toValue: 0,
+        duration: FADE_MS,
+        useNativeDriver: true,
+      }).start(() => setJustJoined(false));
+    }, WAITLIST_CONFIRMATION_MS - FADE_MS);
+    return () => clearTimeout(timer);
+  }, [justJoined, reduceMotion, confirmationOpacity]);
 
   const checkWaitlistStatus = useCallback(async () => {
     const userId = useAuthStore.getState().session?.user?.id;
@@ -63,6 +89,7 @@ export function ProsTeaserCard() {
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
       await new Promise((resolve) => setTimeout(resolve, 300));
       await AsyncStorage.setItem("@visionbuild:waitlist:general", "true");
+      setJustJoined(true);
       setIsOnWaitlist(true);
       setLoading(false);
       return;
@@ -82,6 +109,7 @@ export function ProsTeaserCard() {
         });
 
       if (!error) {
+        setJustJoined(true);
         setIsOnWaitlist(true);
       } else {
         console.error("Error adding to waitlist:", error);
@@ -93,12 +121,26 @@ export function ProsTeaserCard() {
     }
   };
 
-  // Slim mode when on waitlist
-  if (isOnWaitlist) {
+  // Just joined: a short confirmation that fades out after ~3s
+  if (isOnWaitlist && justJoined) {
     return (
-      <View style={styles.slimCard} testID="pros-teaser-joined">
+      <Animated.View
+        style={[styles.slimCard, { opacity: confirmationOpacity }]}
+        testID="pros-teaser-confirmation"
+        accessibilityLiveRegion="polite"
+      >
         <Ionicons name="checkmark-circle" size={20} color={colors.success} />
         <Text style={styles.slimText}>You're on the list.</Text>
+      </Animated.View>
+    );
+  }
+
+  // Joined state: a quiet one-line note instead of the full card
+  if (isOnWaitlist) {
+    return (
+      <View style={styles.joinedRow} testID="pros-teaser-joined">
+        <Ionicons name="people-outline" size={16} color={colors.textSecondary} />
+        <Text style={styles.joinedText}>Pros waitlist: joined. We'll let you know.</Text>
       </View>
     );
   }
@@ -160,6 +202,21 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  joinedRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  joinedText: {
+    ...fonts.body,
+    fontSize: 13,
+    color: colors.textSecondary,
+    textAlign: "center",
+    flexShrink: 1,
   },
   slimText: {
     ...fonts.body,

@@ -243,7 +243,8 @@ async function getSignedUrl(bucket: string, path: string): Promise<string | null
 interface PendingConsentRequest {
   reason: "never" | "outdated";
   resume: {
-    type: "analyze" | "generate";
+    // "assistant": opened from Vi; accepting returns to the chat
+    type: "analyze" | "generate" | "assistant";
     projectId?: string;
     imageUri?: string;
     stylePrompt?: string;

@@ -12,7 +12,7 @@ export function ProgressBar({ progress, message }: ProgressBarProps) {
       <View style={styles.track}>
         <View style={[styles.fill, { width: `${Math.min(progress, 1) * 100}%` }]} />
       </View>
-      {message && <Text style={styles.message}>{message}</Text>}
+      {!!message && <Text style={styles.message}>{message}</Text>}
     </View>
   );
 }
