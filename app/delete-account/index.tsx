@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, ScrollView } from "react-native";
 import { supabase } from "@/lib/supabase";
 import { DELETED_DATA_SUMMARY } from "@/lib/constants/deletion";
+import { colors } from "@/lib/theme";
 
 export default function DeleteAccountRequest() {
   const [email, setEmail] = useState("");
@@ -41,7 +42,7 @@ export default function DeleteAccountRequest() {
 
   if (submitted) {
     return (
-      <View style={styles.container}>
+      <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
         <View style={styles.card}>
           <Text style={styles.title}>Check your email</Text>
           <Text style={styles.body}>
@@ -52,14 +53,20 @@ export default function DeleteAccountRequest() {
             The link expires in 24 hours. If you don't receive it, check your spam folder or try again.
           </Text>
         </View>
-      </View>
+      </ScrollView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    // Scrollable so the form and button stay reachable at large text sizes
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+      testID="delete-account-scroll"
+    >
       <View style={styles.card}>
-        <Text style={styles.title}>Delete your account</Text>
+        <Text style={styles.title} accessibilityRole="header">Delete your account</Text>
         <Text style={styles.body}>
           Enter your email address to receive a confirmation link. We'll send you an email with instructions to
           permanently delete your account.
@@ -79,6 +86,7 @@ export default function DeleteAccountRequest() {
           autoCapitalize="none"
           autoCorrect={false}
           editable={!loading}
+          accessibilityLabel="Email address"
         />
 
         <Text style={styles.label}>Reason (optional)</Text>
@@ -91,9 +99,10 @@ export default function DeleteAccountRequest() {
           multiline
           numberOfLines={3}
           editable={!loading}
+          accessibilityLabel="Reason (optional)"
         />
 
-        <Pressable
+        <Pressable accessibilityRole="button" accessibilityLabel="Send confirmation email"
           style={[styles.button, loading && styles.buttonDisabled]}
           onPress={handleSubmit}
           disabled={loading}
@@ -109,14 +118,17 @@ export default function DeleteAccountRequest() {
           This will permanently delete your account and {DELETED_DATA_SUMMARY}. This action cannot be undone.
         </Text>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: "#F4F6FE",
+  },
+  container: {
+    flexGrow: 1,
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
@@ -170,12 +182,12 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
   },
   button: {
-    backgroundColor: "#EA4335",
+    backgroundColor: colors.error,
     borderRadius: 18,
     padding: 16,
     alignItems: "center",
     marginTop: 24,
-    shadowColor: "#B3261E",
+    shadowColor: "#8C1D18",
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 1,
     shadowRadius: 0,
@@ -200,7 +212,7 @@ const styles = StyleSheet.create({
   },
   error: {
     fontSize: 14,
-    color: "#EA4335",
+    color: colors.error,
     marginTop: 4,
     marginBottom: 8,
     fontWeight: "600",

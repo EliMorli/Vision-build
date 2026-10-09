@@ -31,16 +31,9 @@ export default function EditProfileScreen() {
   const [successMessage, setSuccessMessage] = useState<string>("");
 
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (status !== "granted") {
-      setErrorMessage("Please grant photo library access to change your profile picture.");
-      setTimeout(() => setErrorMessage(""), 3000);
-      return;
-    }
-
+    // System photo picker: no media-library permission needed (see app.json blockedPermissions)
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
@@ -146,7 +139,7 @@ export default function EditProfileScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()} hitSlop={12}>
             <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
           </Pressable>
           <Text style={styles.headerTitle}>Edit Profile</Text>
@@ -167,7 +160,7 @@ export default function EditProfileScreen() {
 
         {/* Avatar */}
         <View style={styles.avatarSection}>
-          <Pressable onPress={pickImage} style={styles.avatarContainer}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Change profile photo" onPress={pickImage} style={styles.avatarContainer}>
             {currentPhotoUrl ? (
               <View style={styles.avatar}>
                 {/* In real mode, would show <Image source={{ uri: signedUrl }} /> */}
@@ -194,7 +187,7 @@ export default function EditProfileScreen() {
         {/* Form */}
         <View style={styles.form}>
           <View style={styles.field}>
-            <Text style={styles.label}>Display Name</Text>
+            <Text style={styles.label}>Display name</Text>
             <TextInput
               style={styles.input}
               value={displayName}

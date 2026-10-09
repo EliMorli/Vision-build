@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { isOutreachEnabled } from "@/lib/config/features";
 import { Stack, useRouter, useSegments, useRootNavigationState } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as WebBrowser from "expo-web-browser";
@@ -14,6 +15,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore, useSettingsStore } from "@/lib/store";
 import { MOCK_USER_ID } from "@/lib/constants/mock";
+
+// Root error boundary: friendly fallback instead of a crash screen
+export { AppErrorBoundary as ErrorBoundary } from "@/components/AppErrorBoundary";
 
 // Complete any pending auth sessions (handles redirect back from browser)
 WebBrowser.maybeCompleteAuthSession();
@@ -89,11 +93,13 @@ export default function RootLayout() {
       loadSettings().catch((err) => {
         console.warn('Failed to load settings:', err);
       });
-      // Fetch inbox unread count on app start
-      const { useInboxStore } = require("@/lib/store");
-      useInboxStore.getState().fetchUnreadCount().catch(() => {
-        // Errors are already logged in fetchUnreadCount
-      });
+      // Fetch inbox unread count on app start (Inbox exists only with outreach on)
+      if (isOutreachEnabled()) {
+        const { useInboxStore } = require("@/lib/store");
+        useInboxStore.getState().fetchUnreadCount().catch(() => {
+          // Errors are already logged in fetchUnreadCount
+        });
+      }
     }
   }, [session?.user?.id, loadSettings]);
 
@@ -172,16 +178,15 @@ export default function RootLayout() {
         />
         <Stack.Screen name="dev/deleted-preview" options={{ headerShown: false }} />
         <Stack.Screen name="project/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="editor/[id]" options={{ title: "Choose Style" }} />
+        <Stack.Screen name="editor/[id]" options={{ title: "Choose a style" }} />
         <Stack.Screen name="generating/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="result/[id]" options={{ title: "Your Designs" }} />
-        <Stack.Screen name="handoff/[id]" options={{ title: "Get Estimates" }} />
-        <Stack.Screen name="delete-account/index" options={{ title: "Delete Account" }} />
+        <Stack.Screen name="result/[id]" options={{ title: "Your designs" }} />
+        <Stack.Screen name="handoff/[id]" options={{ title: "Get estimates" }} />
+        <Stack.Screen name="delete-account/index" options={{ title: "Delete account" }} />
         <Stack.Screen name="delete-account/confirm" options={{ headerShown: false }} />
-        <Stack.Screen name="pros-coming-soon" options={{ title: "Find a pro" }} />
+        <Stack.Screen name="pros-coming-soon" options={{ headerShown: false }} />
         <Stack.Screen name="terms" options={{ title: "Terms of Service" }} />
         <Stack.Screen name="privacy" options={{ title: "Privacy Policy" }} />
-        <Stack.Screen name="licenses" options={{ headerShown: false }} />
       </Stack>
     </>
   );

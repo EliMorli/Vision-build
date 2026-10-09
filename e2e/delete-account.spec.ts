@@ -103,7 +103,7 @@ test.describe("Delete Account Flow", () => {
     await expect(page.getByTestId("deleted-account-view")).toBeVisible({ timeout: 5000 });
     
     // Verify DELETED_DATA_SUMMARY or deleted text is visible
-    await expect(page.getByText(/your projects, photos, designs, chats and pros waitlist signup/i)).toBeVisible();
+    await expect(page.getByText(/your projects, photos, designs, profile photo and pros waitlist signup/i)).toBeVisible();
     
     // Take screenshot of deleted screen
     await page.screenshot({ 

@@ -23,7 +23,7 @@ function HandoffConfirmScreenInner() {
   const [toggles, setToggles] = useState<PrivacyToggle[]>([
     {
       id: "brief",
-      label: "Project Brief",
+      label: "Project brief",
       description: "Room type, style preferences, and scope of work",
       required: true,
       enabled: true,
@@ -37,14 +37,14 @@ function HandoffConfirmScreenInner() {
     },
     {
       id: "name",
-      label: "Your Name",
+      label: "Your name",
       description: "So contractors know who to address",
       required: false,
       enabled: true,
     },
     {
       id: "contact",
-      label: "Contact Method",
+      label: "Contact method",
       description: "Email or phone number for initial contact",
       required: false,
       enabled: true,
@@ -67,7 +67,7 @@ function HandoffConfirmScreenInner() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} hitSlop={12}>
             <Ionicons name="close" size={28} color={colors.textPrimary} />
           </Pressable>
         </View>
@@ -79,7 +79,7 @@ function HandoffConfirmScreenInner() {
           </View>
 
           {/* Title */}
-          <Text style={styles.title}>What Contractors Will See</Text>
+          <Text style={styles.title}>What contractors will see</Text>
           <Text style={styles.subtitle}>
             Choose what information to share. Your phone and email stay hidden until you pick a pro.
           </Text>
@@ -134,7 +134,7 @@ function HandoffConfirmScreenInner() {
       {/* Actions */}
       <View style={styles.actions}>
         <Button
-          label="Confirm & Continue"
+          label="Confirm & continue"
           icon="arrow-forward"
           onPress={handleConfirm}
           variant="primary"

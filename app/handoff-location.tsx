@@ -51,10 +51,10 @@ function HandoffLocationScreenInner() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()} hitSlop={12}>
             <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
           </Pressable>
-          <Text style={styles.headerTitle}>Your Location</Text>
+          <Text style={styles.headerTitle}>Your location</Text>
           <View style={{ width: 24 }} />
         </View>
 
@@ -65,7 +65,7 @@ function HandoffLocationScreenInner() {
           </View>
 
           {/* Title */}
-          <Text style={styles.title}>Where's Your Project?</Text>
+          <Text style={styles.title}>Where's your project?</Text>
 
           {/* Description */}
           <Text style={styles.description}>
@@ -75,7 +75,7 @@ function HandoffLocationScreenInner() {
 
           {/* ZIP Input */}
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>ZIP Code</Text>
+            <Text style={styles.inputLabel}>ZIP code</Text>
             <TextInput
               style={[styles.input, error && styles.inputError]}
               value={zipCode}

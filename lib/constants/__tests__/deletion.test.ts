@@ -5,7 +5,7 @@ describe("deletion constants", () => {
   describe("DELETED_DATA_SUMMARY", () => {
     it("has the exact compliance-approved data summary", () => {
       expect(DELETED_DATA_SUMMARY).toBe(
-        "your projects, photos, designs, chats and pros waitlist signup"
+        "your projects, photos, designs, profile photo and pros waitlist signup"
       );
     });
   });

@@ -31,14 +31,12 @@ The table below lists what we collect, where it comes from, why, and who receive
 
 | Data category | What it includes | Source | Why we use it | Who receives it |
 |---|---|---|---|---|
-| **Account information** | Name, email address (which may be an Apple "Hide My Email" relay address), the account ID from Apple or Google, and the profile picture link Google or Apple provides (if any) | Apple or Google when you sign in | Create and secure your account; sign you in; contact you about your account | Supabase; Apple or Google (they already have it) |
+| **Account information** | Name, email address (which may be an Apple "Hide My Email" relay address), the account ID from Apple or Google, the profile picture link Google or Apple provides (if any), and a profile photo if you upload one (stored privately) | Apple or Google when you sign in | Create and secure your account; sign you in; contact you about your account | Supabase; Apple or Google (they already have it) |
 | **Public profile** | The name or handle and the level shown next to your public designs | Your account; your XP | Show who made a public design | Supabase; other users (only for designs you make Public) |
-| **Age confirmation** | That you checked "I confirm I am 13 years or older" | You | Keep children under 13 off the Service | Supabase [NOTE: The current code doesn't save this checkbox to the server; it only blocks the sign-in buttons until you check it. Decide whether to store it.] |
 | **Room photos** | Photos you take or upload, after EXIF and location data are removed on your device | You | Analyze the room and create designs | Supabase (private storage); OpenRouter and Google (Gemini) for analysis and rendering |
 | **Room analysis** | The AI's description of the room (room type, current style, estimated size, key features) | Created by AI from your photo | Create designs that fit your room | Supabase; OpenRouter and AI providers when making designs |
 | **Designs** | AI-generated design images, the style you picked, your selected design, project names | You; created by AI | Show your designs and keep your project library | Supabase; other users only if you make the project Public |
-| **Vi chats and design briefs** | Messages you send to Vi, our AI assistant; Vi's replies; the design brief created for your project | You; created by AI | Answer your questions; help you plan your design | Supabase; OpenRouter and Anthropic (Claude) [NOTE: Confirm Vi chat history is saved with the project. The code has no table for chat history yet.] |
-| **Public activity** | Likes, saves, and remixes of public designs | You | Run the Explore feed | Supabase; other users can see a design's public activity [NOTE: Likes, saves, and remixes are not built yet; the Explore feed shows sample data. Confirm what other users can see, such as like counts or who remixed.] |
+| **Vi chats and design briefs** | Messages you send to Vi, our AI assistant, and Vi's replies; the design brief created for your project | You; created by AI | Answer your questions; help you plan your design. Vi chats are sent to the AI to answer you and are **not saved** on our servers. Design briefs are saved with your project. | OpenRouter and Anthropic (Claude) for chats; Supabase for design briefs |
 | **Pros waitlist** | The email address on your account, plus the project ID if you joined from a project (from Results or the "Pros are coming soon" screen). Joining from Home saves one general entry per person with your email only. | You (when you tap "Join the waitlist"); your account | Send you a one-time email when pros are live on VisionBuild | Supabase; Resend (to send that one email) |
 | **AI consent records** | Your user ID, the consent version, and the date and time you agreed | Created when you agree | Prove and enforce your choice; our servers refuse AI requests without a current consent record | Supabase |
 | **Settings and privacy choices** | Your Public/Private default, Reduce Motion setting, AI choice, and "Your Privacy Choices" selections | You | Remember your settings across devices | Supabase |
@@ -64,7 +62,7 @@ Photos of your home could accidentally show people, documents, or personal items
 We use your information only to:
 
 - **Provide the Service:** sign you in, store your projects, create designs, run Vi, and show your library.
-- **Run public features:** show designs from projects you make Public on Explore, with your name or handle and level, and let others like, save, and remix them.
+- **Run public features:** show designs from projects you make Public on Explore, with your name or handle and level.
 - **Run the game features:** XP, levels, and badges.
 - **Send emails you need or ask for:** account deletion confirmations, and, if you joined the pros waitlist, one email telling you pros are live, sent through Resend.
 - **Run the pros waitlist:** if you tap "Join the waitlist" (on Home, on Results, or on the "Pros are coming soon" screen), we save your account email and, when you join from a project, that project's ID. We use it only to send you one "pros are live" email. That email includes an unsubscribe link and our mailing address. Joining the waitlist doesn't earn XP, and we don't use it for other marketing.
@@ -151,7 +149,7 @@ We keep information only as long as we need it for the reasons in this Policy. P
 | Information | How long we keep it |
 |---|---|
 | Account information and public profile | Until you delete your account [CONFIRM] |
-| Room photos, room analysis, designs, chats, briefs | Until you delete them or your account [CONFIRM] |
+| Room photos, room analysis, designs, design briefs | Until you delete them or your account [CONFIRM] |
 | Public copies of designs | Until you switch the project to Private, delete it, or delete your account [CONFIRM] |
 | Other users' remixes of your public designs | They belong to the user who made them and stay until that user deletes them [CONFIRM] |
 | AI consent records | While your account exists, and deleted with your account [CONFIRM] [NOTE: The code deletes consent records with the account. The attorney may want a minimal record kept longer as proof of consent.] |
@@ -229,11 +227,10 @@ We'll confirm we got your request within 10 business days and respond within **4
 |---|---|---|
 | Identifiers | Name, email or relay email, account ID, IP address | No |
 | Customer records (Cal. Civ. Code § 1798.80(e)) | Name, email | No |
-| Characteristics of protected classifications | Confirmation that you are 13 or older (age range only) | No |
-| Internet or other electronic network activity | Usage counts, XP events, likes, saves, remixes, reports, blocks, server logs | No |
+| Internet or other electronic network activity | Usage counts, XP events, reports, blocks, server logs | No |
 | Audio, electronic, visual, or similar information | Room photos and AI-generated designs | No |
 | Inferences | None. We don't build profiles about you. | No |
-| Other (content and choices) | Vi chats, design briefs, consent records, settings, pros waitlist entries | No |
+| Other (content and choices) | Design briefs, consent records, settings, pros waitlist entries | No |
 
 Sources, purposes, recipients, and retention for each are in Sections 1, 2, 4, and 6. We disclose these categories for business purposes only to the service providers in Section 4, and designs you make Public to other users at your direction.
 

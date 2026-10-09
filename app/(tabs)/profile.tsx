@@ -108,8 +108,8 @@ export default function ProfileScreen() {
 
   const menuItems = [
     { icon: "person-outline" as const, label: "Edit Profile", badge: null, route: "/edit-profile" },
-    { icon: "settings-outline" as const, label: "Settings & Privacy", badge: null, route: "/profile-settings" },
-    { icon: "help-circle-outline" as const, label: "Help & Contact", badge: null, route: "/help-contact" },
+    { icon: "settings-outline" as const, label: "Settings & privacy", badge: null, route: "/profile-settings" },
+    { icon: "help-circle-outline" as const, label: "Help & contact", badge: null, route: "/help-contact" },
   ];
 
   if (authLoading && !profile) {
@@ -148,7 +148,7 @@ export default function ProfileScreen() {
           <Text style={styles.name} testID="profile-display-name">{displayName}</Text>
           <View style={styles.levelBadge}>
             <Text style={styles.levelBadgeText}>
-              Level {level} · Rookie Designer
+              Level {level} · Rookie designer
             </Text>
           </View>
         </View>
@@ -224,14 +224,14 @@ export default function ProfileScreen() {
         {/* Menu items */}
         <View style={styles.section}>
           {menuItems.map((item, index) => (
-            <Pressable
+            <Pressable accessibilityRole="button"
               key={item.label}
               style={[
                 styles.menuItem,
                 index === menuItems.length - 1 && styles.lastMenuItem,
               ]}
               onPress={() => item.route && router.push(item.route as any)}
-              testID={item.label === "Settings & Privacy" ? "profile-settings-button" : undefined}
+              testID={item.route === "/profile-settings" ? "profile-settings-button" : undefined}
             >
               <View style={styles.menuItemLeft}>
                 <Ionicons name={item.icon} size={22} color={colors.textPrimary} />
@@ -252,7 +252,7 @@ export default function ProfileScreen() {
         {/* Sign out button */}
         <View style={styles.signOutSection}>
           <Button
-            label="Sign Out"
+            label="Sign out"
             icon="log-out-outline"
             variant="outline"
             onPress={signOut}

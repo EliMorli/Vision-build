@@ -31,11 +31,12 @@ const ENV_CHECKS: CheckResult[] = [
     present: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
   },
   
-  // AI Services
+  // AI: one OpenRouter key (enable zero data retention in OpenRouter settings).
+  // No Replicate token or direct OpenAI key is needed; production refuses both.
   {
-    name: "OPENROUTER_API_KEY",
+    name: "AI_API_KEY",
     required: true,
-    present: !!process.env.OPENROUTER_API_KEY,
+    present: !!process.env.AI_API_KEY,
   },
   
   // Email

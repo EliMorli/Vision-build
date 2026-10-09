@@ -42,7 +42,7 @@ export default function ResultErrorScreen() {
           <View style={styles.roomWrapper}>
             <IsoRoom palette="modern" size={200} />
           </View>
-          <Text style={styles.rateLimitTitle}>Daily Limit Reached</Text>
+          <Text style={styles.rateLimitTitle}>Daily limit reached</Text>
           <Text style={styles.rateLimitMessage}>
             You've used all your free designs for today. Come back soon for more!
           </Text>
@@ -67,28 +67,28 @@ export default function ResultErrorScreen() {
     switch (type) {
       case "upload":
         return {
-          title: "Upload Failed",
+          title: "Upload failed",
           message:
             "We couldn't upload your photo. Please check your connection and try again.",
           icon: "cloud-upload-outline" as const,
         };
       case "analysis":
         return {
-          title: "Analysis Failed",
+          title: "Analysis failed",
           message:
             "We couldn't analyze your photo. This might be due to image quality or a temporary issue. Please try again.",
           icon: "analytics-outline" as const,
         };
       case "offline":
         return {
-          title: "You're Offline",
+          title: "You're offline",
           message:
             "Looks like you lost your internet connection. Check your network and try again.",
           icon: "cloud-offline" as const,
         };
       default:
         return {
-          title: "Something Went Wrong",
+          title: "Something went wrong",
           message:
             "We encountered an unexpected error while generating your designs. Our team has been notified. Please try again.",
           icon: "alert-circle" as const,

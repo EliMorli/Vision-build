@@ -125,9 +125,13 @@ export default function AssistantChatScreen() {
           {item.imageUrls && item.imageUrls.length > 0 && (
             <View style={styles.imagesGrid}>
               {item.imageUrls.map((url, index) => (
-                <Pressable key={index} style={styles.imagePreview}>
-                  <Image source={{ uri: url }} style={styles.previewImage} />
-                </Pressable>
+                <View key={index} style={styles.imagePreview}>
+                  <Image
+                    source={{ uri: url }}
+                    style={styles.previewImage}
+                    accessibilityLabel={`Design image ${index + 1}`}
+                  />
+                </View>
               ))}
             </View>
           )}
@@ -139,6 +143,8 @@ export default function AssistantChatScreen() {
                 setReportModalVisible(true);
               }}
               hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Report this message"
             >
               <Ionicons name="flag-outline" size={14} color={colors.textSecondary} />
               <Text style={styles.reportButtonText}>Report</Text>
@@ -164,12 +170,17 @@ export default function AssistantChatScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
             <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
           </Pressable>
           <View style={styles.headerCenter}>
             <Text style={styles.headerTitle}>Vi</Text>
-            <Text style={styles.headerSubtitle}>Design Assistant</Text>
+            <Text style={styles.headerSubtitle}>Design assistant</Text>
           </View>
           <View style={{ width: 24 }} />
         </View>
@@ -199,7 +210,7 @@ export default function AssistantChatScreen() {
         <View style={styles.actionsBar}>
           <View style={{ flex: 1 }}>
             <Button
-              label="Generate Design"
+              label="Generate design"
               icon="color-palette-outline"
               onPress={generateDesign}
               variant="outline"
@@ -208,7 +219,7 @@ export default function AssistantChatScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Button
-              label="Find Me a Pro"
+              label="Find me a Pro"
               icon="people-outline"
               onPress={() => {
                 const projects = require("@/lib/store").useProjectStore.getState().projects;
@@ -226,9 +237,6 @@ export default function AssistantChatScreen() {
 
         {/* Input */}
         <View style={styles.inputContainer}>
-          <Pressable style={styles.attachButton}>
-            <Ionicons name="image-outline" size={24} color={colors.textSecondary} />
-          </Pressable>
           <TextInput
             style={styles.input}
             placeholder="Describe your ideas..."
@@ -237,11 +245,17 @@ export default function AssistantChatScreen() {
             onChangeText={setInputText}
             multiline
             maxLength={500}
+            accessibilityLabel="Message Vi"
+            testID="vi-input"
           />
           <Pressable
             style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
             onPress={sendMessage}
             disabled={!inputText.trim() || isLoading}
+            accessibilityRole="button"
+            accessibilityLabel="Send message"
+            accessibilityState={{ disabled: !inputText.trim() || isLoading }}
+            testID="vi-send"
           >
             <Ionicons
               name="send"
@@ -386,12 +400,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border,
     gap: spacing.sm,
-  },
-  attachButton: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
   },
   input: {
     flex: 1,

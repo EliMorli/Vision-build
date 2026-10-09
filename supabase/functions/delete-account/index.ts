@@ -28,6 +28,18 @@ serve(async (req: Request) => {
       throw new Error("Failed to get user details");
     }
 
+    // Optional Apple authorization code (iOS app, Apple users) so the shared
+    // module can revoke Sign in with Apple tokens (guideline 5.1.1(v)).
+    let appleAuthCode: string | undefined;
+    try {
+      const body = await req.json();
+      if (typeof body?.appleAuthCode === "string" && body.appleAuthCode.length < 2048) {
+        appleAuthCode = body.appleAuthCode;
+      }
+    } catch {
+      // No/invalid JSON body: proceed without Apple revocation
+    }
+
     // Execute deletion using shared module
     await deleteUserData({
       userId,
@@ -35,6 +47,7 @@ serve(async (req: Request) => {
       userAppMetadata: user.app_metadata || {},
       userIdentities: user.identities || [],
       supabase,
+      appleAuthCode,
     });
 
     return new Response(

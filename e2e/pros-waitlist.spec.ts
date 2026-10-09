@@ -7,7 +7,7 @@ test.use({
   deviceScaleFactor: 2,
 });
 
-test.describe("Pros Waitlist", () => {
+test.describe("Pros waitlist", () => {
   test.beforeEach(async ({ page }: { page: Page }) => {
     // Seed intro seen and consent accepted for all tests
     await page.addInitScript(() => {
@@ -167,7 +167,7 @@ test.describe("Pros Waitlist", () => {
     await page.waitForLoadState("networkidle");
 
     // Verify toggle is visible and take screenshot
-    await expect(page.getByText("Pros Waitlist")).toBeVisible();
+    await expect(page.getByText("Pros waitlist")).toBeVisible();
     await expect(page.getByTestId("settings-pros-waitlist-toggle")).toBeVisible();
     await page.screenshot({ path: "e2e/screens/hf-settings-waitlist.png", fullPage: false });
   });

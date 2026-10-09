@@ -1,5 +1,6 @@
-import { View, StyleSheet, Animated, Easing } from "react-native";
+import { View, StyleSheet, Animated, Easing, ViewStyle, DimensionValue } from "react-native";
 import { useEffect, useRef } from "react";
+import { LinearGradient } from "expo-linear-gradient";
 import { colors, spacing, radius } from "@/lib/theme";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 
@@ -9,30 +10,70 @@ interface LoadingSkeletonProps {
   testID?: string;
 }
 
+/** Clay-gray placeholder tone: clearly visible on white cards and backgrounds. */
+export const SKELETON_COLOR = "#EEF1F6";
+/** Soft white highlight that sweeps across each placeholder while loading. */
+const SHIMMER_COLORS = ["rgba(255,255,255,0)", "rgba(255,255,255,0.9)", "rgba(255,255,255,0)"] as const;
+const SHIMMER_DURATION_MS = 1300;
+
+interface BoneProps {
+  style: ViewStyle | ViewStyle[];
+  shimmer: Animated.Value;
+  animate: boolean;
+}
+
+/**
+ * One placeholder block. When motion is allowed a white band sweeps from left
+ * to right; under Reduce Motion the block is a static clay-gray shape.
+ */
+function Bone({ style, shimmer, animate }: BoneProps) {
+  const left = shimmer.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["-60%", "110%"] as unknown as number[],
+  });
+  return (
+    <View
+      style={[styles.bone, style]}
+      testID="skeleton-bone"
+    >
+      {animate && (
+        <Animated.View
+          pointerEvents="none"
+          testID="skeleton-shimmer"
+          style={[styles.shimmerBand, { left: left as unknown as DimensionValue }]}
+        >
+          <LinearGradient
+            colors={SHIMMER_COLORS}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={StyleSheet.absoluteFill}
+          />
+        </Animated.View>
+      )}
+    </View>
+  );
+}
+
 export function LoadingSkeleton({ variant = "card", count = 3, testID }: LoadingSkeletonProps) {
   const reduceMotion = useReducedMotion();
   const shimmerAnim = useRef(new Animated.Value(0)).current;
+  const animate = !reduceMotion;
 
   useEffect(() => {
-    if (reduceMotion) {
+    if (!animate) {
+      shimmerAnim.stopAnimation();
+      shimmerAnim.setValue(0);
       return;
     }
 
     const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(shimmerAnim, {
-          toValue: 1,
-          duration: 1500,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }),
-        Animated.timing(shimmerAnim, {
-          toValue: 0,
-          duration: 1500,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }),
-      ])
+      Animated.timing(shimmerAnim, {
+        toValue: 1,
+        duration: SHIMMER_DURATION_MS,
+        easing: Easing.inOut(Easing.ease),
+        // Animates `left`, which the native driver does not support
+        useNativeDriver: false,
+      })
     );
 
     animation.start();
@@ -40,45 +81,22 @@ export function LoadingSkeleton({ variant = "card", count = 3, testID }: Loading
     return () => {
       animation.stop();
     };
-  }, [shimmerAnim, reduceMotion]);
+  }, [shimmerAnim, animate]);
 
-  const shimmerOpacity = shimmerAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.3, 0.6],
-  });
+  const bone = (style: ViewStyle | ViewStyle[]) => (
+    <Bone style={style} shimmer={shimmerAnim} animate={animate} />
+  );
 
   const renderSkeleton = () => {
     switch (variant) {
       case "card":
         return Array.from({ length: count }).map((_, i) => (
           <View key={i} style={styles.card}>
-            <Animated.View
-              style={[
-                styles.cardImage,
-                reduceMotion ? {} : { opacity: shimmerOpacity },
-              ]}
-            />
+            {bone(styles.cardImage)}
             <View style={styles.cardBody}>
-              <Animated.View
-                style={[
-                  styles.skeletonTitle,
-                  reduceMotion ? {} : { opacity: shimmerOpacity },
-                ]}
-              />
-              <Animated.View
-                style={[
-                  styles.skeletonText,
-                  { width: "80%" },
-                  reduceMotion ? {} : { opacity: shimmerOpacity },
-                ]}
-              />
-              <Animated.View
-                style={[
-                  styles.skeletonText,
-                  { width: "60%" },
-                  reduceMotion ? {} : { opacity: shimmerOpacity },
-                ]}
-              />
+              {bone(styles.skeletonTitle)}
+              {bone([styles.skeletonText, { width: "80%" }])}
+              {bone([styles.skeletonText, { width: "60%" }])}
             </View>
           </View>
         ));
@@ -86,27 +104,10 @@ export function LoadingSkeleton({ variant = "card", count = 3, testID }: Loading
       case "list":
         return Array.from({ length: count }).map((_, i) => (
           <View key={i} style={styles.listItem}>
-            <Animated.View
-              style={[
-                styles.listAvatar,
-                reduceMotion ? {} : { opacity: shimmerOpacity },
-              ]}
-            />
+            {bone(styles.listAvatar)}
             <View style={styles.listContent}>
-              <Animated.View
-                style={[
-                  styles.skeletonText,
-                  { width: "70%" },
-                  reduceMotion ? {} : { opacity: shimmerOpacity },
-                ]}
-              />
-              <Animated.View
-                style={[
-                  styles.skeletonText,
-                  { width: "50%", marginTop: 6 },
-                  reduceMotion ? {} : { opacity: shimmerOpacity },
-                ]}
-              />
+              {bone([styles.skeletonText, { width: "70%" }])}
+              {bone([styles.skeletonText, { width: "50%", marginTop: 6 }])}
             </View>
           </View>
         ));
@@ -116,19 +117,10 @@ export function LoadingSkeleton({ variant = "card", count = 3, testID }: Loading
           <View style={styles.gridContainer}>
             {Array.from({ length: count }).map((_, i) => (
               <View key={i} style={styles.gridItem}>
-                <Animated.View
-                  style={[
-                    styles.gridImage,
-                    reduceMotion ? {} : { opacity: shimmerOpacity },
-                  ]}
-                />
-                <Animated.View
-                  style={[
-                    styles.skeletonText,
-                    { marginTop: spacing.xs },
-                    reduceMotion ? {} : { opacity: shimmerOpacity },
-                  ]}
-                />
+                {bone(styles.gridImage)}
+                {/* Title + style lines, like the Explore card caption strip */}
+                {bone([styles.skeletonText, { marginTop: spacing.sm, width: "75%" }])}
+                {bone([styles.skeletonText, { width: "45%", height: 12 }])}
               </View>
             ))}
           </View>
@@ -137,7 +129,13 @@ export function LoadingSkeleton({ variant = "card", count = 3, testID }: Loading
   };
 
   return (
-    <View style={styles.container} testID={testID}>
+    <View
+      style={styles.container}
+      testID={testID}
+      accessibilityRole="progressbar"
+      accessibilityLabel="Loading"
+      accessibilityState={{ busy: true }}
+    >
       {renderSkeleton()}
     </View>
   );
@@ -146,6 +144,16 @@ export function LoadingSkeleton({ variant = "card", count = 3, testID }: Loading
 const styles = StyleSheet.create({
   container: {
     padding: spacing.md,
+  },
+  bone: {
+    backgroundColor: SKELETON_COLOR,
+    overflow: "hidden",
+  },
+  shimmerBand: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    width: "55%",
   },
   card: {
     backgroundColor: "#fff",
@@ -161,20 +169,17 @@ const styles = StyleSheet.create({
   cardImage: {
     width: "100%",
     height: 170,
-    backgroundColor: colors.surface,
   },
   cardBody: {
     padding: spacing.md,
   },
   skeletonTitle: {
     height: 20,
-    backgroundColor: colors.surface,
     borderRadius: radius.sm,
     marginBottom: spacing.sm,
   },
   skeletonText: {
     height: 14,
-    backgroundColor: colors.surface,
     borderRadius: radius.sm,
     marginBottom: 6,
   },
@@ -189,7 +194,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: colors.surface,
     marginRight: spacing.md,
   },
   listContent: {
@@ -207,7 +211,6 @@ const styles = StyleSheet.create({
   gridImage: {
     width: "100%",
     aspectRatio: 1,
-    backgroundColor: colors.surface,
     borderRadius: radius.lg,
   },
 });

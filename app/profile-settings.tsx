@@ -14,11 +14,23 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useAuthStore, usePrivacyStore, useSettingsStore } from "@/lib/store";
+import { getAppleAuthCodeForDeletion, isAppleSession } from "@/lib/auth/apple-revoke";
 import { SUPPORT_EMAIL } from "@/lib/config";
 import { supabase } from "@/lib/supabase";
 import { ConfirmationSheet } from "@/components";
 import { DELETED_DATA_SUMMARY } from "@/lib/constants/deletion";
 import { wipeOfflineCache } from "@/lib/offline-cache";
+import Constants from "expo-constants";
+import { openLegalPage } from "@/lib/helpers/openLegalPage";
+import type { LegalPage } from "@/lib/config/legal";
+
+const APP_VERSION = Constants.expoConfig?.version ?? "1.0.0";
+
+const ABOUT_ROWS: { page: LegalPage; label: string }[] = [
+  { page: "terms", label: "Terms of Service" },
+  { page: "privacy", label: "Privacy Policy" },
+  { page: "licenses", label: "Open-source licenses" },
+];
 
 export default function ProfileSettingsScreen() {
   const router = useRouter();
@@ -158,7 +170,10 @@ export default function ProfileSettingsScreen() {
   const confirmDeleteAccount = async () => {
     const profile = useAuthStore.getState().profile;
     const userId = profile?.id;
-    const isAppleUser = profile?.email?.endsWith('@privaterelay.appleid.com') || false;
+    const isAppleUser =
+      isAppleSession(useAuthStore.getState().session) ||
+      profile?.email?.endsWith("@privaterelay.appleid.com") ||
+      false;
     
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
       // Record mock delete call for E2E testing
@@ -191,7 +206,10 @@ export default function ProfileSettingsScreen() {
     }
 
     try {
-      const { error } = await supabase.functions.invoke("delete-account");
+      const appleAuthCode = await getAppleAuthCodeForDeletion(useAuthStore.getState().session);
+      const { error } = await supabase.functions.invoke("delete-account", {
+        body: { appleAuthCode },
+      });
       
       if (error) throw error;
       
@@ -225,18 +243,14 @@ export default function ProfileSettingsScreen() {
     }
   };
 
-  const openLink = (url: string) => {
-    Linking.openURL(url);
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <ConfirmationSheet
         visible={deleteConfirmVisible}
         onClose={() => setDeleteConfirmVisible(false)}
-        title="Delete Account"
+        title="Delete account"
         message={`Are you sure? This will permanently delete your account and ${DELETED_DATA_SUMMARY}. This action cannot be undone.`}
-        confirmLabel="Delete My Account"
+        confirmLabel="Delete my account"
         confirmVariant="danger"
         onConfirm={confirmDeleteAccount}
         testID="delete-account-confirm"
@@ -244,7 +258,7 @@ export default function ProfileSettingsScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()} hitSlop={12}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </Pressable>
         <Text style={styles.headerTitle}>Settings</Text>
@@ -264,7 +278,7 @@ export default function ProfileSettingsScreen() {
           <View style={styles.settingCard}>
             <View style={styles.settingRow}>
               <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>Pros Waitlist</Text>
+                <Text style={styles.settingLabel}>Pros waitlist</Text>
                 <Text style={styles.settingDescription}>
                   Get notified when local pros can quote your projects
                 </Text>
@@ -274,7 +288,7 @@ export default function ProfileSettingsScreen() {
                 onValueChange={handleProsWaitlist}
                 disabled={checkingWaitlist}
                 testID="settings-pros-waitlist-toggle"
-                accessibilityLabel="Pros Waitlist"
+                accessibilityLabel="Pros waitlist"
                 trackColor={{ false: colors.border, true: colors.success }}
                 thumbColor="#fff"
               />
@@ -294,7 +308,7 @@ export default function ProfileSettingsScreen() {
               accessibilityLabel={`Public Projects by Default, ${publicProjectsDefault ? "on" : "off"}. New projects visible in Explore.`}
             >
               <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>Public Projects by Default</Text>
+                <Text style={styles.settingLabel}>Public projects by default</Text>
                 <Text style={styles.settingDescription}>
                   New projects visible in Explore (you can change per-project)
                 </Text>
@@ -372,7 +386,7 @@ export default function ProfileSettingsScreen() {
               accessibilityLabel={`Reduce Motion, ${reduceMotion ? "on" : "off"}. Minimize animations and transitions.`}
             >
               <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>Reduce Motion</Text>
+                <Text style={styles.settingLabel}>Reduce motion</Text>
                 <Text style={styles.settingDescription}>
                   Minimize animations and transitions
                 </Text>
@@ -390,37 +404,9 @@ export default function ProfileSettingsScreen() {
           </View>
         </View>
 
-        {/* Legal Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Legal</Text>
-          <View style={styles.settingCard}>
-            <Pressable
-              style={styles.settingRow}
-              onPress={() => openLink("https://visionbuild.app/terms")}
-              accessibilityRole="button"
-              accessibilityLabel="Terms of Service, opens in browser"
-            >
-              <Text style={styles.settingLabel}>Terms of Service</Text>
-              <Ionicons name="open-outline" size={20} color={colors.textSecondary} />
-            </Pressable>
-
-            <View style={styles.separator} />
-
-            <Pressable
-              style={styles.settingRow}
-              onPress={() => openLink("https://visionbuild.app/privacy")}
-              accessibilityRole="button"
-              accessibilityLabel="Privacy Policy, opens in browser"
-            >
-              <Text style={styles.settingLabel}>Privacy Policy</Text>
-              <Ionicons name="open-outline" size={20} color={colors.textSecondary} />
-            </Pressable>
-          </View>
-        </View>
-
         {/* Danger Zone */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, styles.dangerTitle]}>Danger Zone</Text>
+          <Text style={[styles.sectionTitle, styles.dangerTitle]}>Danger zone</Text>
           <View style={styles.settingCard}>
             <Pressable
               style={styles.settingRow}
@@ -441,12 +427,12 @@ export default function ProfileSettingsScreen() {
               style={styles.settingRow}
               onPress={handleDeleteAccount}
               accessibilityRole="button"
-              accessibilityLabel="Delete Account. Permanently delete your account and all data."
+              accessibilityLabel="Delete account. Permanently delete your account and all data."
               testID="delete-account-button"
             >
               <View style={styles.settingInfo}>
                 <Text style={[styles.settingLabel, styles.dangerLabel]}>
-                  Delete Account
+                  Delete account
                 </Text>
                 <Text style={styles.settingDescription}>
                   Permanently delete your account and all data
@@ -457,8 +443,31 @@ export default function ProfileSettingsScreen() {
           </View>
         </View>
 
-        {/* Version */}
-        <Text style={styles.version}>VisionBuild v1.0.0</Text>
+        {/* About: hosted legal pages open in an in-app browser sheet */}
+        <View style={styles.section} testID="settings-about">
+          <Text style={styles.sectionTitle} accessibilityRole="header">About</Text>
+          <View style={styles.settingCard}>
+            {ABOUT_ROWS.map((row, index) => (
+              <View key={row.page}>
+                {index > 0 && <View style={styles.separator} />}
+                <Pressable
+                  style={styles.aboutRow}
+                  onPress={() => openLegalPage(row.page)}
+                  accessibilityRole="link"
+                  accessibilityLabel={row.label}
+                  accessibilityHint="Opens in an in-app browser"
+                  testID={`settings-about-${row.page}`}
+                >
+                  <Text style={styles.settingLabel}>{row.label}</Text>
+                  <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                </Pressable>
+              </View>
+            ))}
+          </View>
+          <Text style={styles.version} testID="settings-app-version">
+            VisionBuild version {APP_VERSION}
+          </Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -578,11 +587,21 @@ const styles = StyleSheet.create({
   switchThumbOn: {
     transform: [{ translateX: 20 }],
   },
+  aboutRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.md,
+    paddingVertical: 14,
+    minHeight: 52,
+  },
   version: {
     ...fonts.regular,
+    fontSize: 12,
+    color: colors.textSecondary,
     textAlign: "center",
-    marginTop: spacing.lg,
-    marginBottom: spacing.xl,
+    marginTop: spacing.md,
+    marginBottom: spacing.lg,
   },
   errorBanner: {
     backgroundColor: colors.surface,

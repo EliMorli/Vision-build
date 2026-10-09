@@ -11,6 +11,8 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { SUPPORT_EMAIL } from "@/lib/config";
+import Constants from "expo-constants";
+import { openLegalPage } from "@/lib/helpers/openLegalPage";
 
 const FAQ_ITEMS = [
   {
@@ -33,10 +35,6 @@ const FAQ_ITEMS = [
 export default function HelpContactScreen() {
   const router = useRouter();
 
-  const openLink = (url: string) => {
-    Linking.openURL(url);
-  };
-
   const sendEmail = () => {
     if (SUPPORT_EMAIL) {
       Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=VisionBuild Support Request`);
@@ -47,10 +45,10 @@ export default function HelpContactScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()} hitSlop={12}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Help & Contact</Text>
+        <Text style={styles.headerTitle}>Help & contact</Text>
         <View style={{ width: 24 }} />
       </View>
 
@@ -58,13 +56,13 @@ export default function HelpContactScreen() {
         {/* Contact Support */}
         {SUPPORT_EMAIL && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Get Help</Text>
-            <Pressable style={styles.contactCard} onPress={sendEmail}>
+            <Text style={styles.sectionTitle}>Get help</Text>
+            <Pressable accessibilityRole="button" style={styles.contactCard} onPress={sendEmail}>
               <View style={styles.contactIcon}>
                 <Ionicons name="mail" size={24} color={colors.primary} />
               </View>
               <View style={styles.contactInfo}>
-                <Text style={styles.contactLabel}>Email Support</Text>
+                <Text style={styles.contactLabel}>Email support</Text>
                 <Text style={styles.contactValue}>{SUPPORT_EMAIL}</Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
@@ -74,7 +72,7 @@ export default function HelpContactScreen() {
 
         {/* FAQ */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
+          <Text style={styles.sectionTitle}>Frequently asked questions</Text>
           {FAQ_ITEMS.map((item, index) => (
             <View
               key={index}
@@ -93,31 +91,34 @@ export default function HelpContactScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Legal</Text>
           <View style={styles.legalCard}>
-            <Pressable
+            <Pressable accessibilityRole="link"
               style={styles.legalRow}
-              onPress={() => openLink("https://visionbuild.app/terms")}
+              onPress={() => openLegalPage("terms")}
+              testID="help-legal-terms"
             >
               <Text style={styles.legalLabel}>Terms of Service</Text>
-              <Ionicons name="open-outline" size={18} color={colors.textSecondary} />
+              <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
             </Pressable>
 
             <View style={styles.separator} />
 
-            <Pressable
+            <Pressable accessibilityRole="link"
               style={styles.legalRow}
-              onPress={() => openLink("https://visionbuild.app/privacy")}
+              onPress={() => openLegalPage("privacy")}
+              testID="help-legal-privacy"
             >
               <Text style={styles.legalLabel}>Privacy Policy</Text>
-              <Ionicons name="open-outline" size={18} color={colors.textSecondary} />
+              <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
             </Pressable>
 
             <View style={styles.separator} />
 
-            <Pressable
+            <Pressable accessibilityRole="link"
               style={styles.legalRow}
-              onPress={() => router.push("/licenses")}
+              onPress={() => openLegalPage("licenses")}
+              testID="help-legal-licenses"
             >
-              <Text style={styles.legalLabel}>Open Source Licenses</Text>
+              <Text style={styles.legalLabel}>Open-source licenses</Text>
               <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
             </Pressable>
           </View>
@@ -125,7 +126,7 @@ export default function HelpContactScreen() {
 
         {/* App Info */}
         <View style={styles.appInfo}>
-          <Text style={styles.appVersion}>VisionBuild v1.0.0</Text>
+          <Text style={styles.appVersion}>VisionBuild version {Constants.expoConfig?.version ?? "1.0.0"}</Text>
           <Text style={styles.appCopyright}>© 2026 VisionBuild. All rights reserved.</Text>
         </View>
       </ScrollView>

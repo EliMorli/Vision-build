@@ -104,7 +104,7 @@ export function ReportModal({ visible, onClose, onSuccess, onError, type, itemId
       <SafeAreaView style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <Pressable onPress={handleClose} hitSlop={12}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Close report" onPress={handleClose} hitSlop={12}>
             <Ionicons name="close" size={28} color={colors.textPrimary} />
           </Pressable>
           <Text style={styles.headerTitle}>
@@ -157,7 +157,7 @@ export function ReportModal({ visible, onClose, onSuccess, onError, type, itemId
         {/* Actions */}
         <View style={styles.actions}>
           <Button
-            label="Submit Report"
+            label="Submit report"
             icon="send"
             onPress={handleSubmit}
             loading={isSubmitting}

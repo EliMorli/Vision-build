@@ -62,6 +62,57 @@ test.describe("Offline Mode", () => {
     await page.screenshot({ path: "e2e/screens/ui-offline-home.png", fullPage: false });
   });
 
+  test("offline Home: 'Start a new room' and the raised + are gray, disabled and say 'Needs internet'", async ({ page, context }) => {
+    await page.goto(BASE_URL);
+    await expect(page.getByText("Kitchen Design")).toBeVisible({ timeout: 15000 });
+
+    const startButton = page.getByTestId("home-start-new-room").locator("visible=true");
+    const homeNeedsInternet = page.getByTestId("home-needs-internet").locator("visible=true");
+
+    // Positive control: online, both actions are live and there is no notice
+    await expect(startButton).toBeEnabled();
+    await expect(homeNeedsInternet).toHaveCount(0);
+    await expect(page.getByTestId("tab-create-icon").locator("visible=true").first()).toBeVisible();
+    const onlineBg = await startButton.evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(onlineBg).toBe("rgb(26, 115, 232)");
+
+    await context.setOffline(true);
+
+    // Start a new room: disabled, clay gray, with the "Needs internet" label
+    await expect(startButton).toBeDisabled();
+    await expect(homeNeedsInternet).toHaveCount(1);
+    await expect(homeNeedsInternet).toHaveText(/Needs internet/);
+    const offlineBg = await startButton.evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(offlineBg).toBe("rgb(232, 234, 237)");
+
+    // Raised + in the tab bar: gray and labelled "Needs internet"
+    const createDisabled = page.getByTestId("tab-create-disabled").locator("visible=true").first();
+    await expect(createDisabled).toBeVisible();
+    const plusBg = await createDisabled.evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(plusBg).toBe("rgb(232, 234, 237)");
+    await expect(page.getByTestId("tab-create").locator("visible=true").first()).toContainText("Needs internet");
+
+    // Tapping the gray + does nothing while offline
+    await page.getByTestId("tab-create").locator("visible=true").first().click();
+    await expect(page.getByText("Start your project")).toHaveCount(0);
+    await expect(page).toHaveURL(/localhost:19006\/?$/);
+
+    // ~16px between the button area (incl. the notice) and the first project card
+    const noticeBox = await homeNeedsInternet.boundingBox();
+    const startBox = await startButton.boundingBox();
+    const cardBox = await page.getByTestId("home-project-card").locator("visible=true").first().boundingBox();
+    expect(noticeBox && startBox && cardBox).toBeTruthy();
+    // The notice is the last thing above the list; the card starts ~16px below it
+    expect(cardBox!.y - (noticeBox!.y + noticeBox!.height)).toBeGreaterThanOrEqual(15);
+    expect(cardBox!.y - (startBox!.y + startBox!.height)).toBeGreaterThanOrEqual(16);
+
+    // Back online: everything is live again
+    await context.setOffline(false);
+    await expect(startButton).toBeEnabled();
+    await expect(homeNeedsInternet).toHaveCount(0);
+    await expect(page.getByTestId("tab-create-icon").locator("visible=true").first()).toBeVisible();
+  });
+
   test("shows exactly one visible offline banner per screen", async ({ page, context }) => {
     await page.goto(BASE_URL);
     await expect(page.getByText("Kitchen Design")).toBeVisible({ timeout: 15000 });

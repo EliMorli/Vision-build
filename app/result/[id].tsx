@@ -11,6 +11,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Animated,
+  ScrollView,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -194,6 +195,12 @@ export default function ResultScreen() {
   return (
     <SafeAreaView style={styles.container}>
       {isOffline && <OfflineBanner testID="offline-banner" />}
+      {/* Scrolls when text is large so nothing is squeezed off-screen; the Save button stays pinned below */}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        testID="results-scroll"
+      >
       {/* XP reward banner */}
       {showXPBanner && (
         <Animated.View style={[styles.xpBanner, { transform: [{ scale: xpBannerScale }] }]}>
@@ -204,14 +211,17 @@ export default function ResultScreen() {
             <Text style={styles.xpTitle}>Room redesigned!</Text>
             <Text style={styles.xpSubtitle}>Quest complete</Text>
           </View>
-          <Text style={styles.xpAmount}>+50 XP</Text>
-          <Pressable 
-            onPress={() => setShowXPBanner(false)}
-            hitSlop={8}
-            accessibilityLabel="Dismiss"
-          >
-            <Ionicons name="close" size={18} color="#8A6A00" />
-          </Pressable>
+          {/* Amount + dismiss wrap to their own line at large text sizes */}
+          <View style={styles.xpRight}>
+            <Text style={styles.xpAmount}>+50 XP</Text>
+            <Pressable accessibilityRole="button"
+              onPress={() => setShowXPBanner(false)}
+              hitSlop={8}
+              accessibilityLabel="Dismiss"
+            >
+              <Ionicons name="close" size={18} color="#8A6A00" />
+            </Pressable>
+          </View>
         </Animated.View>
       )}
 
@@ -237,6 +247,7 @@ export default function ResultScreen() {
 
       {/* Carousel */}
       <FlatList
+        style={styles.carousel}
         data={allSlots}
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -334,6 +345,7 @@ export default function ResultScreen() {
           </Pressable>
         </View>
       )}
+      </ScrollView>
 
       {/* CTA */}
       <View style={styles.cta}>
@@ -353,9 +365,9 @@ export default function ResultScreen() {
 
       {/* Before/After Modal */}
       <Modal visible={showCompare} transparent animationType={reduceMotion ? "none" : "fade"}>
-        <Pressable style={styles.modal} onPress={() => setShowCompare(false)}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Before and after comparison, tap to close" style={styles.modal} onPress={() => setShowCompare(false)}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Before & After</Text>
+            <Text style={styles.modalTitle}>Before & after</Text>
             <View style={styles.compareRow}>
               <View style={styles.compareCol}>
                 <PrivateImage
@@ -398,6 +410,7 @@ const styles = StyleSheet.create({
   },
   xpBanner: {
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "center",
     gap: spacing.sm,
     marginHorizontal: spacing.md,
@@ -425,7 +438,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   xpTextWrapper: {
-    flex: 1,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 140,
+  },
+  xpRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginLeft: "auto",
   },
   xpTitle: {
     fontSize: 14,
@@ -494,6 +515,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
   },
   cardImage: { width: "100%", height: "100%" },
+  scroll: { flex: 1 },
+  scrollContent: { flexGrow: 1 },
+  // Fills the free space at normal sizes; never collapses below a usable card height
+  carousel: { flexGrow: 1, minHeight: CARD_WIDTH },
   checkBadge: {
     position: "absolute",
     top: 16,

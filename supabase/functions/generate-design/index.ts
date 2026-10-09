@@ -1,13 +1,17 @@
 // Supabase Edge Function: generate-design
-// Generates renovation design images via configurable provider (Replicate/OpenRouter/Mock)
+// Generates renovation design images. The render provider defaults to OpenRouter.
 //
-// Required secrets (varies by provider):
-//   REPLICATE_API_TOKEN (for Replicate)
-//   AI_API_KEY (for OpenRouter)
+// Production (APP_ENV unset or anything other than development/staging) allows
+// ONLY OpenRouter (or mock); RENDER_PROVIDER=replicate is refused in production.
+//
+// Required secrets:
+//   AI_API_KEY (OpenRouter API key; enable zero data retention in OpenRouter settings)
 //   SUPABASE_SERVICE_ROLE_KEY (auto-available)
 // Optional:
-//   RENDER_PROVIDER (default: replicate, options: replicate|openrouter|mock)
-//   AI_BASE_URL (for OpenRouter, default: https://openrouter.ai/api/v1)
+//   RENDER_PROVIDER (default: openrouter; options: openrouter|mock, plus replicate in
+//                    development/staging only)
+//   AI_BASE_URL (default: https://openrouter.ai/api/v1)
+//   REPLICATE_API_TOKEN (development/staging only, never needed for launch)
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";

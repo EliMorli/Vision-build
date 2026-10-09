@@ -28,7 +28,51 @@ test.describe("Loading, Empty, and Error States", () => {
 
     await expect(page.getByTestId("explore-loading")).toBeVisible({ timeout: 10000 });
 
+    // Placeholder cards use the clay-gray tone so they are visible on white
+    const bones = page.getByTestId("explore-loading").getByTestId("skeleton-bone");
+    expect(await bones.count()).toBeGreaterThan(0);
+    const bg = await bones.first().evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(bg).toBe("rgb(238, 241, 246)");
+
+    // This project runs with Reduce Motion on: the shimmer is off
+    await expect(page.getByTestId("explore-loading").getByTestId("skeleton-shimmer")).toHaveCount(0);
+
     await page.screenshot({ path: "e2e/screens/ui-explore-loading.png", fullPage: false });
+  });
+
+  test.describe("explore loading with motion allowed", () => {
+    test.use({ reducedMotion: "no-preference" });
+
+    test("explore: loading placeholders shimmer when Reduce Motion is off", async ({ page }: { page: Page }) => {
+      await page.addInitScript(() => {
+        localStorage.setItem("@visionbuild:mock_state_override", JSON.stringify({ explore: "loading" }));
+      });
+
+      await page.goto(`${BASE_URL}/(tabs)/explore`);
+      await expect(page.getByTestId("explore-loading")).toBeVisible({ timeout: 10000 });
+
+      const shimmer = page.getByTestId("explore-loading").getByTestId("skeleton-shimmer");
+      expect(await shimmer.count()).toBeGreaterThan(0);
+
+      // The highlight band moves across the placeholder
+      const positions = new Set<string>();
+      for (let i = 0; i < 6; i++) {
+        positions.add(await shimmer.first().evaluate((el) => getComputedStyle(el).left));
+        await page.waitForTimeout(150);
+      }
+      expect(positions.size).toBeGreaterThan(1);
+
+      // Capture mid-sweep so the highlight is in the screenshot
+      await expect
+        .poll(async () => {
+          const x = (await shimmer.first().boundingBox())?.x ?? -999;
+          // Band entering the first card; it reaches mid-card by the time the capture lands
+          return x > -20 && x < 50;
+        }, { timeout: 8000, intervals: [16] })
+        .toBe(true);
+
+      await page.screenshot({ path: "e2e/screens/ui-explore-loading-shimmer.png", fullPage: false });
+    });
   });
 
   test("explore: empty state shows message and start button", async ({ page }: { page: Page }) => {
@@ -48,6 +92,7 @@ test.describe("Loading, Empty, and Error States", () => {
   test("home: error state shows safe message, try again button, and hides raw errors", async ({ page }: { page: Page }) => {
     await page.addInitScript(() => {
       localStorage.setItem("@visionbuild:mock_state_override", JSON.stringify({ home: "error" }));
+      localStorage.setItem("@visionbuild:mock_support_email", "support@example.com");
     });
 
     await page.goto(BASE_URL);
@@ -55,7 +100,21 @@ test.describe("Loading, Empty, and Error States", () => {
 
     await expect(page.getByTestId("home-error")).toBeVisible({ timeout: 10000 });
     await expect(page.getByText("Something went wrong")).toBeVisible();
+    await expect(page.getByText("We couldn't load your projects.", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: /try again/i })).toBeVisible();
+
+    // Header and XP stay, so the error doesn't look like a crash
+    await expect(page.getByTestId("home-greeting")).toBeVisible();
+    await expect(page.getByText(/ready to redesign/i)).toBeVisible();
+    await expect(page.getByTestId("home-xp-chip")).toBeVisible();
+
+    // Contact support sits under Try again
+    const support = page.getByTestId("error-contact-support");
+    await expect(support).toBeVisible();
+    await expect(support).toHaveText("Contact support");
+    const retryBox = await page.getByRole("button", { name: /try again/i }).boundingBox();
+    const supportBox = await support.boundingBox();
+    expect(supportBox!.y).toBeGreaterThan(retryBox!.y + retryBox!.height);
 
     // Verify raw error is never exposed
     const content = await page.content();
@@ -77,6 +136,7 @@ test.describe("Loading, Empty, and Error States", () => {
 
   test("inbox: loading state works", async ({ page }: { page: Page }) => {
     await page.addInitScript(() => {
+      localStorage.setItem("@visionbuild:mock_outreach_enabled", "true");
       localStorage.setItem("@visionbuild:mock_state_override", JSON.stringify({ inbox: "loading" }));
     });
 
@@ -88,6 +148,7 @@ test.describe("Loading, Empty, and Error States", () => {
 
   test("inbox: error state works", async ({ page }: { page: Page }) => {
     await page.addInitScript(() => {
+      localStorage.setItem("@visionbuild:mock_outreach_enabled", "true");
       localStorage.setItem("@visionbuild:mock_state_override", JSON.stringify({ inbox: "error" }));
     });
 

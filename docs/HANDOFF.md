@@ -1,5 +1,7 @@
 # Handoff Document: VisionBuild Client Flow
 
+> **Before submission:** everything Elimar has to provide (keys, accounts, domain, legal-site URL `EXPO_PUBLIC_LEGAL_BASE_URL`, effective dates, demo account) is listed in **[docs/FILL_IN.md](FILL_IN.md)**.
+
 **Date**: October 8, 2026  
 **Branch**: `cursor/visionbuild-client-flow-740f`  
 **PR**: [#2](https://github.com/EliMorli/Vision-build/pull/2)
@@ -34,6 +36,18 @@ All 6 security issues from review of commit d93632a have been fixed:
 
 ### Environment Variables / Fill-ins Required
 
+**AI (one key only)** - set via `npx supabase secrets set`:
+- `AI_API_KEY` - your **OpenRouter** API key. This is the only AI key the app needs.
+  In your OpenRouter account settings, turn on **zero data retention (ZDR)**.
+  Production only allows OpenRouter; the code refuses Replicate and direct OpenAI there.
+  The Privacy Policy and AI consent screen name only Google and Anthropic models via OpenRouter.
+- There is **no Replicate token** and **no direct OpenAI key** to fill in.
+
+**Email**: `RESEND_API_KEY` - Resend handles all outgoing email.
+
+**Database**: Supabase handles the database, auth and storage
+(`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`).
+
 **Account Deletion Ops Alerts** (for `retry-account-deletions` edge function):
 - `OPS_ALERT_EMAIL` - Email address to receive ops alerts when deletions fail repeatedly
 - `ALERT_FROM_EMAIL` - From email address for ops alerts (e.g., `alerts@yourdomain.com`)
@@ -46,6 +60,8 @@ All 6 security issues from review of commit d93632a have been fixed:
 
 **Client Configuration**:
 - `EXPO_PUBLIC_SUPPORT_EMAIL` - Support email address shown in app (used in Contact support links)
+- `EXPO_PUBLIC_LEGAL_BASE_URL` - **FILL-IN (Elimar)**: where the legal website (`web-legal/dist`) is hosted, e.g. `https://visionbuild.app/legal`. The app opens `<base>/terms`, `<base>/privacy` and `<base>/licenses` from Settings → About, sign-in and the AI consent screen. Until it is set the app uses the placeholder `https://visionbuild.app/legal`, and the release check fails. Also set it as a GitHub Actions **repository variable** with the same name so the release gate can check the live site.
+- `EXPO_PUBLIC_CONTRACTOR_OUTREACH_ENABLED` - leave unset at launch. While off, the Inbox tab is hidden. Set to `true` when pros go live.
 
 Note: If OPS_ALERT_EMAIL or ALERT_FROM_EMAIL are unset, the retry function will log a warning and skip sending alerts.
 
@@ -64,10 +80,17 @@ These secrets must be created in Supabase Vault for the hourly retry cron job to
 
 The `deletion_cron_ready()` function returns boolean status for all requirements (service_role only).
 
-### Legal Routes
-- ✅ `/terms` - Renders `content/legal/terms-of-service.md` (including DRAFT line)
-- ✅ `/privacy` - Renders `content/legal/privacy-policy.md`
-- ✅ Registered in root layout
+### Legal pages (hosted website, PR #11)
+The app no longer renders legal or license text. Terms, Privacy, Open-source licenses and Delete account live on a small static website built from this repo and open in an in-app browser sheet (`expo-web-browser`, page sheet on iOS).
+
+- **Source:** `web-legal/` (content, styles, `versions.json`, `archive/`). Terms and Privacy text comes from the markdown in `app/terms.tsx` and `app/privacy.tsx` (the same text `strip-legal-drafts.js` checks). Licenses come from `lib/generated/licenses.ts` (`node scripts/generate-licenses.js`).
+- **Build:** `npm run legal:build` → `web-legal/dist/` (gitignored). `npm run legal:build -- --release` additionally fails on DRAFT banners, `[NOTE]`s, `[CONFIRM]`s and placeholders. CI builds it on every run.
+- **Pages:** `/` index, `/terms`, `/privacy`, `/licenses` (grouped by package, versions merged, collapsible texts, search box), `/delete-account` (in-app, web and email deletion; what is deleted and kept, with the retention table from Privacy section 6). Every policy page shows its version and effective date and has `<meta name="policy-version">`. Old versions stay online at `/privacy/v1`, `/terms/v1`, …; the latest is at `/privacy` and `/privacy/vN`.
+- **Current versions:** Terms v1, Privacy **v2** (from `legal/v2`: profile photos added; the 13+ checkbox and Vi chats are not stored; likes/saves/remixes claims removed). v1 stays at `/privacy/v1`. **FILL-IN (Elimar):** the v2 effective date in `web-legal/versions.json` (the release build fails until it's filled).
+- **Deploy (manual, not done in this PR):** upload the contents of `web-legal/dist/` to any static host so that `<EXPO_PUBLIC_LEGAL_BASE_URL>/privacy/` serves `privacy/index.html`. Options: Vercel or Netlify (drag-and-drop the folder, or point the project at `web-legal/dist` with build command `npm ci && npm run legal:build`), or a public Supabase Storage bucket behind your domain. All links are relative, so any base path works. Then set `EXPO_PUBLIC_LEGAL_BASE_URL` (app env and GitHub repo variable).
+- **Publishing a new policy version:** copy the current text to `web-legal/archive/<doc>/v<N>.md` and point its `versions.json` entry at it; edit `app/<doc>.tsx`; add the new version (with its effective date) and bump `current` in `web-legal/versions.json`; bump `PRIVACY_POLICY_VERSION` / `TERMS_VERSION` in `lib/config/legal.ts` (jest fails if they disagree); build and deploy; then release.
+- **Release gates** (main/tags, in "Validate legal pages for release"): `strip-legal-drafts.js`, the release build, then `scripts/check-legal-release.js`: (1) fails if `EXPO_PUBLIC_LEGAL_BASE_URL` is unset, http, or the placeholder; (2) fetches the live `<base>/privacy` and fails unless `<meta name="policy-version">` equals `PRIVACY_POLICY_VERSION`, the version the consent screen records (consents row `kind = "privacy_policy"`). `npm run legal:test-gates` proves both gates fail and pass correctly using fixtures and a local server; it runs on every CI build.
+- The in-app `/terms` and `/privacy` routes remain only as the markdown sources; nothing links to them.
 
 ### Files Created/Modified
 ```
@@ -364,7 +387,7 @@ The `projects` table stores **storage paths**, never signed URLs:
 **`generate-design`**
 - Now stores paths in the database, not signed URLs
 - Paths follow format: `<userId>/<projectId>/design-<n>.png`
-- Works with Replicate, OpenRouter, or mock mode
+- Render provider defaults to OpenRouter (the only provider allowed in production); mock mode for local testing
 
 **`set-project-visibility`**
 - Copies only generated designs to `public-designs`, never originals

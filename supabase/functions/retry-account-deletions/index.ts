@@ -212,7 +212,8 @@ Deno.serve(async (req) => {
   const cronSecret = req.headers.get("X-Cron-Secret");
   const expectedCronSecret = Deno.env.get("CRON_SECRET");
 
-  const hasServiceRole = authHeader?.includes(SUPABASE_SERVICE_ROLE_KEY);
+  // Exact match only (an empty key or substring match must never authorize)
+  const hasServiceRole = !!SUPABASE_SERVICE_ROLE_KEY && authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`;
   const hasValidCronSecret = expectedCronSecret && cronSecret === expectedCronSecret;
 
   if (!hasServiceRole && !hasValidCronSecret) {

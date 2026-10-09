@@ -7,7 +7,7 @@
  * Summary of data that will be deleted when an account is deleted.
  * Used in both in-app and web deletion confirmation screens.
  */
-export const DELETED_DATA_SUMMARY = "your projects, photos, designs, chats and pros waitlist signup";
+export const DELETED_DATA_SUMMARY = "your projects, photos, designs, profile photo and pros waitlist signup";
 
 /**
  * Compliance-approved Apple settings note

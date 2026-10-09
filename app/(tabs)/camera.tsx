@@ -46,22 +46,17 @@ export default function CameraScreen() {
   };
 
   const pickImage = async (useCamera: boolean) => {
-    // Request permissions
-    let permissionResult;
-    
+    // Only the camera needs a runtime permission. Picking from the library uses
+    // the system photo picker (PHPicker on iOS, Android Photo Picker), which needs
+    // no media permission, so READ_MEDIA_IMAGES is blocked in app.json.
     if (useCamera) {
-      permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-    } else {
-      permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    }
-
-    if (!permissionResult.granted) {
-      setPermissionError(
-        useCamera
-          ? "Camera permission is required. Please enable it in your device settings."
-          : "Photo library permission is required. Please enable it in your device settings."
-      );
-      return;
+      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permissionResult.granted) {
+        setPermissionError(
+          "Camera permission is required. Please enable it in your device settings."
+        );
+        return;
+      }
     }
 
     const method = useCamera
@@ -115,7 +110,7 @@ export default function CameraScreen() {
       {/* Quick tips */}
       {!imageUri && (
         <View style={styles.tipsContainer}>
-          <Text style={styles.tipsTitle}>Quick Tips</Text>
+          <Text style={styles.tipsTitle}>Quick tips</Text>
           <View style={styles.tipRow}>
             <Ionicons name="sunny-outline" size={16} color={colors.primary} />
             <Text style={styles.tipText}>Good lighting works best</Text>
@@ -134,7 +129,7 @@ export default function CameraScreen() {
       {/* Image preview area */}
       <View style={styles.previewArea}>
         {imageUri ? (
-          <Pressable onPress={() => !loading && pickImage(false)} style={styles.imageFill}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Change room photo" onPress={() => !loading && pickImage(false)} style={styles.imageFill}>
             <Image source={{ uri: imageUri }} style={styles.image} />
             {!loading && (
               <View style={styles.retapHint}>
@@ -144,11 +139,11 @@ export default function CameraScreen() {
             )}
           </Pressable>
         ) : (
-          <Pressable style={styles.placeholder} onPress={() => pickImage(false)}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Add a room photo" style={styles.placeholder} onPress={() => pickImage(false)}>
             <View style={styles.placeholderIcon}>
               <Ionicons name="image-outline" size={48} color={colors.primary} />
             </View>
-            <Text style={styles.placeholderTitle}>Add a Room Photo</Text>
+            <Text style={styles.placeholderTitle}>Add a room photo</Text>
             <Text style={styles.placeholderSub}>Tap here to choose from your gallery</Text>
           </Pressable>
         )}
@@ -171,7 +166,7 @@ export default function CameraScreen() {
           {imageUri ? (
             <>
               <Button
-                label="Analyze Room"
+                label="Analyze room"
                 icon="sparkles"
                 onPress={handleAnalyze}
                 variant="primary"

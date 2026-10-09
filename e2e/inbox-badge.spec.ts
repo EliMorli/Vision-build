@@ -8,9 +8,32 @@ test.use({
   reducedMotion: "reduce",
 });
 
-test.describe("Inbox Badge", () => {
+test.describe("Inbox hidden while the outreach flag is off (launch default)", () => {
+  test("no Inbox tab, and /inbox redirects Home", async ({ page }: { page: Page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("@visionbuild:intro_seen", "true");
+      localStorage.setItem("@visionbuild:mock_session", "true");
+      localStorage.setItem("@visionbuild:ai_consent", "true");
+      localStorage.setItem("@visionbuild:ai_consent_version", "2026-10-07b");
+      localStorage.setItem("@visionbuild:mock_seed_inbox", JSON.stringify([{ id: "1", is_read: false }]));
+    });
+    await page.goto(BASE_URL);
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("tab", { name: /home/i }).first()).toBeVisible();
+    await expect(page.locator('[href="/inbox"]')).toHaveCount(0);
+    await expect(page.getByRole("tab", { name: /inbox/i })).toHaveCount(0);
+
+    await page.goto(`${BASE_URL}/inbox`);
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId("inbox-empty")).toHaveCount(0);
+    await page.screenshot({ path: "e2e/screens/ui-tabs-no-inbox.png", fullPage: false });
+  });
+});
+
+test.describe("Inbox Badge (outreach flag on)", () => {
   test.beforeEach(async ({ page }: { page: Page }) => {
     await page.addInitScript(() => {
+      localStorage.setItem("@visionbuild:mock_outreach_enabled", "true");
       localStorage.setItem("@visionbuild:intro_seen", "true");
       localStorage.setItem("@visionbuild:mock_session", "true");
       localStorage.setItem("@visionbuild:ai_consent", "true");

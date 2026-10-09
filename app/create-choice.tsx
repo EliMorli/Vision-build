@@ -11,21 +11,21 @@ export default function CreateChoiceScreen() {
       <View style={styles.content}>
         {/* Header */}
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} hitSlop={12}>
             <Ionicons name="close" size={28} color={colors.textPrimary} />
           </Pressable>
         </View>
 
         {/* Title section */}
         <View style={styles.titleSection}>
-          <Text style={styles.title}>Start Your Project</Text>
+          <Text style={styles.title}>Start your project</Text>
           <Text style={styles.subtitle}>Choose how you'd like to begin</Text>
         </View>
 
         {/* Choice cards */}
         <View style={styles.choices}>
           {/* Brainstorm with Vi */}
-          <Pressable
+          <Pressable accessibilityRole="button"
             style={styles.choiceCard}
             onPress={() => router.push("/assistant-chat")}
           >
@@ -47,7 +47,7 @@ export default function CreateChoiceScreen() {
           </Pressable>
 
           {/* Snap a photo */}
-          <Pressable
+          <Pressable accessibilityRole="button"
             style={styles.choiceCard}
             onPress={() => router.push("/space-type")}
           >
@@ -55,14 +55,14 @@ export default function CreateChoiceScreen() {
               <Ionicons name="camera" size={48} color={colors.secondary} />
             </View>
             <View style={styles.choiceContent}>
-              <Text style={styles.choiceTitle}>Snap a Photo</Text>
+              <Text style={styles.choiceTitle}>Snap a photo</Text>
               <Text style={styles.choiceDescription}>
                 Upload a photo of your space, pick a style, and get 4 AI-generated
                 designs instantly.
               </Text>
               <View style={[styles.choiceBadge, { backgroundColor: colors.secondary + "12" }]}>
-                <Ionicons name="flash" size={14} color={colors.secondary} />
-                <Text style={[styles.badgeText, { color: colors.secondary }]}>Quick Start</Text>
+                <Ionicons name="flash" size={14} color={colors.success} />
+                <Text style={[styles.badgeText, { color: colors.success }]}>Quick start</Text>
               </View>
             </View>
             <Ionicons name="chevron-forward" size={24} color={colors.textSecondary} />

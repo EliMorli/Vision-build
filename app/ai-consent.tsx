@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, Pressable, NativeScrollEvent, NativeSyntheticEvent } from "react-native";
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -9,10 +9,13 @@ import { Button } from "@/components";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore, useProjectStore } from "@/lib/store";
 import { AI_CONSENT_VERSION, CONSENT_CHANGE_NOTE } from "@/lib/config";
+import { PRIVACY_POLICY_VERSION } from "@/lib/config/legal";
+import { openLegalPage } from "@/lib/helpers/openLegalPage";
 import { getProviderDisclosureText } from "@/lib/ai-models";
 
 const AI_CONSENT_KEY = "@visionbuild:ai_consent";
 const AI_CONSENT_VERSION_KEY = "@visionbuild:ai_consent_version";
+const PRIVACY_VERSION_KEY = "@visionbuild:privacy_policy_version";
 
 export default function AIConsentScreen() {
   const router = useRouter();
@@ -29,7 +32,7 @@ export default function AIConsentScreen() {
   const isNever = reason === "never";
   const isReconsent = isOutdated || isNever;
   
-  console.log("[AIConsentScreen] pendingConsent:", pendingConsent, "reason:", reason, "isReconsent:", isReconsent, "isOutdated:", isOutdated);
+  if (__DEV__) console.log("[AIConsentScreen] pendingConsent:", pendingConsent, "reason:", reason, "isReconsent:", isReconsent, "isOutdated:", isOutdated);
 
   const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
@@ -43,6 +46,9 @@ export default function AIConsentScreen() {
     try {
       await AsyncStorage.setItem(AI_CONSENT_KEY, "true");
       await AsyncStorage.setItem(AI_CONSENT_VERSION_KEY, AI_CONSENT_VERSION);
+      // Record which Privacy Policy version was linked when the user agreed.
+      // The release check verifies the live /privacy page carries this version.
+      await AsyncStorage.setItem(PRIVACY_VERSION_KEY, PRIVACY_POLICY_VERSION);
       
       // In mock mode, also update the mock consent version
       const isMockMode = __DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true";
@@ -56,6 +62,12 @@ export default function AIConsentScreen() {
             user_id: userId,
             kind: "ai_processing",
             version: AI_CONSENT_VERSION,
+            accepted_at: new Date().toISOString(),
+          },
+          {
+            user_id: userId,
+            kind: "privacy_policy",
+            version: PRIVACY_POLICY_VERSION,
             accepted_at: new Date().toISOString(),
           },
         ]);
@@ -152,7 +164,7 @@ export default function AIConsentScreen() {
             </View>
 
             {/* Title */}
-            <Text style={styles.title}>AI-Powered Designs</Text>
+            <Text style={styles.title}>AI-powered designs</Text>
 
             {/* Re-consent message (if applicable) */}
             {isReconsent && isOutdated && (
@@ -214,10 +226,25 @@ export default function AIConsentScreen() {
           style={{ marginTop: spacing.sm }}
         />
         <Text style={styles.footerText}>
-          By continuing, you agree to this use of AI.{" "}
-          <Pressable onPress={() => router.push("/privacy")} accessibilityRole="link">
-            <Text style={styles.privacyLink}>Privacy Policy</Text>
-          </Pressable>
+          By continuing, you agree to this use of AI. Read our{" "}
+          <Text
+            style={styles.privacyLink}
+            onPress={() => openLegalPage("terms")}
+            accessibilityRole="link"
+            testID="consent-terms-link"
+          >
+            Terms of Service
+          </Text>{" "}
+          and{" "}
+          <Text
+            style={styles.privacyLink}
+            onPress={() => openLegalPage("privacy")}
+            accessibilityRole="link"
+            testID="consent-privacy-link"
+          >
+            Privacy Policy
+          </Text>
+          .
         </Text>
       </View>
     </SafeAreaView>

@@ -41,8 +41,15 @@ export function ConfirmationSheet({
       onRequestClose={onClose}
     >
       <View style={styles.container} testID={testID}>
-        <Pressable style={styles.overlay} onPress={onClose}>
-          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+        <View style={styles.overlay}>
+          {/* Tapping outside the sheet closes it */}
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss"
+          />
+          <View style={styles.sheet}>
             <View style={styles.header}>
               <Text style={styles.title}>{title}</Text>
               <Pressable
@@ -67,14 +74,14 @@ export function ConfirmationSheet({
               />
               <Button
                 label="Cancel"
-                variant="outline"
+                variant="neutral"
                 onPress={onClose}
                 fullWidth
                 testID={`${testID}-cancel`}
               />
             </View>
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </View>
     </Modal>
   );

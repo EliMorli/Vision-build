@@ -38,7 +38,15 @@ serve(async (req: Request) => {
     }
 
     // Verify HMAC token
-    const UNSUBSCRIBE_SECRET = Deno.env.get("UNSUBSCRIBE_SECRET") || "default-secret-change-me";
+    // Fail closed: never verify tokens with a guessable default secret
+    const UNSUBSCRIBE_SECRET = Deno.env.get("UNSUBSCRIBE_SECRET");
+    if (!UNSUBSCRIBE_SECRET) {
+      console.error("unsubscribe: UNSUBSCRIBE_SECRET is not set");
+      return new Response(
+        "<!DOCTYPE html><html><body><h1>Temporarily unavailable</h1><p>Please try again later or contact support.</p></body></html>",
+        { status: 503, headers: { "Content-Type": "text/html" } }
+      );
+    }
     const message = email.toLowerCase();
     const encoder = new TextEncoder();
     const keyData = encoder.encode(UNSUBSCRIBE_SECRET);

@@ -4,10 +4,15 @@ import { View, StyleSheet, Text } from "react-native";
 import { useRouter } from "expo-router";
 import { colors } from "@/lib/theme";
 import { useInboxStore } from "@/lib/store";
+import { isOutreachEnabled } from "@/lib/config/features";
+import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
 
 export default function TabsLayout() {
   const router = useRouter();
   const unreadCount = useInboxStore((s) => s.unreadCount);
+  // Inbox is for pros messages; hidden until the outreach flag is on (off at launch).
+  const showInbox = isOutreachEnabled();
+  const isOffline = !useNetworkStatus().isConnected;
 
   return (
     <Tabs
@@ -21,6 +26,10 @@ export default function TabsLayout() {
           fontWeight: "800",
         },
         tabBarStyle: { height: 65, paddingBottom: 8 },
+        // Like a native UITabBar, tab labels stay a fixed size at large text
+        // settings (iOS shows them in the Large Content Viewer on long-press).
+        // All screen content keeps scaling with the system font size.
+        tabBarAllowFontScaling: false,
       }}
     >
       <Tabs.Screen
@@ -47,11 +56,24 @@ export default function TabsLayout() {
         name="create"
         options={{
           title: "Create",
-          tabBarLabel: " ",
-          tabBarIcon: ({ focused }) => (
+          // Offline: the raised + turns clay-gray and says "Needs internet",
+          // matching the disabled Generate button on the style picker.
+          tabBarLabel: isOffline ? "Needs internet" : " ",
+          tabBarLabelStyle: isOffline ? styles.createLabelOffline : undefined,
+          tabBarAccessibilityLabel: isOffline ? "Create a new design, needs internet" : "Create a new design",
+          tabBarButtonTestID: "tab-create",
+          tabBarIcon: () => (
             <View style={styles.createButtonContainer}>
-              <View style={styles.createButton}>
-                <Ionicons name="add" size={32} color="#fff" style={{ transform: [{ rotate: '6deg' }] }} />
+              <View
+                style={[styles.createButton, isOffline && styles.createButtonDisabled]}
+                testID={isOffline ? "tab-create-disabled" : "tab-create-icon"}
+              >
+                <Ionicons
+                  name="add"
+                  size={32}
+                  color={isOffline ? colors.textSecondary : "#fff"}
+                  style={{ transform: [{ rotate: '6deg' }] }}
+                />
               </View>
             </View>
           ),
@@ -59,6 +81,7 @@ export default function TabsLayout() {
         listeners={{
           tabPress: (e) => {
             e.preventDefault();
+            if (isOffline) return;
             router.push("/create-choice");
           },
         }}
@@ -66,6 +89,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="inbox"
         options={{
+          href: showInbox ? undefined : null,
           title: "Inbox",
           tabBarLabel: "Inbox",
           tabBarBadge: unreadCount > 0 ? (unreadCount > 9 ? '9+' : unreadCount.toString()) : undefined,
@@ -75,6 +99,7 @@ export default function TabsLayout() {
         }}
         listeners={{
           tabPress: () => {
+            if (!showInbox) return;
             // Refresh unread count when tab is focused
             useInboxStore.getState().fetchUnreadCount().catch(() => {
               // Errors are already logged in fetchUnreadCount
@@ -117,6 +142,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     transform: [{ rotate: '-6deg' }],
+  },
+  createButtonDisabled: {
+    backgroundColor: "#E8EAED",
+    borderBottomColor: "#BDC1C6",
+  },
+  createLabelOffline: {
+    color: colors.textSecondary,
+    fontSize: 10,
+    fontFamily: "Nunito_700Bold",
   },
   badge: {
     position: "absolute",

@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { STYLE_OPTIONS, StyleOption } from "@/lib/types";
 import { useProjectStore } from "@/lib/store";
-import { Button, Banner, IsoRoom, LoadingSkeleton, ErrorState, OfflineBanner } from "@/components";
+import { Button, Banner, IsoRoom, LoadingSkeleton, ErrorState, OfflineBanner, NeedsInternetNotice } from "@/components";
 import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
 import { useProjectById } from "@/lib/hooks/useProjectById";
 import { usePrivacyStore } from "@/lib/store";
@@ -93,7 +93,7 @@ export default function EditorScreen() {
         <Banner
           icon="checkmark-circle"
           iconColor={colors.secondary}
-          title="Room Analyzed"
+          title="Room analyzed"
           subtitle={`${capitalize(analysis.roomType)}, approx ${analysis.estimatedSqFt} sq ft, ${analysis.currentStyle}`}
           style={styles.banner}
         >
@@ -156,11 +156,7 @@ export default function EditorScreen() {
 
       {/* Footer */}
       <View style={styles.footer}>
-        {isOffline && (
-          <View style={styles.offlineNotice}>
-            <Text style={styles.offlineNoticeText}>Needs internet</Text>
-          </View>
-        )}
+        {isOffline && <NeedsInternetNotice style={styles.offlineNoticeSpacing} />}
         {privacyOptOut && (
           <View style={styles.offlineNotice} testID="ai-opt-out-notice">
             <Text style={styles.offlineNoticeText}>
@@ -251,6 +247,7 @@ const styles = StyleSheet.create({
   },
   styleName: { fontSize: 14, fontWeight: "900", color: colors.textPrimary, marginHorizontal: 6 },
   footer: { padding: spacing.md },
+  offlineNoticeSpacing: { marginBottom: spacing.sm },
   offlineNotice: {
     padding: spacing.sm,
     backgroundColor: colors.surface,
