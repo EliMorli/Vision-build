@@ -19,6 +19,7 @@ import { realAssistantProvider } from "@/lib/providers/RealAssistantProvider";
 import { AssistantMessage } from "@/lib/providers/AssistantProvider";
 import { Button, ReportModal } from "@/components";
 import Constants from "expo-constants";
+import { useViConsentGate } from "@/lib/hooks/useViConsentGate";
 
 const WELCOME_MESSAGE: AssistantMessage = {
   id: "welcome",
@@ -32,8 +33,15 @@ const WELCOME_MESSAGE: AssistantMessage = {
 const useMockMode = __DEV__ && Constants.expoConfig?.extra?.EXPO_PUBLIC_DEV_MOCK_SESSION === "true";
 const assistantProvider = useMockMode ? mockAssistantProvider : realAssistantProvider;
 
+/** Stack route (opened from Create or a project). The Vi tab renders <AssistantChat asTab />. */
 export default function AssistantChatScreen() {
+  return <AssistantChat />;
+}
+
+export function AssistantChat({ asTab = false }: { asTab?: boolean }) {
   const router = useRouter();
+  // The server refuses chat without AI consent: show the consent screen first
+  const { state: consentState, openConsent } = useViConsentGate();
   const [messages, setMessages] = useState<AssistantMessage[]>([WELCOME_MESSAGE]);
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -155,8 +163,38 @@ export default function AssistantChatScreen() {
     );
   };
 
+  if (consentState !== "granted") {
+    return (
+      <SafeAreaView style={styles.container} testID="vi-consent-gate">
+        {!asTab && (
+          <View style={styles.header}>
+            <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Go back">
+              <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+            </Pressable>
+            <View style={styles.headerCenter}>
+              <Text style={styles.headerTitle} accessibilityRole="header">Vi</Text>
+            </View>
+            <View style={{ width: 24 }} />
+          </View>
+        )}
+        {consentState === "needed" && (
+          <View style={styles.gate}>
+            <View style={styles.gateIcon}>
+              <Ionicons name="sparkles" size={36} color={colors.primary} />
+            </View>
+            <Text style={styles.gateTitle} accessibilityRole="header">Chat with Vi</Text>
+            <Text style={styles.gateText}>
+              Vi uses AI to answer. Review and agree to AI processing to start chatting.
+            </Text>
+            <Button label="Review and continue" icon="arrow-forward" onPress={openConsent} variant="primary" testID="vi-consent-review" />
+          </View>
+        )}
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID={asTab ? "vi-tab-screen" : "vi-screen"}>
       <ReportModal
         visible={reportModalVisible}
         onClose={() => setReportModalVisible(false)}
@@ -168,18 +206,22 @@ export default function AssistantChatScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={90}
       >
-        {/* Header */}
+        {/* Header (no back arrow when Vi is a tab) */}
         <View style={styles.header}>
-          <Pressable
-            onPress={() => router.back()}
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-          </Pressable>
+          {asTab ? (
+            <View style={{ width: 24 }} />
+          ) : (
+            <Pressable
+              onPress={() => router.back()}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+            >
+              <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+            </Pressable>
+          )}
           <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle}>Vi</Text>
+            <Text style={styles.headerTitle} accessibilityRole="header">Vi</Text>
             <Text style={styles.headerSubtitle}>Design assistant</Text>
           </View>
           <View style={{ width: 24 }} />
@@ -219,7 +261,7 @@ export default function AssistantChatScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Button
-              label="Find me a Pro"
+              label="Find me a pro"
               icon="people-outline"
               onPress={() => {
                 const projects = require("@/lib/store").useProjectStore.getState().projects;
@@ -284,6 +326,23 @@ const styles = StyleSheet.create({
   headerCenter: { flex: 1, alignItems: "center" },
   headerTitle: { ...fonts.title, fontSize: 18 },
   headerSubtitle: { ...fonts.regular, fontSize: 12, color: colors.textSecondary },
+  gate: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: spacing.xl,
+    gap: spacing.md,
+  },
+  gateIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.primary + "15",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  gateTitle: { ...fonts.heading, textAlign: "center" },
+  gateText: { ...fonts.body, color: colors.textSecondary, textAlign: "center", marginBottom: spacing.sm },
   messagesList: {
     padding: spacing.lg,
     paddingBottom: spacing.sm,

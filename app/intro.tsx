@@ -88,13 +88,11 @@ function BeforeAfterSlider() {
 
   return (
     <View style={sliderStyles.container}>
-      <View style={sliderStyles.iconCircle}>
-        <Ionicons name="home-outline" size={44} color={colors.primary} />
-      </View>
+      {/* No icon circle here: the app icon + "VisionBuild" row above already brands the page */}
       <Text style={sliderStyles.title}>See the transformation</Text>
       <Text style={sliderStyles.subtitle}>Drag the slider to reveal the power of AI redesign</Text>
 
-      <View style={sliderStyles.sliderContainer} {...panHandlers}>
+      <View style={sliderStyles.sliderContainer} testID="intro-slider" {...panHandlers}>
         <View style={sliderStyles.beforeImage}>
           <IsoRoom palette="modern" size={imageWidth * 0.9} />
           {showBeforeLabel && <Text style={sliderStyles.beforeLabel} testID="intro-label-before">Before</Text>}
@@ -274,20 +272,13 @@ const styles = StyleSheet.create({
 });
 
 const sliderStyles = StyleSheet.create({
+  // Top-aligned under the brand row so the slider sits high on the screen
   container: {
     width,
-    justifyContent: "center",
+    justifyContent: "flex-start",
     alignItems: "center",
+    paddingTop: spacing.lg,
     paddingHorizontal: spacing.xl,
-  },
-  iconCircle: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    backgroundColor: colors.primary + "12",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 24,
   },
   title: {
     ...fonts.heading,

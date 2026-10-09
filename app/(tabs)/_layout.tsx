@@ -11,6 +11,8 @@ export default function TabsLayout() {
   const router = useRouter();
   const unreadCount = useInboxStore((s) => s.unreadCount);
   // Inbox is for pros messages; hidden until the outreach flag is on (off at launch).
+  // The slot right of + is never empty: Vi while outreach is off, Inbox once it's on
+  // (Vi then moves to a button on Home). Bar: Home · Explore · + · Vi/Inbox · Profile.
   const showInbox = isOutreachEnabled();
   const isOffline = !useNetworkStatus().isConnected;
 
@@ -37,6 +39,7 @@ export default function TabsLayout() {
         options={{
           headerShown: false,
           tabBarLabel: "Home",
+          tabBarButtonTestID: "tab-home",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home-outline" size={size} color={color} />
           ),
@@ -47,6 +50,7 @@ export default function TabsLayout() {
         options={{
           title: "Explore",
           tabBarLabel: "Explore",
+          tabBarButtonTestID: "tab-explore",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="grid-outline" size={size} color={color} />
           ),
@@ -87,11 +91,26 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="vi"
+        options={{
+          href: showInbox ? null : undefined,
+          headerShown: false,
+          title: "Vi",
+          tabBarLabel: "Vi",
+          tabBarAccessibilityLabel: "Vi, design assistant",
+          tabBarButtonTestID: "tab-vi",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="sparkles-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="inbox"
         options={{
           href: showInbox ? undefined : null,
           title: "Inbox",
           tabBarLabel: "Inbox",
+          tabBarButtonTestID: "tab-inbox",
           tabBarBadge: unreadCount > 0 ? (unreadCount > 9 ? '9+' : unreadCount.toString()) : undefined,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="chatbubbles-outline" size={size} color={color} />
@@ -112,6 +131,7 @@ export default function TabsLayout() {
         options={{
           title: "Profile",
           tabBarLabel: "Profile",
+          tabBarButtonTestID: "tab-profile",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-outline" size={size} color={color} />
           ),

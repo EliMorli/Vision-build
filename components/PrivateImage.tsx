@@ -235,7 +235,7 @@ export function PrivateImage({
           accessibilityLabel={accessibilityLabel}
         />
       )}
-      {imageUrl && !imageLoaded && (
+      {!!imageUrl && !imageLoaded && (
         <Image
           source={{ uri: imageUrl }}
           style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }}

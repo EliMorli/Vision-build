@@ -12,6 +12,7 @@ import { AI_CONSENT_VERSION, CONSENT_CHANGE_NOTE } from "@/lib/config";
 import { PRIVACY_POLICY_VERSION } from "@/lib/config/legal";
 import { openLegalPage } from "@/lib/helpers/openLegalPage";
 import { getProviderDisclosureText } from "@/lib/ai-models";
+import { markViConsentDeclined } from "@/lib/hooks/useViConsentGate";
 
 const AI_CONSENT_KEY = "@visionbuild:ai_consent";
 const AI_CONSENT_VERSION_KEY = "@visionbuild:ai_consent_version";
@@ -129,7 +130,16 @@ export default function AIConsentScreen() {
     // If we have resume data, return to appropriate screen
     if (pendingConsent?.resume) {
       const { type, projectId } = pendingConsent.resume;
-      if (type === "generate" && projectId) {
+      if (type === "assistant") {
+        // Opened from Vi: go back to Vi's gate card (it won't reopen this screen
+        // on its own again this session)
+        markViConsentDeclined();
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace("/(tabs)");
+        }
+      } else if (type === "generate" && projectId) {
         // For generate flow, dismiss back to project detail (not editor/style picker)
         // Use dismissTo to remove consent screen from stack
         router.dismissTo(`/project/${projectId}`);

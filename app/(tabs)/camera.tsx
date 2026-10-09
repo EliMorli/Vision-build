@@ -157,8 +157,8 @@ export default function CameraScreen() {
       )}
 
       {/* Error */}
-      {error && <Text style={styles.error}>{error}</Text>}
-      {permissionError && <Text style={styles.error}>{permissionError}</Text>}
+      {!!error && <Text style={styles.error}>{error}</Text>}
+      {!!permissionError && <Text style={styles.error}>{permissionError}</Text>}
 
       {/* Action buttons */}
       {!loading && (

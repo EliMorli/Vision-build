@@ -37,6 +37,21 @@ test.describe("UI pass", () => {
       return img?.getAttribute("src") || bg;
     });
     expect(src).toMatch(/icon/);
+    // No second (house) icon circle under the brand row: the title follows it
+    // directly and the slider sits higher on the screen
+    const title = page.getByText("See the transformation");
+    const slider = page.getByTestId("intro-slider");
+    const [t, s] = [await title.boundingBox(), await slider.boundingBox()];
+    expect(t && s).toBeTruthy();
+    const between = await page.evaluate(({ top, bottom }) => {
+      // Any sizable box (like the 110px icon circle) between the brand row and the title
+      return Array.from(document.querySelectorAll("div")).filter((el) => {
+        const r = el.getBoundingClientRect();
+        return r.top >= top && r.bottom <= bottom && r.width >= 80 && r.width <= 140 && r.height >= 80 && Math.abs(r.width - r.height) < 2;
+      }).length;
+    }, { top: i!.y + i!.height, bottom: t!.y });
+    expect(between).toBe(0);
+    expect(s!.y).toBeLessThan(270);
     await page.screenshot({ path: "e2e/screens/ui-intro-app-icon.png", fullPage: false });
   });
 
