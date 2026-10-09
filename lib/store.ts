@@ -9,6 +9,7 @@ import { Project, Profile, Contractor } from "./types";
 import { getDataLayer } from "./data";
 import { InMemoryDataLayer } from "./data/in-memory";
 import { MOCK_USER_ID } from "./constants/mock";
+import { wipeOfflineCache, setOfflineCacheData, getOfflineCacheData, cacheImageFile } from "./offline-cache";
 
 // ─── Auth Store ────────────────────────────────────────────
 
@@ -44,6 +45,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // In mock mode, check for seeded mock profile first (for E2E testing)
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
       const userId = get().session?.user?.id ?? MOCK_USER_ID;
+      
+      // Check for state override
+      const overrideJson = await AsyncStorage.getItem("@visionbuild:mock_state_override");
+      if (overrideJson) {
+        const overrides = JSON.parse(overrideJson);
+        if (overrides.profile === "loading") {
+          set({ loading: true });
+          await new Promise(() => {}); // Never resolves
+        }
+        if (overrides.profile === "error") {
+          set({ loading: false, error: "RAW_SECRET_ERROR_profile_fetch" });
+          return;
+        }
+      }
       
       try {
         const seedJson = await AsyncStorage.getItem("@visionbuild:mock_seed_profile");
@@ -152,12 +167,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
-    // Clear Supabase session
-    await supabase.auth.signOut();
+    const userId = get().session?.user?.id;
+    
+    // Wipe offline cache for this user first, so a failing network sign-out
+    // can never leave cached data behind
+    if (userId) {
+      try {
+        await wipeOfflineCache(userId);
+      } catch (error) {
+        console.error("offline_cache_wipe_failed");
+      }
+    }
+    
+    // Clear Supabase session (may fail offline; local state is cleared regardless)
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      console.error("supabase_sign_out_failed");
+    }
     
     // Clear all stores
     set({ session: null, profile: null, loading: false, error: null });
     useProjectStore.getState().clear();
+    useInboxStore.setState({ unreadCount: 0 });
     
     // Set mock signed-out flag if in mock mode
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
@@ -246,17 +278,48 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   fetchProjects: async () => {
     const userId = useAuthStore.getState().session?.user?.id;
     
+    // Set loading at start
+    set({ loading: true, error: null });
+    
     // Dev mode: Check for seeded mock projects first (for E2E testing)
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      // Check for state override - home, project, results, editor all use fetchProjects
+      try {
+        const overrideJson = await AsyncStorage.getItem("@visionbuild:mock_state_override");
+        if (overrideJson) {
+          const overrides = JSON.parse(overrideJson);
+          // Check any of the screens that use fetchProjects
+          for (const screen of ["home", "project", "results", "editor"]) {
+            if (overrides[screen] === "loading") {
+              set({ loading: true, error: null });
+              return; // Hang until override is cleared
+            }
+            if (overrides[screen] === "error") {
+              set({ loading: false, error: `RAW_SECRET_ERROR_${screen}_fetch` });
+              return;
+            }
+          }
+        }
+      } catch (e) {
+        // Invalid JSON, ignore
+      }
       try {
         const seedJson = await AsyncStorage.getItem("@visionbuild:mock_seed_projects");
         if (seedJson) {
           const seedProjects = JSON.parse(seedJson);
-          set({ projects: seedProjects });
+          set({ projects: seedProjects, loading: false, error: null });
+          // Exercise the real offline cache write path with the seeded data
+          await setOfflineCacheData(userId ?? MOCK_USER_ID, "projects", seedProjects).catch(() => {});
           return;
         }
       } catch (e) {
         console.warn("Failed to load mock seed projects:", e);
+      }
+      // Mock session with no seed: there is no backend to query. Keep whatever
+      // is already in memory (e.g. projects created this session) and stop loading.
+      if (userId) {
+        set({ loading: false });
+        return;
       }
     }
     
@@ -339,19 +402,60 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           updated_at: new Date(Date.now() - 5 * 86400000).toISOString(),
         },
       ];
-      set({ projects: mockProjects });
+      set({ projects: mockProjects, loading: false, error: null });
       return;
     }
     
-    if (!userId) return;
+    if (!userId) {
+      set({ loading: false, error: null });
+      return;
+    }
 
-    const { data } = await supabase
+    const { data, error: fetchError } = await supabase
       .from("projects")
       .select("*")
       .eq("user_id", userId)
       .order("updated_at", { ascending: false });
 
-    if (data) set({ projects: data });
+    if (fetchError || !data) {
+      // Offline or request failed: fall back to what's saved on this device
+      const cached = await getOfflineCacheData(userId, "projects").catch(() => null);
+      if (Array.isArray(cached)) {
+        set({ projects: cached as Project[], loading: false, error: null });
+      } else {
+        set({ loading: false, error: "projects_fetch_failed" });
+      }
+      return;
+    }
+
+    {
+      set({ projects: data, loading: false, error: null });
+      
+      // Cache projects for offline use in background
+      setOfflineCacheData(userId, "projects", data).catch(() => {
+        // Silently fail offline cache
+      });
+      
+      // Cache project images in background
+      for (const project of (data as Project[])) {
+        if (project.original_image_url) {
+          const fileName = `project_${project.id}_original.jpg`;
+          cacheImageFile(userId, fileName, project.original_image_url).catch(() => {
+            // Silently fail individual image cache
+          });
+        }
+        if (project.selected_generation_url) {
+          const fileName = `project_${project.id}_selected.jpg`;
+          cacheImageFile(userId, fileName, project.selected_generation_url).catch(() => {});
+        }
+        if (project.generated_image_urls && Array.isArray(project.generated_image_urls)) {
+          project.generated_image_urls.forEach((url: string, idx: number) => {
+            const fileName = `project_${project.id}_gen_${idx}.jpg`;
+            cacheImageFile(userId, fileName, url).catch(() => {});
+          });
+        }
+      }
+    }
   },
 
   setCurrentProject: (project) => set({ currentProject: project }),
@@ -554,6 +658,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
 
   generateDesigns: async (projectId: string, stylePrompt: string) => {
+    if (usePrivacyStore.getState().privacyOptOut) {
+      // User opted out of AI processing: never call the model
+      set({ error: "ai_opted_out" });
+      return null;
+    }
     const startTime = Date.now();
     set({ 
       loading: true, 
@@ -995,18 +1104,38 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 interface ExploreState {
   publicDesigns: Project[];
   loading: boolean;
+  error: string | null;
   fetchPublicDesigns: () => Promise<void>;
 }
 
 export const useExploreStore = create<ExploreState>((set, get) => ({
   publicDesigns: [],
   loading: false,
+  error: null,
 
   fetchPublicDesigns: async () => {
+    set({ loading: true });
     const userId = useAuthStore.getState().session?.user?.id;
     
     // Dev mode: Check for seeded mock projects first (for E2E testing)
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      // Check for state override
+      const overrideJson = await AsyncStorage.getItem("@visionbuild:mock_state_override");
+      if (overrideJson) {
+        const overrides = JSON.parse(overrideJson);
+        if (overrides.explore === "loading") {
+          set({ loading: true });
+          return; // Hang until override is cleared
+        }
+        if (overrides.explore === "error") {
+          set({ loading: false, error: "RAW_SECRET_ERROR_explore_fetch" });
+          return;
+        }
+        if (overrides.explore === "empty") {
+          set({ publicDesigns: [], loading: false, error: null });
+          return;
+        }
+      }
       try {
         const seedJson = await AsyncStorage.getItem("@visionbuild:mock_seed_projects");
         if (seedJson) {
@@ -1018,7 +1147,7 @@ export const useExploreStore = create<ExploreState>((set, get) => ({
           
           // Check blocks
           const blocksJson = await AsyncStorage.getItem("@visionbuild:blocks");
-          const blocksData: Array<{ blocked_id: string }> = blocksJson ? JSON.parse(blocksJson) : [];
+          const blocksData: { blocked_id: string }[] = blocksJson ? JSON.parse(blocksJson) : [];
           const blockedIds = blocksData.map(b => b.blocked_id);
           
           // Filter out blocked users
@@ -1026,7 +1155,7 @@ export const useExploreStore = create<ExploreState>((set, get) => ({
             !blockedIds.includes(p.user_id || "")
           );
           
-          set({ publicDesigns: filtered });
+          set({ publicDesigns: filtered, loading: false });
           return;
         }
       } catch (e) {
@@ -1034,16 +1163,14 @@ export const useExploreStore = create<ExploreState>((set, get) => ({
       }
       
       // Default: no public designs in mock mode without seeds
-      set({ publicDesigns: [] });
+      set({ publicDesigns: [], loading: false });
       return;
     }
     
     if (!userId) {
-      set({ publicDesigns: [] });
+      set({ publicDesigns: [], loading: false });
       return;
     }
-
-    set({ loading: true });
     
     // Use RPC function that excludes blocked users
     const { data, error} = await (supabase.rpc("fetch_public_designs") as any);
@@ -1073,6 +1200,9 @@ export const usePrivacyStore = create<PrivacyState>((set, get) => ({
     const userId = useAuthStore.getState().session?.user?.id;
 
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      // Mock mode: the opt-out persists locally, standing in for profiles.privacy_opt_out
+      const stored = await AsyncStorage.getItem("@visionbuild:mock_privacy_opt_out").catch(() => null);
+      set({ privacyOptOut: stored === "true" });
       return;
     }
 
@@ -1093,6 +1223,7 @@ export const usePrivacyStore = create<PrivacyState>((set, get) => ({
     const userId = useAuthStore.getState().session?.user?.id;
 
     if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      await AsyncStorage.setItem("@visionbuild:mock_privacy_opt_out", optOut ? "true" : "false").catch(() => {});
       set({ privacyOptOut: optOut });
       return;
     }
@@ -1106,6 +1237,92 @@ export const usePrivacyStore = create<PrivacyState>((set, get) => ({
 
     if (!error) {
       set({ privacyOptOut: optOut });
+    }
+  },
+}));
+
+// ─── Inbox Store ───────────────────────────────────────────
+
+interface InboxState {
+  unreadCount: number;
+  fetchUnreadCount: () => Promise<void>;
+  markAsRead: (messageId: string) => Promise<void>;
+}
+
+export const useInboxStore = create<InboxState>((set, get) => ({
+  unreadCount: 0,
+
+  fetchUnreadCount: async () => {
+    const userId = useAuthStore.getState().session?.user?.id;
+
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      // Check for state override
+      const overrideJson = await AsyncStorage.getItem("@visionbuild:mock_state_override");
+      if (overrideJson) {
+        const overrides = JSON.parse(overrideJson);
+        if (overrides.inbox === "loading") {
+          // For inbox, the screen manages its own loading state, so we just hang the promise
+          await new Promise(() => {}); // Never resolves
+        }
+        if (overrides.inbox === "error") {
+          throw new Error("RAW_SECRET_ERROR_inbox_fetch");
+        }
+      }
+      // Mock mode: check for seeded inbox messages
+      try {
+        const seedJson = await AsyncStorage.getItem("@visionbuild:mock_seed_inbox");
+        if (seedJson) {
+          const messages = JSON.parse(seedJson);
+          const unread = messages.filter((m: any) => !m.is_read).length;
+          set({ unreadCount: unread });
+        } else {
+          set({ unreadCount: 0 });
+        }
+      } catch (e) {
+        console.error("inbox_mock_seed_parse_failed");
+        set({ unreadCount: 0 });
+      }
+      return;
+    }
+
+    if (!userId) {
+      set({ unreadCount: 0 });
+      return;
+    }
+
+    const { count, error } = await (supabase
+      .from("inbox_messages") as any)
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("is_read", false);
+
+    if (error) {
+      console.error("inbox_fetch_count_failed");
+      // Don't reset to 0 on error - keep existing count
+      return;
+    }
+
+    set({ unreadCount: count || 0 });
+  },
+
+  markAsRead: async (messageId: string) => {
+    const userId = useAuthStore.getState().session?.user?.id;
+
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      return;
+    }
+
+    if (!userId) return;
+
+    const { error } = await (supabase
+      .from("inbox_messages") as any)
+      .update({ is_read: true })
+      .eq("id", messageId)
+      .eq("user_id", userId);
+
+    if (!error) {
+      // Refresh unread count
+      get().fetchUnreadCount();
     }
   },
 }));

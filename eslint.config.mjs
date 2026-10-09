@@ -15,6 +15,19 @@ export default [
     ignores: ["dist/*", "node_modules/*", "supabase/functions/**/*"],
   },
   {
+    files: ["scripts/**/*.js"],
+    languageOptions: {
+      globals: {
+        __dirname: "readonly",
+        __filename: "readonly",
+        process: "readonly",
+        console: "readonly",
+        require: "readonly",
+        module: "readonly",
+      },
+    },
+  },
+  {
     rules: {
       // Disable react-compiler rule - produces false positives for valid React patterns
       // (e.g. "Cannot access refs during render" for useRef in components,

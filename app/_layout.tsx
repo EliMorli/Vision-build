@@ -89,6 +89,11 @@ export default function RootLayout() {
       loadSettings().catch((err) => {
         console.warn('Failed to load settings:', err);
       });
+      // Fetch inbox unread count on app start
+      const { useInboxStore } = require("@/lib/store");
+      useInboxStore.getState().fetchUnreadCount().catch(() => {
+        // Errors are already logged in fetchUnreadCount
+      });
     }
   }, [session?.user?.id, loadSettings]);
 
@@ -176,6 +181,7 @@ export default function RootLayout() {
         <Stack.Screen name="pros-coming-soon" options={{ title: "Find a pro" }} />
         <Stack.Screen name="terms" options={{ title: "Terms of Service" }} />
         <Stack.Screen name="privacy" options={{ title: "Privacy Policy" }} />
+        <Stack.Screen name="licenses" options={{ headerShown: false }} />
       </Stack>
     </>
   );

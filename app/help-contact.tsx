@@ -115,10 +115,10 @@ export default function HelpContactScreen() {
 
             <Pressable
               style={styles.legalRow}
-              onPress={() => openLink("https://visionbuild.app/licenses")}
+              onPress={() => router.push("/licenses")}
             >
               <Text style={styles.legalLabel}>Open Source Licenses</Text>
-              <Ionicons name="open-outline" size={18} color={colors.textSecondary} />
+              <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
             </Pressable>
           </View>
         </View>

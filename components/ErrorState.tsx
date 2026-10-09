@@ -1,25 +1,50 @@
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, Linking } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { Button } from "./Button";
+import { businessConfig } from "@/lib/config/business";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useState } from "react";
+
+const __DEV__ = process.env.NODE_ENV !== "production";
 
 interface ErrorStateProps {
-  title: string;
+  title?: string;
   message: string;
   icon?: keyof typeof Ionicons.glyphMap;
   onRetry?: () => void;
   retryLabel?: string;
+  testID?: string;
 }
 
 export function ErrorState({
-  title,
+  title = "Something went wrong",
   message,
   icon = "alert-circle",
   onRetry,
-  retryLabel = "Try Again",
+  retryLabel = "Try again",
+  testID,
 }: ErrorStateProps) {
+  const [supportEmail, setSupportEmail] = useState(businessConfig.supportEmail || "support@visionbuild.app");
+  
+  useEffect(() => {
+    if (__DEV__ && process.env.EXPO_PUBLIC_DEV_MOCK_SESSION === "true") {
+      AsyncStorage.getItem("@visionbuild:mock_support_email").then(email => {
+        if (email) setSupportEmail(email);
+      }).catch(() => {});
+    }
+  }, []);
+  
+  const isPlaceholder = supportEmail.startsWith("[") || supportEmail === "TBD" || supportEmail.includes("TBD");
+  
+  const handleContactSupport = () => {
+    Linking.openURL(`mailto:${supportEmail}`).catch(() => {
+      // Silently fail if can't open email client
+    });
+  };
+
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID={testID}>
       <View style={styles.iconCircle}>
         <Ionicons name={icon} size={48} color={colors.error} />
       </View>
@@ -34,6 +59,16 @@ export function ErrorState({
             variant="primary"
           />
         </View>
+      )}
+      {!isPlaceholder && (
+        <Pressable
+          onPress={handleContactSupport}
+          style={styles.supportLink}
+          accessibilityRole="link"
+          testID="error-contact-support"
+        >
+          <Text style={styles.supportLinkText}>Contact support</Text>
+        </Pressable>
       )}
     </View>
   );
@@ -71,5 +106,14 @@ const styles = StyleSheet.create({
   buttonContainer: {
     width: "100%",
     maxWidth: 300,
+  },
+  supportLink: {
+    marginTop: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  supportLinkText: {
+    ...fonts.body,
+    color: colors.primary,
+    textDecorationLine: "underline",
   },
 });

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,24 +12,33 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { STYLE_OPTIONS, StyleOption } from "@/lib/types";
 import { useProjectStore } from "@/lib/store";
-import { Button, Banner, IsoRoom } from "@/components";
+import { Button, Banner, IsoRoom, LoadingSkeleton, ErrorState, OfflineBanner } from "@/components";
+import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
+import { useProjectById } from "@/lib/hooks/useProjectById";
+import { usePrivacyStore } from "@/lib/store";
 
 export default function EditorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [selectedStyle, setSelectedStyle] = useState<StyleOption | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const networkStatus = useNetworkStatus();
+  const isOffline = !networkStatus.isConnected;
   
-  const { 
-    currentProject, 
-    loading, 
-    generateDesigns,
-  } = useProjectStore();
+  const { loading, generateDesigns } = useProjectStore();
+  const { project: currentProject, resolving, retry } = useProjectById(id);
+  const privacyOptOut = usePrivacyStore((s) => s.privacyOptOut);
+  const loadPrivacySettings = usePrivacyStore((s) => s.loadPrivacySettings);
+
+  useEffect(() => {
+    loadPrivacySettings();
+  }, [loadPrivacySettings]);
 
   const analysis = currentProject?.room_analysis;
 
   const handleGenerate = async () => {
-    if (!selectedStyle || !id || isGenerating) return;
+    if (!selectedStyle || !id || isGenerating || isOffline || privacyOptOut) return;
     setIsGenerating(true);
     
     try {
@@ -39,7 +48,8 @@ export default function EditorScreen() {
       // Start generation (will update store which generating screen monitors)
       await generateDesigns(id, selectedStyle.promptModifier);
     } catch (_error) {
-      console.error("Generate error:", _error);
+      console.error("design_generation_failed");
+      setError("Failed to generate designs");
     } finally {
       setIsGenerating(false);
     }
@@ -48,8 +58,36 @@ export default function EditorScreen() {
   const capitalize = (s: string) =>
     s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, " ");
 
+  // Loading state
+  if (resolving && !currentProject) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {isOffline && <OfflineBanner testID="offline-banner" />}
+        <LoadingSkeleton variant="grid" count={4} testID="editor-loading" />
+      </SafeAreaView>
+    );
+  }
+
+  // Error state - only show if not loading
+  if (!currentProject) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {isOffline && <OfflineBanner testID="offline-banner" />}
+        <ErrorState
+          message={error || "Project not found"}
+          onRetry={() => {
+            setError(null);
+            retry();
+          }}
+          testID="editor-error"
+        />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
+      {isOffline && <OfflineBanner testID="offline-banner" />}
       {/* Room analysis banner */}
       {analysis && (
         <Banner
@@ -118,11 +156,23 @@ export default function EditorScreen() {
 
       {/* Footer */}
       <View style={styles.footer}>
+        {isOffline && (
+          <View style={styles.offlineNotice}>
+            <Text style={styles.offlineNoticeText}>Needs internet</Text>
+          </View>
+        )}
+        {privacyOptOut && (
+          <View style={styles.offlineNotice} testID="ai-opt-out-notice">
+            <Text style={styles.offlineNoticeText}>
+              You opted out of AI processing. Turn it back on in Settings to generate designs.
+            </Text>
+          </View>
+        )}
         <Button
           label={selectedStyle ? "Generate 4 designs" : "Pick a style"}
           icon="sparkles"
           onPress={handleGenerate}
-          disabled={!selectedStyle || loading || isGenerating}
+          disabled={!selectedStyle || loading || isGenerating || isOffline || privacyOptOut}
           loading={isGenerating}
           variant="primary"
         />
@@ -201,4 +251,16 @@ const styles = StyleSheet.create({
   },
   styleName: { fontSize: 14, fontWeight: "900", color: colors.textPrimary, marginHorizontal: 6 },
   footer: { padding: spacing.md },
+  offlineNotice: {
+    padding: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    marginBottom: spacing.sm,
+    alignItems: "center",
+  },
+  offlineNoticeText: {
+    ...fonts.regular,
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
 });

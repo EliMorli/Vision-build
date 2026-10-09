@@ -11,7 +11,8 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore, useAuthStore } from "@/lib/store";
-import { IsoRoom, MakePublicSheet, PrivateImage } from "@/components";
+import { IsoRoom, MakePublicSheet, PrivateImage, LoadingSkeleton, ErrorState, OfflineBanner } from "@/components";
+import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
 
 // Helper to format text to sentence case
 function toSentenceCase(text: string): string {
@@ -44,16 +45,28 @@ export default function ProjectDetailScreen() {
   const projects = useProjectStore((s) => s.projects);
   const fetchProjects = useProjectStore((s) => s.fetchProjects);
   const toggleProjectPrivacy = useProjectStore((s) => s.toggleProjectPrivacy);
+  const loading = useProjectStore((s) => s.loading);
   const profile = useAuthStore((s) => s.profile);
   const project = projects.find((p) => p.id === id);
   const [isPublic, setIsPublic] = useState(project?.is_public ?? false);
   const [showMakePublicSheet, setShowMakePublicSheet] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const networkStatus = useNetworkStatus();
+  const isOffline = !networkStatus.isConnected;
   
   // Fetch projects if not found (for E2E tests that seed localStorage)
   useEffect(() => {
-    if (!project && id) {
-      fetchProjects();
-    }
+    const load = async () => {
+      if (!project && id) {
+        try {
+          setError(null);
+          await fetchProjects();
+        } catch (e: any) {
+          setError("Failed to load project");
+        }
+      }
+    };
+    load();
   }, [id, project, fetchProjects]);
 
   // Use actual project data instead of hardcoded values
@@ -91,8 +104,40 @@ export default function ProjectDetailScreen() {
     setShowMakePublicSheet(false);
   };
 
+  // Loading state
+  if (loading && !project) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {isOffline && <OfflineBanner testID="offline-banner" />}
+        <LoadingSkeleton variant="card" count={2} testID="project-loading" />
+      </SafeAreaView>
+    );
+  }
+
+  // Error state
+  if (error || (!project && !loading)) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {isOffline && <OfflineBanner testID="offline-banner" />}
+        <ErrorState
+          message="Failed to load project"
+          onRetry={() => {
+            setError(null);
+            fetchProjects();
+          }}
+          testID="project-error"
+        />
+      </SafeAreaView>
+    );
+  }
+
+  if (!project) {
+    return null;
+  }
+
   return (
     <SafeAreaView style={styles.container}>
+      {isOffline && <OfflineBanner testID="offline-banner" />}
       {/* Make Public Confirmation Sheet */}
       <MakePublicSheet
         visible={showMakePublicSheet}

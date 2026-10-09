@@ -61,6 +61,42 @@ jobs:
       - name: Check launch copy compliance
         run: npm run check:launch-copy
       
+      - name: Test legal validation with fixtures (always)
+        run: |
+          set -o pipefail
+          # Test 1: Dirty fixture should fail and name the specific blank
+          echo "Testing dirty fixture..."
+          if ! LEGAL_DIR=scripts/__fixtures__/legal/dirty node scripts/strip-legal-drafts.js 2>&1 | tee /tmp/dirty-output.txt; then
+            if grep -q "\[YOUR_COMPANY_NAME\]" /tmp/dirty-output.txt && grep -q "\[support@yourdomain.com\]" /tmp/dirty-output.txt; then
+              echo "✅ Legal validation correctly detects planted blanks"
+            else
+              echo "❌ Legal validation should have named the specific blanks"
+              cat /tmp/dirty-output.txt
+              exit 1
+            fi
+          else
+            echo "❌ Legal validation should have failed on dirty fixture"
+            exit 1
+          fi
+          
+          # Test 2: Clean fixture should pass
+          echo "Testing clean fixture..."
+          if LEGAL_DIR=scripts/__fixtures__/legal/clean node scripts/strip-legal-drafts.js; then
+            echo "✅ Legal validation correctly passes clean content"
+          else
+            echo "❌ Legal validation should have passed clean content"
+            exit 1
+          fi
+      
+      - name: Validate legal pages for release (main/tags only)
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        run: node scripts/strip-legal-drafts.js
+      
+      - name: Check licenses are up-to-date
+        run: |
+          node scripts/generate-licenses.js
+          git diff --exit-code lib/generated/licenses.ts || (echo "❌ Licenses are out of date. Run 'node scripts/generate-licenses.js'" && exit 1)
+      
       - name: Install pg_cron and pg_net in PostgreSQL container
         env:
           PGHOST: localhost

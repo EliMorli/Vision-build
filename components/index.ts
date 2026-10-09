@@ -4,6 +4,7 @@ export { Banner } from "./Banner";
 export { EmptyState, FullScreenLoader } from "./EmptyState";
 export { OfflineBanner } from "./OfflineBanner";
 export { ErrorState } from "./ErrorState";
+export { LoadingSkeleton } from "./LoadingSkeleton";
 export { ReportModal } from "./ReportModal";
 export { MakePublicSheet } from "./MakePublicSheet";
 export { IsoRoom, PALETTES } from "./IsoRoom";

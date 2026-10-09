@@ -11,6 +11,8 @@ import {
 import { useSignedUrl, clearSignedUrlCache } from "@/lib/hooks/useSignedUrl";
 import { colors } from "@/lib/theme";
 import { IsoRoom } from "./IsoRoom";
+import { cacheImageFile, getCachedImageFile } from "@/lib/offline-cache";
+import { useAuthStore } from "@/lib/store";
 
 interface PrivateImageProps {
   /**
@@ -97,6 +99,7 @@ export function PrivateImage({
   const [imageLoaded, setImageLoaded] = useState(false); // Track if image successfully loaded
   const retryCountRef = useRef(0);
   const isMountedRef = useRef(true);
+  const userId = useAuthStore((s) => s.session?.user?.id);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -105,16 +108,37 @@ export function PrivateImage({
     };
   }, []);
 
-  // Update imageUrl when signedUrl changes
+  // Update imageUrl when signedUrl changes, with offline cache support
   useEffect(() => {
-    if (signedUrl) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setImageUrl(signedUrl);
-      setShowPlaceholder(false);
-      setImageLoaded(false); // Reset loaded state when URL changes
-      retryCountRef.current = 0;
-    }
-  }, [signedUrl]);
+    const loadImage = async () => {
+      if (!signedUrl || !path || !userId) return;
+
+      // Try to get cached version first
+      const cachedUri = await getCachedImageFile(userId, path);
+      if (cachedUri && isMountedRef.current) {
+        setImageUrl(cachedUri);
+        setShowPlaceholder(false);
+        setImageLoaded(false);
+        retryCountRef.current = 0;
+        return;
+      }
+
+      // Use signed URL and cache it in the background
+      if (isMountedRef.current) {
+        setImageUrl(signedUrl);
+        setShowPlaceholder(false);
+        setImageLoaded(false);
+        retryCountRef.current = 0;
+      }
+
+      // Cache in the background (fire and forget)
+      cacheImageFile(userId, path, signedUrl).catch(() => {
+        // Silently ignore cache errors
+      });
+    };
+
+    loadImage();
+  }, [signedUrl, path, userId]);
 
   const handleImageError = async () => {
     if (!path || !isMountedRef.current) return;

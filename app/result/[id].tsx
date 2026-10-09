@@ -16,8 +16,10 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore, useAuthStore } from "@/lib/store";
-import { Button, IsoRoom, PrivateImage } from "@/components";
+import { Button, IsoRoom, PrivateImage, LoadingSkeleton, ErrorState, OfflineBanner } from "@/components";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
+import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
+import { useProjectById } from "@/lib/hooks/useProjectById";
 import { supabase } from "@/lib/supabase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -27,8 +29,12 @@ const CARD_WIDTH = width * 0.82;
 export default function ResultScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { currentProject, selectDesign, loading } = useProjectStore();
+  const { selectDesign, loading } = useProjectStore();
+  const { project: currentProject, resolving, retry } = useProjectById(id);
   const profile = useAuthStore((s) => s.profile);
+  const [error, setError] = useState<string | null>(null);
+  const networkStatus = useNetworkStatus();
+  const isOffline = !networkStatus.isConnected;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -108,21 +114,22 @@ export default function ResultScreen() {
   };
 
   const handleContinue = async () => {
-    if (!selectedUrl || !id || isSaving) return;
+    if (!selectedUrl || !id || isSaving || isOffline) return;
     
     setIsSaving(true);
     try {
       await selectDesign(id, selectedUrl);
       router.push(`/project/${id}`);
     } catch (_error) {
-      console.error("Error saving design:", _error);
+      console.error("design_save_failed");
+      setError("Failed to save selection");
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleJoinWaitlist = async () => {
-    if (!id || isOnWaitlist || waitlistLoading) return;
+    if (!id || isOnWaitlist || waitlistLoading || isOffline) return;
 
     setWaitlistLoading(true);
 
@@ -151,14 +158,42 @@ export default function ResultScreen() {
         setIsOnWaitlist(true);
       }
     } catch (_err) {
-      console.error("Error joining waitlist:", _err);
+      console.error("pros_waitlist_join_failed");
     } finally {
       setWaitlistLoading(false);
     }
   };
 
+  // Loading state
+  if ((loading || resolving) && images.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {isOffline && <OfflineBanner testID="offline-banner" />}
+        <LoadingSkeleton variant="card" count={1} testID="results-loading" />
+      </SafeAreaView>
+    );
+  }
+
+  // Error state
+  if (error || images.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {isOffline && <OfflineBanner testID="offline-banner" />}
+        <ErrorState
+          message={error || "No designs available"}
+          onRetry={() => {
+            setError(null);
+            retry();
+          }}
+          testID="results-error"
+        />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
+      {isOffline && <OfflineBanner testID="offline-banner" />}
       {/* XP reward banner */}
       {showXPBanner && (
         <Animated.View style={[styles.xpBanner, { transform: [{ scale: xpBannerScale }] }]}>

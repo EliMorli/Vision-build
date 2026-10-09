@@ -1,11 +1,13 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Text } from "react-native";
 import { useRouter } from "expo-router";
 import { colors } from "@/lib/theme";
+import { useInboxStore } from "@/lib/store";
 
 export default function TabsLayout() {
   const router = useRouter();
+  const unreadCount = useInboxStore((s) => s.unreadCount);
 
   return (
     <Tabs
@@ -66,9 +68,18 @@ export default function TabsLayout() {
         options={{
           title: "Inbox",
           tabBarLabel: "Inbox",
+          tabBarBadge: unreadCount > 0 ? (unreadCount > 9 ? '9+' : unreadCount.toString()) : undefined,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="chatbubbles-outline" size={size} color={color} />
           ),
+        }}
+        listeners={{
+          tabPress: () => {
+            // Refresh unread count when tab is focused
+            useInboxStore.getState().fetchUnreadCount().catch(() => {
+              // Errors are already logged in fetchUnreadCount
+            });
+          },
         }}
       />
       <Tabs.Screen
@@ -106,5 +117,23 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     transform: [{ rotate: '-6deg' }],
+  },
+  badge: {
+    position: "absolute",
+    top: -4,
+    right: -8,
+    backgroundColor: colors.error,
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: "#fff",
+    fontSize: 11,
+    fontFamily: "Nunito_700Bold",
+    fontWeight: "700",
   },
 });
