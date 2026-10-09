@@ -156,8 +156,9 @@ BEGIN
   INSERT INTO public.pro_waitlist (user_id, email, project_id, launch_email_sent_at, created_at)
   VALUES
     ('00000000-0000-0000-0000-000000000099'::uuid, 'retention-test-1@example.com', '00000000-0000-0000-0000-000000000097'::uuid, NOW() - INTERVAL '50 days', NOW() - INTERVAL '50 days'),  -- Should be deleted
-    ('00000000-0000-0000-0000-000000000098'::uuid, 'retention-test-2@example.com', NULL, NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days'),    -- Should be kept (different user)
-    ('00000000-0000-0000-0000-000000000099'::uuid, 'retention-test-3@example.com', NULL, NULL, NOW() - INTERVAL '50 days');                        -- Should be kept (no email sent)
+    ('00000000-0000-0000-0000-000000000098'::uuid, 'retention-test-2@example.com', NULL, NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days'),    -- Should be kept (different user, control)
+    ('00000000-0000-0000-0000-000000000099'::uuid, 'retention-test-3@example.com', NULL, NULL, NOW() - INTERVAL '50 days'),                        -- Should be kept (no email sent)
+    ('00000000-0000-0000-0000-000000000099'::uuid, 'retention-test-4@example.com', NULL, NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days');    -- Should be kept (recent)
   
   SELECT COUNT(*) INTO v_old_count FROM public.pro_waitlist WHERE user_id = '00000000-0000-0000-0000-000000000099'::uuid;
   
