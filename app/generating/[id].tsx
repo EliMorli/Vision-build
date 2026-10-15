@@ -13,8 +13,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore } from "@/lib/store";
 import { Button, IsoRoom, GeneratingProgressBar } from "@/components";
+<<<<<<< HEAD
 import Reanimated, { FadeIn, Easing, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
 import { PULSE, pulseAt } from "@/lib/generating/pulse";
+=======
+import Reanimated, { FadeIn } from "react-native-reanimated";
+>>>>>>> origin/cursor/visionbuild-client-flow-740f
 import { getGeneratingProgress } from "@/lib/generating/progress";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 
@@ -38,6 +42,7 @@ export default function GeneratingScreen() {
   // Real progress only: designs that exist, never elapsed time
   const genProgress = getGeneratingProgress({ loading, projectId: id, project: currentProject });
   const readyCount = genProgress.readyCount;
+<<<<<<< HEAD
 
   // A design landing (its segment snaps full, its thumbnail fades in) gets a
   // light tap in the same commit; all 4 ready gets the success notification.
@@ -46,6 +51,8 @@ export default function GeneratingScreen() {
     if (readyCount > prevReady.current) haptic(readyCount >= 4 ? "allDone" : "designLanded");
     prevReady.current = readyCount;
   }, [readyCount]);
+=======
+>>>>>>> origin/cursor/visionbuild-client-flow-740f
 
   // Navigate to results when generation is complete
   useEffect(() => {
