@@ -1,8 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-<<<<<<< HEAD
 import { haptic } from "@/lib/haptics";
-=======
->>>>>>> origin/cursor/visionbuild-client-flow-740f
 import { isStoreCapture } from "@/lib/config/storeCapture";
 import {
   View,
