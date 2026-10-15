@@ -48,10 +48,25 @@ async function generateToResults(page: Page, base: string) {
   await expect(page.getByTestId("result-design-card").first()).toBeVisible({ timeout: 15000 });
 }
 
-type Mode = { base: string; on: boolean };
-const OFF: Mode = { base: BASE_URL, on: false };
-const ON: Mode = { base: CAPTURE_BASE_URL, on: true };
-const tag = (m: Mode) => (m.on ? "on" : "off");
+type Mode = { base: string; on: boolean; screens: { home: string; results: string; project: string } };
+const OFF: Mode = {
+  base: BASE_URL,
+  on: false,
+  screens: {
+    home: 'e2e/screens/store-capture-off-home.png',
+    results: 'e2e/screens/store-capture-off-results.png',
+    project: 'e2e/screens/store-capture-off-project.png',
+  },
+};
+const ON: Mode = {
+  base: CAPTURE_BASE_URL,
+  on: true,
+  screens: {
+    home: 'e2e/screens/store-capture-on-home.png',
+    results: 'e2e/screens/store-capture-on-results.png',
+    project: 'e2e/screens/store-capture-on-project.png',
+  },
+};
 
 async function checkHome(page: Page, mode: Mode) {
   await seed(page, false);
@@ -67,7 +82,7 @@ async function checkHome(page: Page, mode: Mode) {
   // Launch tab bar in both states: Vi in the slot, never Inbox
   await expect(page.getByTestId("tab-vi")).toBeVisible();
   await expect(page.getByTestId("tab-inbox")).toHaveCount(0);
-  await page.screenshot({ path: `e2e/screens/store-capture-${tag(mode)}-home.png`, fullPage: false });
+  await page.screenshot({ path: mode.screens.home, fullPage: false });
 }
 
 async function checkResults(page: Page, mode: Mode) {
@@ -80,7 +95,7 @@ async function checkResults(page: Page, mode: Mode) {
   } else {
     await expect(page.getByTestId("results-waitlist-card")).toBeVisible();
   }
-  await page.screenshot({ path: `e2e/screens/store-capture-${tag(mode)}-results.png`, fullPage: false });
+  await page.screenshot({ path: mode.screens.results, fullPage: false });
 }
 
 async function checkProject(page: Page, mode: Mode) {
@@ -89,7 +104,7 @@ async function checkProject(page: Page, mode: Mode) {
   await page.waitForLoadState("networkidle");
   await expect(page.getByTestId("project-brief")).toBeVisible({ timeout: 10000 });
   await expect(page.getByTestId("project-brief-waitlist")).toHaveCount(mode.on ? 0 : 1);
-  await page.screenshot({ path: `e2e/screens/store-capture-${tag(mode)}-project.png`, fullPage: false });
+  await page.screenshot({ path: mode.screens.project, fullPage: false });
 }
 
 async function checkSettingsAndInbox(page: Page, mode: Mode) {
