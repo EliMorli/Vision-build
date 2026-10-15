@@ -44,7 +44,7 @@ const PAGES = [
     id: "save",
     icon: "bookmark-outline" as const,
     title: "Keep every idea",
-    subtitle: "Save favorites to your projects, with local pros coming soon.",
+    subtitle: "Save your favorite designs to a project.",
   },
 ];
 

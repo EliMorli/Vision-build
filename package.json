@@ -20,7 +20,10 @@
     "test": "jest",
     "legal:build": "node scripts/build-legal-site.js",
     "legal:check-release": "node scripts/check-legal-release.js",
-    "legal:test-gates": "node scripts/test-legal-release-gates.js"
+    "legal:test-gates": "node scripts/test-legal-release-gates.js",
+    "check:store-capture": "node scripts/check-store-capture.js",
+    "store:capture": "node scripts/store-capture/capture.js",
+    "store:time-generations": "node scripts/store-capture/time-generations.js"
   },
   "dependencies": {
     "@expo-google-fonts/nunito": "^0.4.2",

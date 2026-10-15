@@ -173,7 +173,7 @@ export class InMemoryDataLayer implements DataLayer {
     });
     
     // Simulate realistic generation time for testing
-    // Long enough to see the generating screen with countdown (needs at least 2-3 seconds)
+    // Long enough to see the generating screen with its progress (needs at least 2-3 seconds)
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
     // Return mock storage paths (not URLs - the component will call getSignedUrl)

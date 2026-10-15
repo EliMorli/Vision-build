@@ -1,3 +1,5 @@
+import { isStoreCapture } from "./storeCapture";
+
 /**
  * Launch feature flags.
  *
@@ -19,5 +21,7 @@ function mockOverride(): boolean {
 }
 
 export function isOutreachEnabled(): boolean {
+  // Store captures never show Inbox or pros
+  if (isStoreCapture()) return false;
   return process.env.EXPO_PUBLIC_CONTRACTOR_OUTREACH_ENABLED === "true" || mockOverride();
 }

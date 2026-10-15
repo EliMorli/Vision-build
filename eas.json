@@ -7,7 +7,8 @@
     "base": {
       "node": "20.19.4",
       "env": {
-        "EXPO_PUBLIC_DEV_MOCK_SESSION": "false"
+        "EXPO_PUBLIC_DEV_MOCK_SESSION": "false",
+        "EXPO_PUBLIC_STORE_CAPTURE": "0"
       }
     },
     "development": {
@@ -40,6 +41,17 @@
       "autoIncrement": true,
       "android": {
         "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_STORE_CAPTURE": "0"
+      }
+    },
+    "store-capture": {
+      "extends": "preview",
+      "distribution": "internal",
+      "environment": "preview",
+      "env": {
+        "EXPO_PUBLIC_STORE_CAPTURE": "1"
       }
     }
   },

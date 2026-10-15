@@ -15,3 +15,4 @@ export { ProsTeaserCard } from "./ProsTeaserCard";
 export { ConfirmationSheet } from "./ConfirmationSheet";
 export { MenuSheet } from "./MenuSheet";
 export { AiGeneratedBadge } from "./AiGeneratedBadge";
+export { GeneratingProgressBar } from "./GeneratingProgressBar";

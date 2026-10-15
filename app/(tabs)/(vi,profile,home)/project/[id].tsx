@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { isStoreCapture } from "@/lib/config/storeCapture";
 import {
   View,
   Text,
@@ -365,6 +366,7 @@ export default function ProjectDetailScreen() {
               <Text style={styles.briefText}>
                 {project.lead_info.projectBrief}
               </Text>
+              {!isStoreCapture() && (
               <Pressable accessibilityRole="button"
                 style={styles.briefButton}
                 onPress={() => tabNav.push(`/pros-coming-soon?projectId=${id}`)}
@@ -373,6 +375,7 @@ export default function ProjectDetailScreen() {
                 <Text style={styles.briefButtonText}>Join the pros waitlist</Text>
                 <Ionicons name="arrow-forward" size={14} color={colors.primary} />
               </Pressable>
+              )}
             </View>
           </View>
         )}

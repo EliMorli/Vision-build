@@ -60,6 +60,9 @@ jobs:
       
       - name: Check launch copy compliance
         run: npm run check:launch-copy
+
+      - name: Check store-capture mode is off in production
+        run: npm run check:store-capture
       
       - name: Test legal validation with fixtures (always)
         run: |

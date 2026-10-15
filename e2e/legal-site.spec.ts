@@ -18,6 +18,9 @@ test.use({
 });
 
 test.describe("Hosted legal website", () => {
+  // One worker builds web-legal/dist once. In parallel, two workers' beforeAll
+  // rebuilt the same folder at once (ENOTEMPTY on rmdir).
+  test.describe.configure({ mode: "serial" });
   test.beforeAll(() => {
     execFileSync(process.execPath, [path.join(__dirname, "..", "scripts", "build-legal-site.js")], { stdio: "inherit" });
   });

@@ -57,6 +57,25 @@ const VI_FORBIDDEN_PATTERNS = [
   /\bquotes?\b/i,
 ];
 
+// The intro carousel is the first thing anyone sees: it must not promise
+// pros, contractors, quotes or anything "coming soon" (nothing unlaunched).
+const INTRO_FILES = ['app/intro.tsx'];
+const INTRO_FORBIDDEN_PATTERNS = [
+  /\bpros?\b/i,
+  /\bcontractors?\b/i,
+  /\bquotes?\b/i,
+  /coming[\s-]+soon/i,
+];
+
+// No fixed time-left estimates anywhere in the app ("About 20 sec left"):
+// Compliance only allows real progress. Applies to app/ and components/.
+const TIME_ESTIMATE_PATTERNS = [
+  /\bsec(?:ond)?s? left\b/i,
+  /\bmin(?:ute)?s? left\b/i,
+  /\btime left\b/i,
+  /\bsetCountdown\b/,
+];
+
 function walkDir(dir, fileList = []) {
   const files = fs.readdirSync(dir);
   
@@ -104,6 +123,7 @@ function main() {
     // Check if this is a deletion file
     const isDeletionFile = normalizedFile.includes('app/delete-account/');
     const isViFile = VI_FILES.some((viFile) => normalizedFile.endsWith(viFile));
+    const isIntroFile = INTRO_FILES.some((f) => normalizedFile.endsWith(f));
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -130,6 +150,32 @@ function main() {
               line: lineNum,
               content: line.trim(),
               term: pattern.source + ' (no pros or contractor actions in Vi)',
+            });
+          }
+        }
+      }
+
+      // Check fixed time-left estimates
+      for (const pattern of TIME_ESTIMATE_PATTERNS) {
+        if (pattern.test(line)) {
+          violations.push({
+            file: normalizedFile,
+            line: lineNum,
+            content: line.trim(),
+            term: pattern.source + ' (no fixed countdowns; show real progress)',
+          });
+        }
+      }
+
+      // Check intro carousel patterns
+      if (isIntroFile) {
+        for (const pattern of INTRO_FORBIDDEN_PATTERNS) {
+          if (pattern.test(line)) {
+            violations.push({
+              file: normalizedFile,
+              line: lineNum,
+              content: line.trim(),
+              term: pattern.source + ' (no pros or coming-soon promises in the intro)',
             });
           }
         }

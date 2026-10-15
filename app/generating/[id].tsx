@@ -12,7 +12,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore } from "@/lib/store";
-import { Button, IsoRoom } from "@/components";
+import { Button, IsoRoom, GeneratingProgressBar } from "@/components";
+import Reanimated, { FadeIn } from "react-native-reanimated";
+import { getGeneratingProgress } from "@/lib/generating/progress";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 
 const LONG_RUNNING_THRESHOLD_MS = 45000; // 45 seconds
@@ -20,7 +22,6 @@ const LONG_RUNNING_THRESHOLD_MS = 45000; // 45 seconds
 export default function GeneratingScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const [countdown, setCountdown] = useState(20);
   const [showLongRunning, setShowLongRunning] = useState(false);
   const [layerOpacity] = useState(new Animated.Value(0));
   const reduceMotion = useReducedMotion();
@@ -28,35 +29,15 @@ export default function GeneratingScreen() {
   const { 
     currentProject, 
     loading, 
-    progress, 
     progressMessage, 
     generatingStartTime,
   } = useProjectStore();
 
   const selectedStyle = currentProject?.selected_style || "modern";
   
-  // Calculate ready count based on progress
-  const readyCount = Math.floor((progress || 0) * 4);
-  
-  // Calculate progress bar fill based on elapsed time vs estimate (20 seconds)
-  const [elapsedProgress, setElapsedProgress] = useState(0);
-  
-  useEffect(() => {
-    if (!generatingStartTime) {
-      return; // Don't set state in effect body
-    }
-    
-    const updateElapsed = () => {
-      const elapsed = (Date.now() - generatingStartTime) / 20000;
-      setElapsedProgress(Math.min(1, elapsed));
-    };
-    
-    updateElapsed();
-    const interval = setInterval(updateElapsed, 100);
-    return () => clearInterval(interval);
-  }, [generatingStartTime]);
-  
-  const displayProgress = Math.max(progress || 0, elapsedProgress);
+  // Real progress only: designs that exist, never elapsed time
+  const genProgress = getGeneratingProgress({ loading, projectId: id, project: currentProject });
+  const readyCount = genProgress.readyCount;
 
   // Navigate to results when generation is complete
   useEffect(() => {
@@ -67,7 +48,7 @@ export default function GeneratingScreen() {
     }
   }, [loading, currentProject?.status, id, router]);
 
-  // Countdown timer and long-running detection
+  // Long-running detection (no time-left estimate: only real progress is shown)
   useEffect(() => {
     if (!loading || !generatingStartTime) {
       return; // Don't set state, let it naturally reset
@@ -75,8 +56,6 @@ export default function GeneratingScreen() {
 
     const interval = setInterval(() => {
       const elapsed = Date.now() - generatingStartTime;
-      const remaining = Math.max(0, Math.ceil((20000 - elapsed) / 1000));
-      setCountdown(remaining);
 
       if (elapsed > LONG_RUNNING_THRESHOLD_MS) {
         setShowLongRunning(true);
@@ -141,12 +120,14 @@ export default function GeneratingScreen() {
           {Array.from({ length: 4 }, (_, i) => (
             <View key={i} style={[styles.slot, i >= readyCount && styles.slotWaiting]}>
               {i < readyCount ? (
-                <IsoRoom
-                  palette={selectedStyle}
-                  size={64}
-                  accessible={false}
-                  importantForAccessibility="no-hide-descendants"
-                />
+                <Reanimated.View entering={reduceMotion ? undefined : FadeIn.duration(300)} testID={`generating-thumb-${i + 1}`}>
+                  <IsoRoom
+                    palette={selectedStyle}
+                    size={64}
+                    accessible={false}
+                    importantForAccessibility="no-hide-descendants"
+                  />
+                </Reanimated.View>
               ) : i === readyCount ? (
                 <View style={styles.slotActive}>
                   <Text style={styles.slotText}>…</Text>
@@ -160,16 +141,11 @@ export default function GeneratingScreen() {
 
         {/* Progress bar */}
         <View style={styles.progressSection}>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${displayProgress * 100}%` }]} />
-          </View>
+          <GeneratingProgressBar progress={genProgress} reduceMotion={reduceMotion} />
           <View style={styles.progressLabels}>
-            <Text style={styles.progressText}>
-              {progressMessage || `Design ${readyCount + 1} of 4`}
+            <Text style={styles.progressText} testID="generating-progress-label">
+              {progressMessage || genProgress.label}
             </Text>
-            {!showLongRunning && countdown > 0 && (
-              <Text style={styles.progressText}>About {countdown} sec left</Text>
-            )}
           </View>
         </View>
 
@@ -287,18 +263,6 @@ const styles = StyleSheet.create({
   progressSection: {
     width: "100%",
     marginBottom: spacing.lg,
-  },
-  progressBar: {
-    height: 14,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-    borderRadius: radius.full,
-    overflow: "hidden",
-    marginBottom: spacing.xs,
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: colors.accent,
-    borderRadius: radius.full,
   },
   progressLabels: {
     flexDirection: "row",
