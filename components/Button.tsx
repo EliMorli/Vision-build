@@ -1,4 +1,7 @@
+import { useState } from "react";
 import { Pressable, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from "react-native";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, Easing } from "react-native-reanimated";
+import { pressVisual, PRESS_DURATION_MS } from "@/lib/pressFeedback";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
@@ -40,18 +43,33 @@ export function Button({
   const finalTextColor = isDisabled && !loading ? DISABLED_TEXT : textColor || bg.textColor;
   const finalIconColor = isDisabled && !loading ? DISABLED_TEXT : iconColor || textColor || bg.textColor;
 
+  // Press feedback: transform/opacity only (lib/pressFeedback.ts), on the UI thread
+  const [pressed, setPressed] = useState(false);
+  const press = useSharedValue(0);
+  const hasEdge = HAS_3D_EDGE[variant];
+  const pressStyle = useAnimatedStyle(() => {
+    const v = pressVisual(press.value, reduceMotion, hasEdge);
+    return { opacity: v.opacity, transform: [{ translateY: v.translateY }, { scale: v.scale }] };
+  });
+  const animatePress = (to: 0 | 1) => {
+    press.value = withTiming(to, { duration: PRESS_DURATION_MS, easing: Easing.bezier(0.23, 1, 0.32, 1) });
+  };
+
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={onPress}
+      onPressIn={() => { setPressed(true); animatePress(1); }}
+      onPressOut={() => { setPressed(false); animatePress(0); }}
+      pressRetentionOffset={16}
       disabled={isDisabled}
-      style={({ pressed }) => [
+      style={[
         styles.base,
         bg.container,
         fullWidth && styles.fullWidth,
         isDisabled && (variant === "ghost" ? styles.disabledGhost : styles.disabled),
-        pressed && !isDisabled && !reduceMotion && HAS_3D_EDGE[variant] && { borderBottomWidth: 2, marginTop: 3 },
         pressed && !isDisabled && variant === "neutral" && styles.neutralPressed,
         style,
+        pressStyle,
       ]}
       testID={testID}
       accessibilityRole="button"
@@ -66,9 +84,11 @@ export function Button({
           <Text style={[styles.label, { color: finalTextColor }]}>{label}</Text>
         </>
       )}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 // Disabled buttons use a flat clay-gray look (not a faded brand color) so it is
 // obvious they cannot be tapped, e.g. "Needs internet" while offline.

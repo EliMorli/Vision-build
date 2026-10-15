@@ -3,16 +3,14 @@ import {
   View,
   Text,
   StyleSheet,
-  Modal,
   Pressable,
-  SafeAreaView,
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { Button } from "./Button";
 import { useReportStore } from "@/lib/store";
-import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
+import { DraggableSheet } from "./DraggableSheet";
 
 interface ReportModalProps {
   visible: boolean;
@@ -52,7 +50,6 @@ export function ReportModal({ visible, onClose, onSuccess, onError, type, itemId
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitReport = useReportStore((s) => s.submitReport);
-  const reduceMotion = useReducedMotion();
 
   const reasons = REPORT_REASONS[type];
 
@@ -95,13 +92,13 @@ export function ReportModal({ visible, onClose, onSuccess, onError, type, itemId
   };
 
   return (
-    <Modal
+    <DraggableSheet
       visible={visible}
-      animationType={reduceMotion ? "none" : "slide"}
-      presentationStyle="pageSheet"
-      onRequestClose={handleClose}
-    >
-      <SafeAreaView style={styles.container}>
+      onDismiss={handleClose}
+      sheetStyle={styles.sheet}
+      backdropLabel="Close report"
+      testID="report-sheet"
+      header={<>
         {/* Header */}
         <View style={styles.header}>
           <Pressable accessibilityRole="button" accessibilityLabel="Close report" onPress={handleClose} hitSlop={12}>
@@ -113,7 +110,9 @@ export function ReportModal({ visible, onClose, onSuccess, onError, type, itemId
           <View style={{ width: 28 }} />
         </View>
 
-        <ScrollView contentContainerStyle={styles.content}>
+      </>}
+    >
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
           {/* Icon */}
           <View style={styles.iconCircle}>
             <Ionicons name="flag" size={40} color={colors.error} />
@@ -165,15 +164,14 @@ export function ReportModal({ visible, onClose, onSuccess, onError, type, itemId
             variant="primary"
           />
         </View>
-      </SafeAreaView>
-    </Modal>
+    </DraggableSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
+  sheet: {
+    height: "92%",
+    paddingBottom: 0,
   },
   header: {
     flexDirection: "row",

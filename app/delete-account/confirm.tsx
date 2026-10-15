@@ -2,6 +2,7 @@
 // GET: Validates token and shows confirmation page (does NOT delete)
 // POST: Executes actual deletion when user presses button
 
+import { haptic } from "@/lib/haptics";
 import { useState, useEffect } from "react";
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, Platform, Linking, ScrollView } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -88,6 +89,7 @@ export default function DeleteAccountConfirm() {
   }, [token]);
 
   const executeDelete = async () => {
+    haptic("deleteAccount");
     setState("deleting");
 
     try {

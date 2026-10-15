@@ -4,15 +4,16 @@ import {
   Text,
   StyleSheet,
   Dimensions,
-  FlatList,
   ViewToken,
   SafeAreaView,
-  Animated,
-  PanResponder,
   Pressable,
   Image,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { FlatList, Gesture, GestureDetector } from "react-native-gesture-handler";
+import Reanimated, { Easing, useAnimatedStyle, useSharedValue, withSpring, withTiming } from "react-native-reanimated";
+import { rubberband } from "@/lib/sheetPhysics";
+import { useDevRenderCount } from "@/lib/hooks/useDevRenderCount";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
@@ -49,42 +50,53 @@ const PAGES = [
 ];
 
 // Before/After Slider Component
-function BeforeAfterSlider() {
-  const sliderPosition = useRef(new Animated.Value(0.5)).current;
-  const [dividerX, setDividerX] = useState(width * 0.8 * 0.5); // center of the image width
+// Drag runs entirely on the UI thread (gesture-handler Pan + Reanimated shared
+// value): no React render per move. Horizontal drags are claimed from the pager
+// (activeOffsetX, failOffsetY, blocksExternalGesture). Past either edge the
+// divider resists (rubber band) and springs back on release.
+function BeforeAfterSlider({ pagerGesture }: { pagerGesture: React.RefObject<any> }) {
   const imageWidth = width * 0.8;
-  
-  // Hide labels when divider is too close (within 60px of edges to account for label width)
-  const showBeforeLabel = dividerX > 60;
-  const showAfterLabel = dividerX < imageWidth - 60;
+  const x = useSharedValue(imageWidth * 0.5);
+  const startX = useSharedValue(0);
+  useDevRenderCount("introSlider");
 
-  const panResponder = useMemo(
+  const pan = useMemo(
     () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
-        onPanResponderMove: (_, gesture) => {
-          const offset = (width - imageWidth) / 2;
-          const relativeX = gesture.moveX - offset;
-          const clampedX = Math.max(0, Math.min(imageWidth, relativeX));
-          const newPosition = clampedX / imageWidth;
-          sliderPosition.setValue(newPosition);
-          setDividerX(clampedX);
-        },
-      }),
-    [imageWidth, sliderPosition]
+      Gesture.Pan()
+        .activeOffsetX([-6, 6])
+        .failOffsetY([-14, 14])
+        .blocksExternalGesture(pagerGesture)
+        .onStart(() => {
+          startX.value = x.value;
+        })
+        .onUpdate((e) => {
+          const next = startX.value + e.translationX;
+          if (next < 0) x.value = rubberband(next, imageWidth * 0.25);
+          else if (next > imageWidth) x.value = imageWidth + rubberband(next - imageWidth, imageWidth * 0.25);
+          else x.value = next;
+        })
+        .onEnd((e) => {
+          const clamped = Math.min(imageWidth, Math.max(0, x.value));
+          if (clamped !== x.value) x.value = withSpring(clamped, { duration: 400, dampingRatio: 0.8, velocity: e.velocityX });
+        }),
+    [imageWidth, pagerGesture, startX, x]
   );
-  
-  const panHandlers = panResponder.panHandlers;
 
   const handleButtonSlide = (direction: "left" | "right") => {
-    const newX = direction === "left"
-      ? Math.max(0, dividerX - imageWidth * 0.1)
-      : Math.min(imageWidth, dividerX + imageWidth * 0.1);
-    const newPosition = newX / imageWidth;
-    sliderPosition.setValue(newPosition);
-    setDividerX(newX);
+    const cur = Math.min(imageWidth, Math.max(0, x.value));
+    const next = direction === "left" ? Math.max(0, cur - imageWidth * 0.1) : Math.min(imageWidth, cur + imageWidth * 0.1);
+    x.value = withTiming(next, { duration: 200, easing: Easing.bezier(0.77, 0, 0.175, 1) });
   };
+
+  const clampedX = (v: number) => {
+    "worklet";
+    return Math.min(imageWidth, Math.max(0, v));
+  };
+  const afterStyle = useAnimatedStyle(() => ({ width: clampedX(x.value) }));
+  const dividerStyle = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
+  // Hide a label when the divider is within 60px of its edge (label width)
+  const beforeLabelStyle = useAnimatedStyle(() => ({ opacity: x.value > 60 ? 1 : 0 }));
+  const afterLabelStyle = useAnimatedStyle(() => ({ opacity: x.value < imageWidth - 60 ? 1 : 0 }));
 
   return (
     <View style={sliderStyles.container}>
@@ -92,28 +104,30 @@ function BeforeAfterSlider() {
       <Text style={sliderStyles.title}>See the transformation</Text>
       <Text style={sliderStyles.subtitle}>Drag the slider to reveal the power of AI redesign</Text>
 
-      <View style={sliderStyles.sliderContainer} testID="intro-slider" {...panHandlers}>
+      <GestureDetector gesture={pan}>
+      <View style={sliderStyles.sliderContainer} testID="intro-slider">
         <View style={sliderStyles.beforeImage}>
           <IsoRoom palette="modern" size={imageWidth * 0.9} />
-          {showBeforeLabel && <Text style={sliderStyles.beforeLabel} testID="intro-label-before">Before</Text>}
+          <Reanimated.Text style={[sliderStyles.beforeLabel, beforeLabelStyle]} testID="intro-label-before">Before</Reanimated.Text>
         </View>
 
         {/* After image - clipped based on slider, modern styled room */}
-        <View style={[sliderStyles.afterContainer, { width: dividerX }]}>
+        <Reanimated.View style={[sliderStyles.afterContainer, afterStyle]} testID="intro-slider-after">
           <View style={sliderStyles.afterImage}>
             <IsoRoom palette="modern" size={imageWidth * 0.9} spark />
-            {showAfterLabel && <Text style={sliderStyles.afterLabel} testID="intro-label-after">After</Text>}
+            <Reanimated.Text style={[sliderStyles.afterLabel, afterLabelStyle]} testID="intro-label-after">After</Reanimated.Text>
           </View>
-        </View>
+        </Reanimated.View>
 
         {/* Divider line */}
-        <View style={[sliderStyles.divider, { left: dividerX }]}>
+        <Reanimated.View style={[sliderStyles.divider, { left: 0 }, dividerStyle]} testID="intro-slider-divider">
           <View style={sliderStyles.dividerHandle}>
             <Ionicons name="chevron-back" size={12} color="#fff" />
             <Ionicons name="chevron-forward" size={12} color="#fff" />
           </View>
-        </View>
+        </Reanimated.View>
       </View>
+      </GestureDetector>
 
       {/* Button controls for accessibility */}
       <View style={sliderStyles.buttonControls}>
@@ -142,6 +156,7 @@ function BeforeAfterSlider() {
 
 export default function IntroScreen() {
   const [currentPage, setCurrentPage] = useState(0);
+  const pagerRef = useRef<any>(null);
   const router = useRouter();
   const session = useAuthStore((s) => s.session);
 
@@ -180,6 +195,7 @@ export default function IntroScreen() {
 
       {/* Carousel */}
       <FlatList
+        ref={pagerRef}
         data={PAGES}
         horizontal
         pagingEnabled
@@ -189,7 +205,7 @@ export default function IntroScreen() {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => {
           if (item.type === "slider") {
-            return <BeforeAfterSlider />;
+            return <BeforeAfterSlider pagerGesture={pagerRef} />;
           }
           return (
             <View style={styles.page}>

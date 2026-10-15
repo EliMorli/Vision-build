@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { haptic } from "@/lib/haptics";
 import {
   View,
   Text,
   StyleSheet,
   SafeAreaView,
-  Animated,
 } from "react-native";
 import { tabHref } from "@/lib/navigation/tabs";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -13,7 +13,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useProjectStore } from "@/lib/store";
 import { Button, IsoRoom, GeneratingProgressBar } from "@/components";
-import Reanimated, { FadeIn } from "react-native-reanimated";
+import Reanimated, { FadeIn, Easing, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
+import { PULSE, pulseAt } from "@/lib/generating/pulse";
 import { getGeneratingProgress } from "@/lib/generating/progress";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 
@@ -23,7 +24,6 @@ export default function GeneratingScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [showLongRunning, setShowLongRunning] = useState(false);
-  const [layerOpacity] = useState(new Animated.Value(0));
   const reduceMotion = useReducedMotion();
 
   const { 
@@ -38,6 +38,14 @@ export default function GeneratingScreen() {
   // Real progress only: designs that exist, never elapsed time
   const genProgress = getGeneratingProgress({ loading, projectId: id, project: currentProject });
   const readyCount = genProgress.readyCount;
+
+  // A design landing (its segment snaps full, its thumbnail fades in) gets a
+  // light tap in the same commit; all 4 ready gets the success notification.
+  const prevReady = useRef(readyCount);
+  useEffect(() => {
+    if (readyCount > prevReady.current) haptic(readyCount >= 4 ? "allDone" : "designLanded");
+    prevReady.current = readyCount;
+  }, [readyCount]);
 
   // Navigate to results when generation is complete
   useEffect(() => {
@@ -65,29 +73,23 @@ export default function GeneratingScreen() {
     return () => clearInterval(interval);
   }, [loading, generatingStartTime]);
 
-  // Animate room layers (respect reduce motion)
+  // Room "breathing" pulse on the UI thread: opacity 0.85-1, scale 0.97-1 (never invisible).
+  // Reduce Motion: no pulse, the room stays still at full opacity.
+  const pulse = useSharedValue(1);
   useEffect(() => {
-    if (reduceMotion || !loading) return;
-
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(layerOpacity, {
-          toValue: 1,
-          duration: 1500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(layerOpacity, {
-          toValue: 0.3,
-          duration: 1500,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    animation.start();
-
-    return () => animation.stop();
-  }, [loading, reduceMotion, layerOpacity]);
+    if (reduceMotion || !loading) {
+      cancelAnimation(pulse);
+      pulse.value = 1;
+      return;
+    }
+    pulse.value = 1;
+    pulse.value = withRepeat(withTiming(0, { duration: PULSE.halfPeriodMs, easing: Easing.inOut(Easing.quad) }), -1, true);
+    return () => cancelAnimation(pulse);
+  }, [loading, reduceMotion, pulse]);
+  const roomPulseStyle = useAnimatedStyle(() => {
+    const v = pulseAt(pulse.value);
+    return { opacity: v.opacity, transform: [{ scale: v.scale }] };
+  });
 
   const handleGoHome = () => {
     router.dismissTo("/(tabs)/(home)" as any);
@@ -105,7 +107,7 @@ export default function GeneratingScreen() {
         <Text style={styles.title}>Building your{"\n"}{selectedStyle} room</Text>
 
         {/* Room being "built" */}
-        <Animated.View style={[styles.roomWrapper, reduceMotion ? {} : { opacity: layerOpacity, transform: [{ scale: layerOpacity.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }] }]}>
+        <Reanimated.View style={[styles.roomWrapper, roomPulseStyle]} testID="generating-room">
           <IsoRoom
             palette={selectedStyle}
             size={250}
@@ -113,7 +115,7 @@ export default function GeneratingScreen() {
             accessible={false}
             importantForAccessibility="no-hide-descendants"
           />
-        </Animated.View>
+        </Reanimated.View>
 
         {/* Slot thumbnails */}
         <View style={styles.slots}>

@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { haptic } from "@/lib/haptics";
 import { isStoreCapture } from "@/lib/config/storeCapture";
 import {
   View,
@@ -97,9 +98,15 @@ export default function ResultScreen() {
     checkWaitlistStatus();
   }, [id]);
 
+  const xpHapticFired = useRef(false);
   // XP banner animation
   useEffect(() => {
     if (showXPBanner) {
+      // Once per Results visit, in the same commit the banner starts its entrance
+      if (!xpHapticFired.current) {
+        xpHapticFired.current = true;
+        haptic("xpEarned");
+      }
       if (reduceMotion) {
         // Skip animation, set to final state immediately
         xpBannerScale.setValue(1);
@@ -145,6 +152,7 @@ export default function ResultScreen() {
       await selectDesign(id, selectedUrl);
       // Stay on Results and confirm; View opens the project in this tab
       setSavedUrl(selectedUrl);
+      haptic("saved");
     } catch (_error) {
       console.error("design_save_failed");
       setError("Failed to save selection");
