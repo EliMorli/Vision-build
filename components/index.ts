@@ -16,7 +16,4 @@ export { ConfirmationSheet } from "./ConfirmationSheet";
 export { MenuSheet } from "./MenuSheet";
 export { AiGeneratedBadge } from "./AiGeneratedBadge";
 export { GeneratingProgressBar } from "./GeneratingProgressBar";
-<<<<<<< HEAD
 export { DraggableSheet } from "./DraggableSheet";
-=======
->>>>>>> origin/cursor/visionbuild-client-flow-740f

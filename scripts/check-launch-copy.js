@@ -76,13 +76,10 @@ const TIME_ESTIMATE_PATTERNS = [
   /\bsetCountdown\b/,
 ];
 
-<<<<<<< HEAD
 // The Make public sheet lists what stays private: there are no quotes at launch.
 const MAKE_PUBLIC_FILES = ['components/MakePublicSheet.tsx'];
 const MAKE_PUBLIC_FORBIDDEN_PATTERNS = [/\bquotes?\b/i];
 
-=======
->>>>>>> origin/cursor/visionbuild-client-flow-740f
 function walkDir(dir, fileList = []) {
   const files = fs.readdirSync(dir);
   
@@ -130,10 +127,7 @@ function main() {
     // Check if this is a deletion file
     const isDeletionFile = normalizedFile.includes('app/delete-account/');
     const isViFile = VI_FILES.some((viFile) => normalizedFile.endsWith(viFile));
-<<<<<<< HEAD
     const isMakePublicFile = MAKE_PUBLIC_FILES.some((f) => normalizedFile.endsWith(f));
-=======
->>>>>>> origin/cursor/visionbuild-client-flow-740f
     const isIntroFile = INTRO_FILES.some((f) => normalizedFile.endsWith(f));
 
     for (let i = 0; i < lines.length; i++) {
@@ -178,7 +172,6 @@ function main() {
         }
       }
 
-<<<<<<< HEAD
       // Check Make public sheet patterns
       if (isMakePublicFile) {
         for (const pattern of MAKE_PUBLIC_FORBIDDEN_PATTERNS) {
@@ -193,8 +186,6 @@ function main() {
         }
       }
 
-=======
->>>>>>> origin/cursor/visionbuild-client-flow-740f
       // Check intro carousel patterns
       if (isIntroFile) {
         for (const pattern of INTRO_FORBIDDEN_PATTERNS) {
