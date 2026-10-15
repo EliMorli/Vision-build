@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { isStoreCapture } from "@/lib/config/storeCapture";
 import {
   View,
   Text,
@@ -371,7 +372,7 @@ export default function ResultScreen() {
       )}
 
       {/* Waitlist Card */}
-      {!isOnWaitlist && (
+      {!isOnWaitlist && !isStoreCapture() && (
         <View style={styles.waitlistCard} testID="results-waitlist-card">
           <Text style={styles.waitlistTitle}>Want this built?</Text>
           <Pressable

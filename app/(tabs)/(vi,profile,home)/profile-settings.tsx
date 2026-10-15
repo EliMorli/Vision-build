@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { isStoreCapture } from "@/lib/config/storeCapture";
 import {
   View,
   Text,
@@ -283,7 +284,8 @@ export default function ProfileSettingsScreen() {
       ) : null}
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Notifications Section */}
+        {/* Notifications Section (pros waitlist; hidden in store captures) */}
+        {!isStoreCapture() && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Notifications</Text>
           <View style={styles.settingCard}>
@@ -306,6 +308,7 @@ export default function ProfileSettingsScreen() {
             </View>
           </View>
         </View>
+        )}
 
         {/* Privacy Section */}
         <View style={styles.section}>

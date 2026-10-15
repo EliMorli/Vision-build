@@ -93,10 +93,15 @@ test.describe("VisionBuild Create Loop", () => {
     // Click "Generate 4 Designs"
     await page.getByRole("button", { name: /generate 4 designs/i }).click();
 
-    // Assert Generating screen (with countdown text), then screenshot
+    // Assert Generating screen with real progress (no time-left estimate), then screenshot
     await expect(page.getByTestId("generating-screen")).toBeVisible({ timeout: 10000 });
     await expect(page.getByText(/building your/i)).toBeInViewport({ timeout: 10000 });
-    await expect(page.getByText(/sec left/i)).toBeVisible({ timeout: 2000 });
+    // Real progress label: the store's step message, or "Design N of 4"
+    const progressLabel = page.getByTestId("generating-progress-label");
+    await expect(progressLabel).toBeVisible({ timeout: 2000 });
+    await expect(progressLabel).toHaveText(/\S/);
+    await expect(progressLabel).not.toHaveText(/sec left/i);
+    await expect(page.getByText(/sec left/i)).toHaveCount(0);
     await page.screenshot({ path: "e2e/screens/a5-generating.png", fullPage: true });
 
     // Wait for generation to complete - look for results screen

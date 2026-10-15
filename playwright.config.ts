@@ -28,15 +28,29 @@ export default defineConfig({
     },
   ],
 
+  // Two builds of the same code: 19006 is the shipping build; 19007 has
+  // EXPO_PUBLIC_STORE_CAPTURE=1 (build-time) for e2e/store-capture.spec.ts.
   webServer: process.env.CI
-    ? {
-        command: "npx expo start --web --port 19006",
-        port: 19006,
-        timeout: 120 * 1000,
-        reuseExistingServer: !process.env.CI,
-        env: {
-          EXPO_PUBLIC_DEV_MOCK_SESSION: "true",
+    ? [
+        {
+          command: "npx expo start --web --port 19006",
+          port: 19006,
+          timeout: 120 * 1000,
+          reuseExistingServer: !process.env.CI,
+          env: {
+            EXPO_PUBLIC_DEV_MOCK_SESSION: "true",
+          },
         },
-      }
+        {
+          command: "npx expo start --web --port 19007",
+          port: 19007,
+          timeout: 120 * 1000,
+          reuseExistingServer: !process.env.CI,
+          env: {
+            EXPO_PUBLIC_DEV_MOCK_SESSION: "true",
+            EXPO_PUBLIC_STORE_CAPTURE: "1",
+          },
+        },
+      ]
     : undefined,
 });

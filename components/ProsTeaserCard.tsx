@@ -7,13 +7,20 @@ import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { IsoRoom } from "./IsoRoom";
 import { useAuthStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
+import { isStoreCapture } from "@/lib/config/storeCapture";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 
 /** How long "You're on the list." stays before fading into the joined state */
 export const WAITLIST_CONFIRMATION_MS = 3000;
 const FADE_MS = 300;
 
+/** Hidden in store-capture builds (pros aren't live at launch). */
 export function ProsTeaserCard() {
+  if (isStoreCapture()) return null;
+  return <ProsTeaserCardInner />;
+}
+
+function ProsTeaserCardInner() {
   const router = useRouter();
   const profile = useAuthStore((s) => s.profile);
   const [isOnWaitlist, setIsOnWaitlist] = useState(false);
