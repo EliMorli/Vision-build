@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.177.0/testing/asserts.ts";
-import { handleSetVisibility, SetVisibilityDeps } from "./index.ts";
+import { handleSetVisibility, publishBlockReason, SetVisibilityDeps } from "./index.ts";
 import { DIGITAL_SOURCE_TYPE_AI, readDigitalSourceType, readPngChunks } from "../_shared/ai-provenance.ts";
 
 // Helper to create fake deps
@@ -453,4 +453,12 @@ Deno.test("set-visibility: unknown format is copied unchanged and logged", async
   assertEquals(uploads[0].contentType, "image/gif");
   assertEquals(warnings.length, 1);
   assertEquals(warnings[0].includes("without the AI metadata tag"), true);
+});
+
+Deno.test("set-visibility: banned users and hidden designs cannot be published", () => {
+  assertEquals(publishBlockReason(true, { is_hidden: false }, { is_banned: true }), "banned");
+  assertEquals(publishBlockReason(true, { is_hidden: true }, { is_banned: false }), "hidden");
+  assertEquals(publishBlockReason(true, { is_hidden: false }, { is_banned: false }), null);
+  // Making private is always allowed, even when banned or hidden
+  assertEquals(publishBlockReason(false, { is_hidden: true }, { is_banned: true }), null);
 });

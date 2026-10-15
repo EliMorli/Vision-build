@@ -40,6 +40,23 @@ function normalizeToPath(value: string): string {
   }
 }
 
+/**
+ * Moderation gate for publishing (App Review 1.2). Returns why a project may
+ * not be made public, or null when it may. Making a project private is
+ * always allowed. The service-role update below bypasses the database guard
+ * trigger, so this check must run first.
+ */
+export function publishBlockReason(
+  isPublic: boolean,
+  project: { is_hidden?: boolean | null } | null | undefined,
+  profile: { is_banned?: boolean | null } | null | undefined
+): "banned" | "hidden" | null {
+  if (!isPublic) return null;
+  if (profile?.is_banned) return "banned";
+  if (project?.is_hidden) return "hidden";
+  return null;
+}
+
 export async function handleSetVisibility(
   userId: string,
   payload: SetVisibilityPayload,
@@ -238,6 +255,22 @@ serve(async (req) => {
       return projectResult;
     }
     const { project } = projectResult;
+
+    // 4. Moderation: banned users and hidden designs cannot be published
+    if (isPublic) {
+      const { data: profile } = await anonClient
+        .from("profiles")
+        .select("is_banned")
+        .eq("id", userId)
+        .single();
+      const blocked = publishBlockReason(isPublic, project, profile);
+      if (blocked) {
+        return new Response(
+          JSON.stringify({ error: "publishing_disabled", reason: blocked }),
+          { status: 403, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
+        );
+      }
+    }
 
     const deps: SetVisibilityDeps = {
       supabase: getServiceRoleClient(),

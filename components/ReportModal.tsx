@@ -5,12 +5,14 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { Button } from "./Button";
 import { useReportStore } from "@/lib/store";
 import { DraggableSheet } from "./DraggableSheet";
+import { REPORT_NOTE_MAX, normalizeReportNote } from "@/lib/moderation/report-target";
 
 interface ReportModalProps {
   visible: boolean;
@@ -49,6 +51,7 @@ const REPORT_REASONS = {
 export function ReportModal({ visible, onClose, onSuccess, onError, type, itemId }: ReportModalProps) {
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [note, setNote] = useState("");
   const submitReport = useReportStore((s) => s.submitReport);
 
   const reasons = REPORT_REASONS[type];
@@ -63,10 +66,12 @@ export function ReportModal({ visible, onClose, onSuccess, onError, type, itemId
         targetType: type,
         targetId: itemId,
         reason: selectedReason,
+        note: normalizeReportNote(note),
       });
 
       setIsSubmitting(false);
       setSelectedReason(null);
+      setNote("");
       onClose();
       
       // Call onSuccess callback if provided
@@ -88,6 +93,7 @@ export function ReportModal({ visible, onClose, onSuccess, onError, type, itemId
 
   const handleClose = () => {
     setSelectedReason(null);
+    setNote("");
     onClose();
   };
 
@@ -151,6 +157,22 @@ export function ReportModal({ visible, onClose, onSuccess, onError, type, itemId
               </Pressable>
             ))}
           </View>
+
+          {/* Optional note: one line, never required */}
+          <TextInput
+            value={note}
+            onChangeText={(t) => setNote(t.slice(0, REPORT_NOTE_MAX))}
+            maxLength={REPORT_NOTE_MAX}
+            placeholder="Add details (optional)"
+            placeholderTextColor={colors.textSecondary}
+            style={styles.noteInput}
+            returnKeyType="done"
+            accessibilityLabel="Add details, optional"
+            testID="report-note-input"
+          />
+          <Text style={styles.noteCount} testID="report-note-count">
+            {note.length}/{REPORT_NOTE_MAX}
+          </Text>
         </ScrollView>
 
         {/* Actions */}
@@ -169,6 +191,21 @@ export function ReportModal({ visible, onClose, onSuccess, onError, type, itemId
 }
 
 const styles = StyleSheet.create({
+  noteInput: {
+    ...fonts.body,
+    marginTop: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 4,
+  },
+  noteCount: {
+    ...fonts.regular,
+    fontSize: 12,
+    textAlign: "right",
+    marginTop: spacing.xs,
+  },
   sheet: {
     height: "92%",
     paddingBottom: 0,

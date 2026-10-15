@@ -204,7 +204,12 @@ export async function deleteUserData(params: DeleteUserDataParams): Promise<Dele
   // with invalid_client, so use the bundle id as client_id here.
   const APPLE_CLIENT_ID = Deno.env.get("APPLE_BUNDLE_ID") || "com.visionbuild.app";
 
-  const isAppleUser = userAppMetadata?.provider === "apple";
+  // An account can be created with Google and later linked to Apple (or the
+  // reverse), so check linked identities too, not just the primary provider.
+  const isAppleUser =
+    userAppMetadata?.provider === "apple" ||
+    (Array.isArray(userAppMetadata?.providers) && userAppMetadata.providers.includes("apple")) ||
+    (Array.isArray(userIdentities) && userIdentities.some((i: any) => i?.provider === "apple"));
 
   if (!isAppleUser) {
     appleRevokeStatus = { status: 'skipped', reason: 'not_apple_user' };
