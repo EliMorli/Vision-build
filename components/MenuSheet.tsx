@@ -1,5 +1,6 @@
 import React from "react";
-import { Modal, View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
+import { DraggableSheet } from "./DraggableSheet";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
@@ -35,22 +36,7 @@ export function MenuSheet({
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType={reduceMotion ? "none" : "fade"}
-      onRequestClose={onClose}
-    >
-      <View style={styles.container} testID={testID}>
-        <View style={styles.overlay}>
-          {/* Tapping outside the sheet closes it */}
-          <Pressable
-            style={StyleSheet.absoluteFill}
-            onPress={onClose}
-            accessibilityRole="button"
-            accessibilityLabel="Dismiss"
-          />
-          <View style={styles.sheet}>
+    <DraggableSheet visible={visible} onDismiss={onClose} sheetStyle={styles.sheet} testID={testID}>
             <View style={styles.header}>
               <Text style={styles.title}>{title}</Text>
               <Pressable
@@ -97,10 +83,7 @@ export function MenuSheet({
                 </Pressable>
               ))}
             </View>
-          </View>
-        </View>
-      </View>
-    </Modal>
+    </DraggableSheet>
   );
 }
 
@@ -115,10 +98,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   sheet: {
+    alignSelf: "center",
     backgroundColor: "#fff",
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
     padding: spacing.lg,
+    paddingTop: 0,
     width: "100%",
     maxWidth: 600,
     shadowColor: "#000",

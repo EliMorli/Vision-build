@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { haptic } from "@/lib/haptics";
 import { isStoreCapture } from "@/lib/config/storeCapture";
 import {
   View,
@@ -180,6 +181,7 @@ export default function ProfileSettingsScreen() {
   };
 
   const confirmDeleteAccount = async () => {
+    haptic("deleteAccount");
     const profile = useAuthStore.getState().profile;
     const userId = profile?.id;
     const isAppleUser =

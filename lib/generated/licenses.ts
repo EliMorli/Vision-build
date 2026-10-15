@@ -3227,6 +3227,13 @@ export const licenses: LicenseEntry[] = [
     "textId": "3a7a80be"
   },
   {
+    "name": "expo-haptics",
+    "version": "14.0.1",
+    "license": "MIT",
+    "copyright": "Copyright (c) 650 Industries, Inc.",
+    "textId": "3a7a80be"
+  },
+  {
     "name": "expo-image-loader",
     "version": "5.0.0",
     "license": "MIT",

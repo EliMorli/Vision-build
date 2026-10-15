@@ -16,3 +16,4 @@ export { ConfirmationSheet } from "./ConfirmationSheet";
 export { MenuSheet } from "./MenuSheet";
 export { AiGeneratedBadge } from "./AiGeneratedBadge";
 export { GeneratingProgressBar } from "./GeneratingProgressBar";
+export { DraggableSheet } from "./DraggableSheet";

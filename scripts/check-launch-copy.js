@@ -76,6 +76,10 @@ const TIME_ESTIMATE_PATTERNS = [
   /\bsetCountdown\b/,
 ];
 
+// The Make public sheet lists what stays private: there are no quotes at launch.
+const MAKE_PUBLIC_FILES = ['components/MakePublicSheet.tsx'];
+const MAKE_PUBLIC_FORBIDDEN_PATTERNS = [/\bquotes?\b/i];
+
 function walkDir(dir, fileList = []) {
   const files = fs.readdirSync(dir);
   
@@ -123,6 +127,7 @@ function main() {
     // Check if this is a deletion file
     const isDeletionFile = normalizedFile.includes('app/delete-account/');
     const isViFile = VI_FILES.some((viFile) => normalizedFile.endsWith(viFile));
+    const isMakePublicFile = MAKE_PUBLIC_FILES.some((f) => normalizedFile.endsWith(f));
     const isIntroFile = INTRO_FILES.some((f) => normalizedFile.endsWith(f));
 
     for (let i = 0; i < lines.length; i++) {
@@ -164,6 +169,20 @@ function main() {
             content: line.trim(),
             term: pattern.source + ' (no fixed countdowns; show real progress)',
           });
+        }
+      }
+
+      // Check Make public sheet patterns
+      if (isMakePublicFile) {
+        for (const pattern of MAKE_PUBLIC_FORBIDDEN_PATTERNS) {
+          if (pattern.test(line)) {
+            violations.push({
+              file: normalizedFile,
+              line: lineNum,
+              content: line.trim(),
+              term: pattern.source + ' (no quotes at launch in the Make public sheet)',
+            });
+          }
         }
       }
 

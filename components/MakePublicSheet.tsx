@@ -1,4 +1,5 @@
-import { Modal, View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
+import { DraggableSheet } from "./DraggableSheet";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { Button } from "./Button";
@@ -19,22 +20,14 @@ export function MakePublicSheet({
   userLevel,
 }: MakePublicSheetProps) {
   return (
-    <Modal
+    <DraggableSheet
       visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onKeepPrivate}
+      onDismiss={onKeepPrivate}
+      sheetStyle={styles.sheet}
+      backdropLabel="Dismiss and keep private"
+      backdropTestID="make-public-backdrop"
+      testID="make-public-sheet"
     >
-      <View style={styles.backdrop}>
-        {/* Tapping outside the sheet keeps the project private */}
-        <Pressable
-          style={StyleSheet.absoluteFill}
-          onPress={onKeepPrivate}
-          accessibilityRole="button"
-          accessibilityLabel="Dismiss and keep private"
-          testID="make-public-backdrop"
-        />
-        <View style={styles.sheet}>
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>Make this project public?</Text>
@@ -68,8 +61,8 @@ export function MakePublicSheet({
               <Text style={styles.sectionTitle}>Stays private</Text>
             </View>
             <Text style={styles.sectionText}>
-              Your original room photo (It shows the inside of your home), your chats,
-              quotes and ZIP.
+              Your original room photo (It shows the inside of your home), your chats
+              and ZIP.
             </Text>
           </View>
 
@@ -96,9 +89,7 @@ export function MakePublicSheet({
               <Text style={styles.keepPrivateText}>Keep Private</Text>
             </Pressable>
           </View>
-        </View>
-      </View>
-    </Modal>
+    </DraggableSheet>
   );
 }
 
@@ -113,6 +104,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     padding: spacing.lg,
+    paddingTop: 0,
     paddingBottom: spacing.xl,
   },
   header: {
