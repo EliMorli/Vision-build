@@ -1,0 +1,37 @@
+{
+  "_comment": "Policy versions for the hosted legal site. 'current' must match TERMS_VERSION / PRIVACY_POLICY_VERSION in lib/config/legal.ts. To publish a new version: copy the current text to archive/<doc>/v<old>.md, add an entry with source set to that file, edit app/<doc>.tsx, bump 'current' and lib/config/legal.ts, then run npm run legal:build. See docs/HANDOFF.md.",
+  "terms": {
+    "title": "Terms of Service",
+    "current": "2",
+    "versions": [
+      {
+        "version": "2",
+        "effectiveDate": "[EFFECTIVE DATE: fill in the launch date]",
+        "source": "app/terms.tsx",
+        "changes": "Remix rules and the like/save/remix permissions removed; other users can only view Public designs. Copyright complaints (DMCA) section added. Commercial use of your own designs is still an open attorney question."
+      },
+      {
+        "version": "1",
+        "effectiveDate": "January 1, 2027",
+        "source": "web-legal/archive/terms/v1.md"
+      }
+    ]
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "current": "2",
+    "versions": [
+      {
+        "version": "2",
+        "effectiveDate": "[EFFECTIVE DATE: fill in the launch date]",
+        "source": "app/privacy.tsx",
+        "changes": "Profile photos added; the 13+ confirmation and Vi chats are not stored; likes, saves and remixes claims removed (including the remix retention row and deletion notes)."
+      },
+      {
+        "version": "1",
+        "effectiveDate": "January 1, 2027",
+        "source": "web-legal/archive/privacy/v1.md"
+      }
+    ]
+  }
+}

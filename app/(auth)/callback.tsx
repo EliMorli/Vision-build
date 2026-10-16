@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import * as Linking from "expo-linking";
@@ -18,6 +18,28 @@ export default function AuthCallbackScreen() {
   const router = useRouter();
   const setSession = useAuthStore((s) => s.setSession);
 
+  const extractAndSetSession = useCallback(async (url: string) => {
+    // Supabase puts tokens in the URL fragment: #access_token=...&refresh_token=...
+    const fragment = url.split("#")[1];
+    if (!fragment) return;
+
+    const params = new URLSearchParams(fragment);
+    const accessToken = params.get("access_token");
+    const refreshToken = params.get("refresh_token");
+
+    if (accessToken && refreshToken) {
+      const { data } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+
+      if (data.session) {
+        setSession(data.session);
+        router.replace("/(tabs)");
+      }
+    }
+  }, [router, setSession]);
+
   useEffect(() => {
     const handleDeepLink = async () => {
       const url = await Linking.getInitialURL();
@@ -35,29 +57,7 @@ export default function AuthCallbackScreen() {
     });
 
     return () => subscription.remove();
-  }, []);
-
-  const extractAndSetSession = async (url: string) => {
-    // Supabase puts tokens in the URL fragment: #access_token=...&refresh_token=...
-    const fragment = url.split("#")[1];
-    if (!fragment) return;
-
-    const params = new URLSearchParams(fragment);
-    const accessToken = params.get("access_token");
-    const refreshToken = params.get("refresh_token");
-
-    if (accessToken && refreshToken) {
-      const { data, error } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      });
-
-      if (data.session) {
-        setSession(data.session);
-        router.replace("/(tabs)");
-      }
-    }
-  };
+  }, [extractAndSetSession]);
 
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>

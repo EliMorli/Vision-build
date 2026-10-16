@@ -1,0 +1,13 @@
+{
+  "models": {
+    "vision": "google/gemini-2.5-pro",
+    "text": "anthropic/claude-sonnet-5.5",
+    "chat": "anthropic/claude-sonnet-5.5",
+    "renderPreview": "google/gemini-3.1-flash-image",
+    "renderFinal": "google/gemini-3.1-flash-image"
+  },
+  "vendorDisplayNames": {
+    "google": "Google (Gemini)",
+    "anthropic": "Anthropic (Claude)"
+  }
+}

@@ -1,21 +1,16 @@
 import { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  Pressable,
-  ScrollView,
-  SafeAreaView,
-} from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, SafeAreaView } from "react-native";
+import { useRouter, useLocalSearchParams, Redirect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, fonts } from "@/lib/theme";
 import { BUDGET_RANGES } from "@/lib/types";
 import { useProjectStore, useLeadStore, useAuthStore } from "@/lib/store";
 import { Button, Banner, EmptyState, FullScreenLoader } from "@/components";
 
-export default function HandoffScreen() {
+// Feature flag for contractor outreach
+const CONTRACTOR_OUTREACH_ENABLED = false;
+
+function HandoffScreenInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { currentProject } = useProjectStore();
@@ -73,10 +68,10 @@ export default function HandoffScreen() {
             We need a couple of details to match you with the best local contractors.
           </Text>
 
-          <Text style={styles.label}>Budget Range</Text>
+          <Text style={styles.label}>Budget range</Text>
           <View style={styles.chips}>
             {BUDGET_RANGES.map((range) => (
-              <Pressable
+              <Pressable accessibilityRole="button"
                 key={range}
                 style={[styles.chip, budget === range && styles.chipSelected]}
                 onPress={() => setBudget(range)}
@@ -90,7 +85,7 @@ export default function HandoffScreen() {
             ))}
           </View>
 
-          <Text style={[styles.label, { marginTop: spacing.lg }]}>Zip Code</Text>
+          <Text style={[styles.label, { marginTop: spacing.lg }]}>Zip code</Text>
           <TextInput
             style={styles.input}
             placeholder="Enter your zip code"
@@ -103,7 +98,7 @@ export default function HandoffScreen() {
 
           <View style={styles.btnWrap}>
             <Button
-              label="Generate Project Brief"
+              label="Generate project brief"
               icon="document-text-outline"
               onPress={handleGenerateBrief}
               disabled={!canProceed}
@@ -128,7 +123,7 @@ export default function HandoffScreen() {
           <Banner
             icon="checkmark-circle"
             iconColor={colors.secondary}
-            title="Project Brief Generated"
+            title="Project brief generated"
           />
 
           {/* Email preview card */}
@@ -138,7 +133,7 @@ export default function HandoffScreen() {
             </Text>
             <View style={styles.divider} />
 
-            <Text style={styles.cardHeading}>Scope of Work</Text>
+            <Text style={styles.cardHeading}>Scope of work</Text>
             {emailPreview?.scopeOfWork.map((item, i) => (
               <Text key={i} style={styles.scopeItem}>
                 {"\u2022  "}{item}
@@ -178,7 +173,7 @@ export default function HandoffScreen() {
 
           <View style={styles.btnWrap}>
             <Button
-              label="Connect with Contractors"
+              label="Connect with contractors"
               icon="send"
               onPress={handleDispatch}
               variant="secondary"
@@ -197,11 +192,11 @@ export default function HandoffScreen() {
     <SafeAreaView style={styles.safeArea}>
       <EmptyState
         icon="checkmark-circle"
-        title="Leads Sent!"
+        title="Leads sent!"
         subtitle="Your project brief has been sent to matched contractors. You'll receive responses within 24-48 hours."
       >
         <Button
-          label="Back to Dashboard"
+          label="Back to dashboard"
           onPress={() => {
             clear();
             router.replace("/(tabs)");
@@ -292,3 +287,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 });
+
+export default function HandoffScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  
+  if (!CONTRACTOR_OUTREACH_ENABLED) {
+    return <Redirect href={`/pros-coming-soon?projectId=${id}`} />;
+  }
+  
+  return <HandoffScreenInner />;
+}

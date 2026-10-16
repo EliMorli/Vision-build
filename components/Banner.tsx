@@ -18,7 +18,7 @@ export function Banner({ icon, iconColor = colors.secondary, title, subtitle, ch
         {icon && <Ionicons name={icon} size={20} color={iconColor} />}
         <Text style={[styles.title, { color: iconColor }]}>{title}</Text>
       </View>
-      {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+      {!!subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
       {children}
     </View>
   );
