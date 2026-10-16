@@ -9,11 +9,13 @@ import {
   SafeAreaView,
   Pressable,
   Image,
+  Platform,
 } from "react-native";
+import * as AppleAuthentication from "expo-apple-authentication";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { openLegalPage } from "@/lib/helpers/openLegalPage";
-import { colors, spacing, fonts } from "@/lib/theme";
+import { colors, spacing, fonts, radius } from "@/lib/theme";
 import { useAuthStore } from "@/lib/store";
 import { Button } from "@/components";
 
@@ -151,14 +153,28 @@ export default function SignInScreen() {
           textColor={colors.textPrimary}
           iconColor={colors.textPrimary}
         />
-        <Button
-          label="Continue with Apple"
-          icon="logo-apple"
-          onPress={() => handleOAuthPress("apple")}
-          loading={loading}
-          variant="primary"
-          style={styles.appleButton}
-        />
+        {Platform.OS === "ios" ? (
+          // iOS: Apple's own button (HIG / guideline 4.8), same size as Google's
+          <AppleAuthentication.AppleAuthenticationButton
+            buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+            cornerRadius={radius.lg}
+            style={styles.appleNativeButton}
+            onPress={() => {
+              if (!loading) handleOAuthPress("apple");
+            }}
+          />
+        ) : (
+          <Button
+            label="Continue with Apple"
+            icon="logo-apple"
+            onPress={() => handleOAuthPress("apple")}
+            loading={loading}
+            variant="primary"
+            style={styles.appleButton}
+            testID="sign-in-apple-button"
+          />
+        )}
         {error && <Text style={styles.errorText}>{error}</Text>}
       </View>
 
@@ -272,6 +288,10 @@ const styles = StyleSheet.create({
   },
   appleButton: {
     backgroundColor: "#000000",
+  },
+  appleNativeButton: {
+    width: "100%",
+    height: 56,
   },
   errorText: {
     color: colors.error,

@@ -10,6 +10,8 @@ import { Project, Profile, Contractor } from "./types";
 import { getDataLayer } from "./data";
 import { InMemoryDataLayer } from "./data/in-memory";
 import { MOCK_USER_ID } from "./constants/mock";
+import { mockApplyAutoHide, MOCK_KEYS } from "./moderation";
+import { normalizeReportNote, toDbReportType } from "./moderation/report-target";
 import { wipeOfflineCache, setOfflineCacheData, getOfflineCacheData, cacheImageFile } from "./offline-cache";
 
 // ─── Auth Store ────────────────────────────────────────────
@@ -942,12 +944,14 @@ interface ReportState {
     targetType: "design" | "message" | "contractor";
     targetId: string;
     reason: string;
+    note?: string | null;
   }) => Promise<void>;
   blockUser: (userId: string) => Promise<void>;
 }
 
 export const useReportStore = create<ReportState>(() => ({
-  submitReport: async ({ targetType, targetId, reason }) => {
+  submitReport: async ({ targetType, targetId, reason, note: rawNote }) => {
+    const note = normalizeReportNote(rawNote);
     const authState = useAuthStore.getState();
     const userId = authState.session?.user?.id || authState.profile?.id;
 
@@ -961,8 +965,10 @@ export const useReportStore = create<ReportState>(() => ({
       // Persist report to AsyncStorage for E2E testing
       const existingReports = await AsyncStorage.getItem("@visionbuild:reports");
       const reports = existingReports ? JSON.parse(existingReports) : [];
-      reports.push({ targetType, targetId, reason, userId, createdAt: new Date().toISOString() });
+      reports.push({ targetType, targetId, reason, userId, createdAt: new Date().toISOString(), ...(note ? { note } : {}) });
       await AsyncStorage.setItem("@visionbuild:reports", JSON.stringify(reports));
+      // Mirror the database's auto-hide trigger (3 distinct reporters)
+      if (targetType === "design") await mockApplyAutoHide(targetId);
       
       return;
     }
@@ -974,9 +980,10 @@ export const useReportStore = create<ReportState>(() => ({
     const { error } = await (supabase.from("reports") as any).insert([
       {
         user_id: userId,
-        target_type: targetType,
+        target_type: toDbReportType(targetType),
         target_id: targetId,
         reason,
+        note,
       },
     ]);
 
@@ -1151,8 +1158,12 @@ export const useExploreStore = create<ExploreState>((set, get) => ({
         if (seedJson) {
           const seedProjects = JSON.parse(seedJson);
           // Filter to only public projects from other users
-          const publicOnly = seedProjects.filter((p: Project) => 
-            p.is_public && p.user_id !== userId
+          // Same rules as fetch_public_designs(): not hidden by moderation,
+          // owner not banned from publishing
+          const bannedJson = await AsyncStorage.getItem(MOCK_KEYS.banned);
+          const bannedIds: string[] = bannedJson ? JSON.parse(bannedJson) : [];
+          const publicOnly = seedProjects.filter((p: Project & { is_hidden?: boolean }) => 
+            p.is_public && p.user_id !== userId && !p.is_hidden && !bannedIds.includes(p.user_id || "")
           );
           
           // Check blocks

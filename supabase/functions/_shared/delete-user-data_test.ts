@@ -268,3 +268,21 @@ Deno.test("deleteUserData - Apple revoke succeeds", async () => {
     restoreFetch();
   }
 });
+
+Deno.test("deleteUserData - Google account with a linked Apple identity is treated as Apple", async () => {
+  const supabase = createMockSupabase({});
+
+  const result = await deleteUserData({
+    userId: "user-123",
+    userEmail: "test@example.com",
+    userAppMetadata: { provider: "google", providers: ["google", "apple"] },
+    userIdentities: [{ provider: "google" }, { provider: "apple" }],
+    supabase,
+  });
+
+  assertEquals(result.success, true);
+  if (result.success) {
+    // No code was sent, so revocation is skipped for that reason, not "not_apple_user"
+    assertEquals(result.appleRevokeStatus, { status: "skipped", reason: "no_auth_code" });
+  }
+});

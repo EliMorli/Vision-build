@@ -200,6 +200,8 @@ export default function RootLayout() {
         <Stack.Screen name="delete-account/confirm" options={{ headerShown: false }} />
         <Stack.Screen name="terms" options={{ title: "Terms of Service" }} />
         <Stack.Screen name="privacy" options={{ title: "Privacy Policy" }} />
+        <Stack.Screen name="admin/moderation" options={{ title: "Moderation" }} />
+        <Stack.Screen name="admin/design/[id]" options={{ title: "Reported design" }} />
       </Stack>
     </GestureHandlerRootView>
   );

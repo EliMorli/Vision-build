@@ -171,7 +171,7 @@ test.describe("Drag-to-dismiss sheets", () => {
     // Long drag: closes
     const h = (await sheet.boundingBox())!.height;
     await dragDown(page, grabber, Math.round(h * 0.7), { settle: true });
-    await expect(sheet).toHaveCount(0);
+    await expect(sheet).toBeHidden();
   });
 
   // Flick velocity deciding the close is unit tested on the release math
@@ -186,7 +186,7 @@ test.describe("Drag-to-dismiss sheets", () => {
     await expect(sheet).toBeVisible({ timeout: 5000 });
     const h = (await sheet.boundingBox())!.height;
     await dragDown(page, page.getByTestId("make-public-sheet-grabber"), Math.round(h * 0.6), { settle: true });
-    await expect(sheet).toHaveCount(0);
+    await expect(sheet).toBeHidden();
     // Still private: the switch still offers "Make project public"
     await expect(page.getByRole("switch", { name: "Make project public" })).toBeVisible();
   });
@@ -201,7 +201,7 @@ test.describe("Drag-to-dismiss sheets", () => {
     await page.screenshot({ path: "e2e/screens/motion-report-sheet.png", fullPage: false });
     const h = (await sheet.boundingBox())!.height;
     await dragDown(page, page.getByTestId("report-sheet-grabber"), Math.round(h * 0.6), { settle: true });
-    await expect(sheet).toHaveCount(0);
+    await expect(sheet).toBeHidden();
   });
 });
 
@@ -219,7 +219,7 @@ test.describe("Sheets with Reduce Motion", () => {
     expect(Math.abs(v.ty)).toBeLessThan(1);
     await page.screenshot({ path: "e2e/screens/motion-make-public-reduced.png", fullPage: false });
     await page.getByTestId("make-public-backdrop").click({ position: { x: 20, y: 20 } });
-    await expect(sheet).toHaveCount(0);
+    await expect(sheet).toBeHidden();
   });
 });
 

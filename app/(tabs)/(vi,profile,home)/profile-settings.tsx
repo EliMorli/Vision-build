@@ -26,6 +26,7 @@ import Constants from "expo-constants";
 import { openLegalPage } from "@/lib/helpers/openLegalPage";
 import type { LegalPage } from "@/lib/config/legal";
 import { useTabNavigation } from "@/lib/navigation/useTabNavigation";
+import { useIsAdmin } from "@/lib/hooks/useIsAdmin";
 
 const APP_VERSION = Constants.expoConfig?.version ?? "1.0.0";
 
@@ -37,6 +38,7 @@ const ABOUT_ROWS: { page: LegalPage; label: string }[] = [
 
 export default function ProfileSettingsScreen() {
   const router = useRouter();
+  const isAdmin = useIsAdmin();
   const tabNav = useTabNavigation();
   const signOut = useAuthStore((s) => s.signOut);
   const { privacyOptOut, loadPrivacySettings, setPrivacyOptOut } = usePrivacyStore();
@@ -419,6 +421,28 @@ export default function ProfileSettingsScreen() {
             </Pressable>
           </View>
         </View>
+
+        {/* Moderation: only rendered for admins (the database enforces it too) */}
+        {isAdmin && (
+          <View style={styles.section} testID="settings-moderation-section">
+            <Text style={styles.sectionTitle} accessibilityRole="header">Moderation</Text>
+            <View style={styles.settingCard}>
+              <Pressable
+                style={styles.settingRow}
+                onPress={() => router.push("/admin/moderation")}
+                accessibilityRole="button"
+                accessibilityLabel="Open the moderation queue"
+                testID="settings-moderation-link"
+              >
+                <View style={styles.settingInfo}>
+                  <Text style={styles.settingLabel}>Reported designs</Text>
+                  <Text style={styles.settingDescription}>Review reports within 24 hours</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+              </Pressable>
+            </View>
+          </View>
+        )}
 
         {/* Danger Zone */}
         <View style={styles.section}>

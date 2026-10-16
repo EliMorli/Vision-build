@@ -26,3 +26,9 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.outreach_log TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.pro_waitlist TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.blocks TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_settings TO authenticated;
+
+-- Admin moderation (00025). Supabase grants table privileges to authenticated
+-- by default; RLS (no policies / admin-only policies) is what must deny access.
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.moderation_log TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.admins TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.moderation_settings TO authenticated;
